@@ -1,0 +1,243 @@
+import { Injectable, computed, signal, effect, PLATFORM_ID, inject } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
+import { AppState, BusinessProfile, Enquiry, FAQ, Service, Activity } from './types';
+
+const defaultState: AppState = {
+  profile: {
+    name: '',
+    type: '',
+    tagline: '',
+    description: '',
+    email: '',
+    phone: '',
+    address: '',
+    serviceArea: '',
+    openingHours: '',
+    toneOfVoice: 'Professional yet friendly',
+    brandColor: '#2563eb', // Apple blue-ish
+    heroCopy: '',
+    ctaText: 'Get a Quote',
+    trustBadges: [],
+    enquiryFields: []
+  },
+  services: [],
+  enquiries: [],
+  testimonials: [],
+  faqs: [],
+  activities: [],
+  themeSettings: {
+    primaryColor: '#2563eb',
+    fontFamily: 'Inter',
+  },
+  customization: {
+    branding: {
+      logoUrl: '',
+      primaryColor: '#2563eb',
+      secondaryColor: '#f3f4f6',
+      backgroundColor: '#ffffff',
+      buttonStyle: 'rounded',
+      cardStyle: 'soft',
+      fontStyle: 'modern',
+      themeMode: 'light',
+      headerStyle: 'centered',
+      ctaText: 'Get a Quote'
+    },
+    sections: [
+      { id: 'hero', visible: true, order: 1, heading: 'Hero', subheading: '', layoutVariant: 'centered' },
+      { id: 'about', visible: true, order: 2, heading: 'About Us', subheading: 'Who we are', layoutVariant: 'default' },
+      { id: 'services', visible: true, order: 3, heading: 'Our Services', subheading: 'What we offer', layoutVariant: 'grid' },
+      { id: 'products', visible: false, order: 4, heading: 'Products', subheading: 'Browse our items', layoutVariant: 'default' },
+      { id: 'pricing', visible: false, order: 5, heading: 'Pricing', subheading: 'Simple & transparent', layoutVariant: 'default' },
+      { id: 'testimonials', visible: true, order: 6, heading: 'Testimonials', subheading: 'What our clients say', layoutVariant: 'quote' },
+      { id: 'gallery', visible: false, order: 7, heading: 'Gallery', subheading: 'See our work', layoutVariant: 'default' },
+      { id: 'faq', visible: true, order: 8, heading: 'FAQ', subheading: 'Frequently asked questions', layoutVariant: 'accordion' },
+      { id: 'contact', visible: true, order: 9, heading: 'Contact Us', subheading: 'Get in touch', layoutVariant: 'split' },
+      { id: 'location', visible: false, order: 10, heading: 'Location', subheading: 'Find us', layoutVariant: 'default' },
+      { id: 'hours', visible: false, order: 11, heading: 'Business Hours', subheading: 'When we are open', layoutVariant: 'default' },
+      { id: 'badges', visible: false, order: 12, heading: 'Trust Badges', subheading: 'Why choose us', layoutVariant: 'default' },
+      { id: 'cta', visible: false, order: 13, heading: 'Ready to start?', subheading: 'Contact us today', layoutVariant: 'default' }
+    ],
+    formFields: [
+      { id: 'name', label: 'Name', type: 'text', required: true, options: '', order: 1 },
+      { id: 'email', label: 'Email', type: 'email', required: true, options: '', order: 2 },
+      { id: 'phone', label: 'Phone', type: 'phone', required: false, options: '', order: 3 },
+      { id: 'service', label: 'Service Interest', type: 'dropdown', required: true, options: 'Standard Clean,Deep Clean,Other', order: 4 },
+      { id: 'message', label: 'Message', type: 'textarea', required: true, options: '', order: 5 }
+    ],
+    rules: {
+      statuses: ['New', 'In Progress', 'Replied', 'Booked', 'Won', 'Lost', 'Archived'],
+      leadQualities: ['Hot', 'Warm', 'Cold']
+    }
+  },
+  isSetupComplete: false,
+};
+
+@Injectable({ providedIn: 'root' })
+export class DataService {
+  private platformId = inject(PLATFORM_ID);
+  
+  private state = signal<AppState>(this.loadState());
+
+  readonly profile = computed(() => this.state().profile);
+  readonly services = computed(() => this.state().services);
+  readonly enquiries = computed(() => this.state().enquiries);
+  readonly testimonials = computed(() => this.state().testimonials);
+  readonly faqs = computed(() => this.state().faqs);
+  readonly activities = computed(() => this.state().activities);
+  readonly customization = computed(() => this.state().customization);
+  readonly isSetupComplete = computed(() => this.state().isSetupComplete);
+
+  constructor() {
+    effect(() => {
+      if (isPlatformBrowser(this.platformId)) {
+        localStorage.setItem('businessflow_state', JSON.stringify(this.state()));
+      }
+    });
+  }
+
+  private loadState(): AppState {
+    if (isPlatformBrowser(this.platformId)) {
+      const stored = localStorage.getItem('businessflow_state');
+      if (stored) {
+        try {
+          return JSON.parse(stored) as AppState;
+        } catch (e) {
+          console.error('Failed to parse stored state', e);
+        }
+      }
+    }
+    return defaultState;
+  }
+
+  updateProfile(profile: Partial<BusinessProfile>) {
+    this.state.update(s => ({ ...s, profile: { ...s.profile, ...profile } }));
+  }
+
+  updateCustomization(customization: Partial<AppState['customization']>) {
+    this.state.update(s => ({ ...s, customization: { ...s.customization, ...customization } }));
+  }
+
+  completeSetup() {
+    this.state.update(s => ({ ...s, isSetupComplete: true }));
+  }
+  
+  resetSetup() {
+    this.state.set(defaultState);
+  }
+
+  exportState(): string {
+    return JSON.stringify(this.state(), null, 2);
+  }
+
+  importState(jsonString: string): boolean {
+    try {
+      const parsed = JSON.parse(jsonString);
+      if (parsed && parsed.profile) {
+        this.state.set(parsed);
+        return true;
+      }
+    } catch (e) {
+      console.error('Invalid JSON', e);
+    }
+    return false;
+  }
+
+  loadDemoData() {
+    this.state.set({
+      ...defaultState,
+      profile: {
+        name: 'Demo Cleaners',
+        type: 'cleaner',
+        tagline: 'Spotless cleaning for a healthier, happier home.',
+        description: 'Welcome to Demo Cleaners! Residential and commercial cleaning businesses. Spotless cleaning for a healthier, happier home.. Our goal is to make your life easier through professional, reliable, and high-quality solutions.',
+        email: 'hello@democleaners.com',
+        phone: '(555) 123-4567',
+        address: '123 Main St, Seattle, WA',
+        serviceArea: 'Greater Seattle Area',
+        openingHours: 'Mon-Fri: 9am - 5pm',
+        toneOfVoice: 'Professional, trustworthy, and detail-oriented',
+        brandColor: '#2563eb',
+        heroCopy: 'Spotless cleaning for a healthier, happier home.',
+        ctaText: 'Get a Free Estimate',
+        trustBadges: ['Fully Insured', 'Eco-Friendly Products', 'Satisfaction Guarantee'],
+        enquiryFields: ['Property Size (sq ft)', 'Number of Bedrooms', 'Number of Bathrooms']
+      },
+      services: [
+        { id: 'c1', name: 'Standard Clean', description: 'Regular maintenance cleaning for your home.', price: '$120' },
+        { id: 'c2', name: 'Deep Clean', description: 'Thorough top-to-bottom cleaning including baseboards and inside cabinets.', price: '$250' }
+      ],
+      faqs: [
+        { id: 'f1', question: 'Do I need to provide cleaning supplies?', answer: 'No, we bring our own professional-grade supplies and equipment.' },
+      ],
+      enquiries: [
+        { id: 'e1', name: 'Jane Doe', email: 'jane@example.com', phone: '555-987-6543', serviceInterest: 'Deep Clean', preferredDateTime: 'Next Tuesday morning', urgency: 'Medium', message: 'Looking for a deep clean before my parents visit.', status: 'New', date: new Date().toISOString(), leadScore: 'Hot', nextAction: 'Call to confirm details' }
+      ],
+      activities: [
+        { id: 'a1', type: 'enquiry_received', title: 'New Enquiry', description: 'Jane Doe requested a Deep Clean.', date: new Date().toISOString() }
+      ],
+      isSetupComplete: true
+    });
+  }
+
+  addActivity(activity: Omit<Activity, 'id' | 'date'>) {
+    const newActivity: Activity = {
+      ...activity,
+      id: crypto.randomUUID(),
+      date: new Date().toISOString()
+    };
+    this.state.update(s => ({ ...s, activities: [newActivity, ...s.activities] }));
+  }
+
+  addEnquiry(enquiry: Omit<Enquiry, 'id' | 'date' | 'status'>) {
+    const leadScore = enquiry.urgency === 'High' ? 'Hot' : (enquiry.urgency === 'Medium' ? 'Warm' : 'Cold');
+    const newEnquiry: Enquiry = {
+      ...enquiry,
+      id: crypto.randomUUID(),
+      date: new Date().toISOString(),
+      status: 'New',
+      leadScore,
+      nextAction: 'Review and reply'
+    };
+    this.state.update(s => ({ ...s, enquiries: [newEnquiry, ...s.enquiries] }));
+    this.addActivity({
+      type: 'enquiry_received',
+      title: 'New Enquiry Received',
+      description: `${enquiry.name} requested ${enquiry.serviceInterest}`
+    });
+  }
+
+  updateEnquiry(id: string, updates: Partial<Enquiry>) {
+    let statusChanged = false;
+    let oldStatus = '';
+    let name = '';
+    
+    this.state.update(s => {
+      const enquiry = s.enquiries.find(e => e.id === id);
+      if (enquiry && updates.status && updates.status !== enquiry.status) {
+        statusChanged = true;
+        oldStatus = enquiry.status;
+        name = enquiry.name;
+      }
+      return {
+        ...s,
+        enquiries: s.enquiries.map(e => e.id === id ? { ...e, ...updates } : e)
+      };
+    });
+    
+    if (statusChanged) {
+      this.addActivity({
+        type: 'status_changed',
+        title: 'Enquiry Updated',
+        description: `${name}'s enquiry moved from ${oldStatus} to ${updates.status}`
+      });
+    }
+  }
+
+  setServices(services: Service[]) {
+    this.state.update(s => ({ ...s, services }));
+  }
+
+  setFaqs(faqs: FAQ[]) {
+    this.state.update(s => ({ ...s, faqs }));
+  }
+}

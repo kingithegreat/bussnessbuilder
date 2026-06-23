@@ -1,0 +1,7 @@
+{
+  "name": "BusinessFlow Studio",
+  "description": "A reusable small-business website, enquiry, and automation template for any business type.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+
