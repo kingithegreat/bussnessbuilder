@@ -1,20 +1,69 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://ai.google.dev/static/site-assets/images/share-ais-513315318.png" />
-</div>
+# BusinessFlow Studio
 
-# Run and deploy your AI Studio app
-
-This contains everything you need to run your app locally.
-
-View your app in AI Studio: https://ai.studio/apps/1ab44507-a5cf-4c5e-84b4-41887736dad6
+A reusable small-business website, enquiry, and automation template for any
+business type. Built with **Angular 21** (standalone components + signals) and
+**Tailwind CSS**. The app runs entirely in the browser — business data is kept
+in `localStorage`, so no backend or database is required.
 
 ## Run Locally
 
-**Prerequisites:**  Node.js
-
+**Prerequisites:** Node.js 20+
 
 1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+   ```bash
+   npm install
+   ```
+2. Run the dev server:
+   ```bash
+   npm run dev
+   ```
+   Then open http://localhost:3000
+
+## Build
+
+```bash
+npm run build
+```
+
+The production build is emitted to `dist/app/browser`.
+
+## Deploy to Firebase Hosting
+
+This app is a static single-page application, so it deploys to **Firebase
+Hosting** with no Cloud Functions or billing required.
+
+### One-time setup
+
+1. Install the Firebase CLI (if you don't have it):
+   ```bash
+   npm install -g firebase-tools
+   ```
+2. Sign in:
+   ```bash
+   firebase login
+   ```
+3. Point the project at your Firebase project. Either edit the `default`
+   project id in [`.firebaserc`](.firebaserc), or run:
+   ```bash
+   firebase use --add
+   ```
+   and pick your project (create one first at https://console.firebase.google.com
+   if needed).
+
+### Deploy
+
+```bash
+npm run deploy
+```
+
+This builds the app and runs `firebase deploy --only hosting`. After it
+finishes, the CLI prints your live **Hosting URL**.
+
+> CI / non-interactive deploys: generate a token with `firebase login:ci` and
+> run `firebase deploy --only hosting --token "$FIREBASE_TOKEN"`.
+
+## Project Configuration
+
+- [`firebase.json`](firebase.json) — Hosting config. Serves `dist/app/browser`
+  and rewrites all routes to `index.html` for client-side routing.
+- [`.firebaserc`](.firebaserc) — the Firebase project alias.
