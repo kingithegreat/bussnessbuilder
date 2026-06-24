@@ -27,6 +27,9 @@ import { MatIconModule } from '@angular/material/icon';
               <span class="ml-auto bg-red-100 text-red-600 text-[10px] px-2 py-0.5 rounded-full font-bold">{{ newEnquiriesCount() }}</span>
             }
           </a>
+          <a routerLink="/admin/content" routerLinkActive="bg-blue-50 text-blue-600 font-medium" class="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-500 hover:bg-gray-50 font-medium transition-colors">
+            <mat-icon class="w-5 h-5">inventory_2</mat-icon> Content
+          </a>
           <a routerLink="/admin/ai" routerLinkActive="bg-blue-50 text-blue-600 font-medium" class="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-500 hover:bg-gray-50 font-medium transition-colors">
             <mat-icon class="w-5 h-5">auto_awesome</mat-icon> AI Tools
           </a>

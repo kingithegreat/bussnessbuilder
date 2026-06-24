@@ -1,6 +1,6 @@
 import { Injectable, computed, signal, effect, PLATFORM_ID, inject } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
-import { AppState, BusinessProfile, Enquiry, FAQ, Service, Activity } from './types';
+import { AppState, BusinessProfile, Enquiry, FAQ, Service, Activity, Testimonial } from './types';
 
 const defaultState: AppState = {
   profile: {
@@ -193,6 +193,11 @@ export class DataService {
       faqs: [
         { id: 'f1', question: 'Do I need to provide cleaning supplies?', answer: 'No, we bring our own professional-grade supplies and equipment.' },
       ],
+      testimonials: [
+        { id: 't1', author: 'Sarah M.', role: 'Homeowner, Ballard', rating: 5, text: 'Demo Cleaners did an incredible job on our move-out deep clean. Spotless, on time, and so friendly. We got our full deposit back!' },
+        { id: 't2', author: 'James T.', role: 'Office Manager', rating: 5, text: 'We switched our weekly office cleaning to them and never looked back. Reliable, thorough, and great communication.' },
+        { id: 't3', author: 'Priya K.', role: 'Repeat Client', rating: 4, text: 'Consistently great results. Booking is easy and the team always pays attention to the little details.' },
+      ],
       enquiries: [
         { id: 'e1', name: 'Jane Doe', email: 'jane@example.com', phone: '555-987-6543', serviceInterest: 'Deep Clean', preferredDateTime: 'Next Tuesday morning', urgency: 'Medium', message: 'Looking for a deep clean before my parents visit.', status: 'New', date: new Date().toISOString(), leadScore: 'Hot', nextAction: 'Call to confirm details' }
       ],
@@ -263,5 +268,9 @@ export class DataService {
 
   setFaqs(faqs: FAQ[]) {
     this.state.update(s => ({ ...s, faqs }));
+  }
+
+  setTestimonials(testimonials: Testimonial[]) {
+    this.state.update(s => ({ ...s, testimonials }));
   }
 }

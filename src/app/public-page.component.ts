@@ -1,6 +1,7 @@
-import { Component, inject, computed, input } from '@angular/core';
+import { Component, inject, computed, input, effect } from '@angular/core';
 import { DataService } from './data.service';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Title, Meta } from '@angular/platform-browser';
 import { MatIconModule } from '@angular/material/icon';
 import { SlicePipe, NgTemplateOutlet } from '@angular/common';
 import { CustomizationSettings, SectionConfig, FormFieldConfig } from './types';
@@ -604,6 +605,8 @@ import { CustomizationSettings, SectionConfig, FormFieldConfig } from './types';
 export class PublicPageComponent {
   private dataService = inject(DataService);
   private fb = inject(FormBuilder);
+  private title = inject(Title);
+  private meta = inject(Meta);
 
   previewCustomization = input<CustomizationSettings | null>(null);
 
@@ -658,6 +661,45 @@ export class PublicPageComponent {
 
   constructor() {
     this.setupDynamicForm();
+    this.setupSeo();
+  }
+
+  /**
+   * Keep the document <title> and social/SEO meta tags in sync with the
+   * business profile (description, Open Graph, Twitter card, theme-color).
+   *
+   * Note: profile data lives in the browser (localStorage), so the SSR pass
+   * renders the default/empty profile and this effect no-ops server-side. The
+   * tags are filled in on the client after hydration — which still benefits
+   * users (correct tab title) and JS-rendering crawlers/scrapers. True
+   * server-rendered SEO would require the profile to live on the server.
+   * Skipped entirely when rendered as an embedded admin preview.
+   */
+  private setupSeo() {
+    effect(() => {
+      if (this.previewCustomization()) return; // admin preview — don't touch the page <head>
+      const p = this.profile();
+      if (!p.name) return;
+
+      const title = p.tagline ? `${p.name} — ${p.tagline}` : p.name;
+      const description = (p.description || p.tagline || `${p.name} in ${p.serviceArea || 'your area'}.`)
+        .replace(/\s+/g, ' ')
+        .trim()
+        .slice(0, 160);
+
+      this.title.setTitle(title);
+      this.meta.updateTag({ name: 'description', content: description });
+      this.meta.updateTag({ property: 'og:title', content: title });
+      this.meta.updateTag({ property: 'og:description', content: description });
+      this.meta.updateTag({ property: 'og:type', content: 'website' });
+      if (this.customization().branding.logoUrl) {
+        this.meta.updateTag({ property: 'og:image', content: this.customization().branding.logoUrl });
+      }
+      this.meta.updateTag({ name: 'twitter:card', content: 'summary_large_image' });
+      this.meta.updateTag({ name: 'twitter:title', content: title });
+      this.meta.updateTag({ name: 'twitter:description', content: description });
+      this.meta.updateTag({ name: 'theme-color', content: this.customization().branding.primaryColor || '#2563eb' });
+    });
   }
 
   private setupDynamicForm() {

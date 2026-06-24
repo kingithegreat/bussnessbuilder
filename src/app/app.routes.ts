@@ -5,6 +5,7 @@ import { PublicPageComponent } from './public-page.component';
 import { AdminLayoutComponent } from './admin-layout.component';
 import { AdminDashboardComponent } from './admin-dashboard.component';
 import { AdminInboxComponent } from './admin-inbox.component';
+import { AdminContentComponent } from './admin-content.component';
 import { AdminAiToolsComponent } from './admin-ai.component';
 import { AdminCustomisationComponent } from './admin-customisation.component';
 import { AdminBuilderComponent } from './admin-builder.component';
@@ -23,6 +24,7 @@ export const routes: Routes = [
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
       { path: 'dashboard', component: AdminDashboardComponent },
       { path: 'inbox', component: AdminInboxComponent },
+      { path: 'content', component: AdminContentComponent },
       { path: 'ai', component: AdminAiToolsComponent },
       { path: 'customisation', component: AdminCustomisationComponent },
       { path: 'builder', component: AdminBuilderComponent },

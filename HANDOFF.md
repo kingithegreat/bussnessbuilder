@@ -33,8 +33,11 @@ Gemini (`@google/genai`) for AI features, Angular Material, and Tailwind v4.
   - `/setup` → `SetupWizardComponent`
   - `/public` → `PublicPageComponent` (guarded by `publicGuard`)
   - `/admin/*` → `AdminLayoutComponent` (guarded by `authGuard`) with children:
-    `dashboard`, `inbox`, `ai`, `customisation`, `builder`, `form-builder`
+    `dashboard`, `inbox`, `content`, `ai`, `customisation`, `builder`,
+    `form-builder`
 - **Services:** `ai.service.ts` (Gemini calls), `data.service.ts` (app data)
+- **Content editor:** `admin-content.component.ts` — tabbed CRUD for services,
+  testimonials, and FAQs (local edit + Save, mirrors the form-builder pattern)
 - **Guards:** `auth.guard.ts` (`authGuard`, `publicGuard`)
 - **Domain types:** `types.ts` (`BusinessProfile`, `Service`, `Enquiry`,
   `Testimonial`, `FAQ`, …), presets in `presets.ts`
@@ -46,6 +49,13 @@ Gemini (`@google/genai`) for AI features, Angular Material, and Tailwind v4.
 - AI wired to real Gemini (lazy-loaded) with graceful template fallback.
 - Build verified: `npm run build` green; SSR server renders (`ng-server-context="ssr"`)
   and `/healthz` returns 200.
+- **Content editor added** (`/admin/content`): manage services, testimonials,
+  and FAQs in-app (previously only editable via JSON import). Demo data now
+  includes sample testimonials so that section isn't empty.
+- **Dynamic SEO** on the public page: `<title>` + description/OG/Twitter/
+  theme-color meta from the profile. Note: profile lives in localStorage, so
+  these populate client-side after hydration (SSR pass sees the empty default);
+  true server-rendered SEO would need the profile on the server.
 
 ## Next steps
 - [ ] Deploy: `gcloud run deploy businessflow --source . --region us-central1
