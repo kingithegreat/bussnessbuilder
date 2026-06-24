@@ -8,6 +8,7 @@ import {
   signOut,
   GoogleAuthProvider,
   signInWithPopup,
+  signInWithRedirect,
   sendPasswordResetEmail,
   updateProfile,
   onAuthStateChanged,
@@ -91,7 +92,14 @@ export class AuthService {
 
   async signInWithGoogle() {
     const provider = new GoogleAuthProvider();
-    return signInWithPopup(this.auth, provider);
+    try {
+      return await signInWithPopup(this.auth, provider);
+    } catch (e: any) {
+      if (e?.code === 'auth/popup-blocked' || e?.code === 'auth/cancelled-popup-request') {
+        return signInWithRedirect(this.auth, provider);
+      }
+      throw e;
+    }
   }
 
   async resetPassword(email: string) {

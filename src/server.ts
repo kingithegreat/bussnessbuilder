@@ -14,6 +14,12 @@ const angularApp = new AngularNodeAppEngine({
   trustProxyHeaders: true,
 });
 
+// Allow Firebase Auth popups to communicate back to the opener window.
+app.use((_req, res, next) => {
+  res.setHeader('Cross-Origin-Opener-Policy', 'same-origin-allow-popups');
+  next();
+});
+
 /**
  * Liveness/readiness probe for Cloud Run (and any container orchestrator).
  * Returns 200 as soon as the process is serving, without touching the
