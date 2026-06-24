@@ -99,7 +99,7 @@ import { BUSINESS_PRESETS, getPreset } from './presets';
               <div class="text-[13px] text-gray-500 flex items-center gap-1">
                  <mat-icon class="text-[16px]">auto_awesome</mat-icon> AI will generate the rest
               </div>
-              <button type="submit" [disabled]="form.invalid || isSubmitting" class="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white px-8 py-3.5 rounded-full font-medium transition-colors disabled:opacity-50 flex items-center justify-center gap-2 shadow-sm">
+              <button type="button" (click)="onSubmit()" [disabled]="isSubmitting" class="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white px-8 py-3.5 rounded-full font-medium transition-colors disabled:opacity-50 flex items-center justify-center gap-2 shadow-sm">
                 @if (isSubmitting) {
                   <span class="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full"></span>
                   Generating...
@@ -108,6 +108,9 @@ import { BUSINESS_PRESETS, getPreset } from './presets';
                   <mat-icon class="text-sm">arrow_forward</mat-icon>
                 }
               </button>
+              @if (formError) {
+                <p class="text-red-500 text-sm font-medium w-full text-center mt-2">{{ formError }}</p>
+              }
             </div>
           </form>
         </div>
@@ -174,6 +177,7 @@ export class SetupWizardComponent implements OnInit {
   private router = inject(Router);
 
   isSubmitting = false;
+  formError = '';
   presets = BUSINESS_PRESETS;
 
   form = this.fb.group({
@@ -226,8 +230,14 @@ export class SetupWizardComponent implements OnInit {
   }
 
   async onSubmit() {
+    this.formError = '';
     if (this.form.invalid) {
       this.form.markAllAsTouched();
+      const missing: string[] = [];
+      if (this.form.get('name')?.invalid) missing.push('Business Name');
+      if (this.form.get('type')?.invalid) missing.push('Business Type');
+      if (this.form.get('email')?.invalid) missing.push('a valid Email');
+      this.formError = `Please fill in: ${missing.join(', ')}`;
       return;
     }
     this.isSubmitting = true;
