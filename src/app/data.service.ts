@@ -118,8 +118,12 @@ export class DataService {
     });
   }
 
+  private initialized = false;
+
   async init(uid: string) {
+    if (this.initialized && this.uid() === uid) return;
     this.uid.set(uid);
+    this.initialized = true;
 
     this.loadPaymentSettings(uid);
     this.loadTemplates(uid);
@@ -176,6 +180,7 @@ export class DataService {
 
   resetSetup() {
     this.state.set(defaultState);
+    this.initialized = false;
   }
 
   resetCustomization() {
