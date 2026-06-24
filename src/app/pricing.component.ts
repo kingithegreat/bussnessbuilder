@@ -30,7 +30,7 @@ import { SubscriptionService } from './subscription.service';
       <main class="max-w-6xl mx-auto px-4 sm:px-6 py-12 md:py-20">
         <div class="text-center mb-12 md:mb-16">
           <h1 class="text-3xl md:text-5xl font-bold tracking-tight mb-4">Simple, transparent pricing</h1>
-          <p class="text-gray-500 max-w-2xl mx-auto text-sm md:text-base">All plans include full site customisation. Upgrade for AI tools, unlimited content, and priority features.</p>
+          <p class="text-gray-500 max-w-2xl mx-auto text-sm md:text-base">Everything you need to build a professional website — at a fraction of the cost of other platforms.</p>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
@@ -38,7 +38,7 @@ import { SubscriptionService } from './subscription.service';
           <div class="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 md:p-8 flex flex-col">
             <div class="mb-6">
               <h3 class="text-lg font-bold text-gray-900 mb-1">Free</h3>
-              <p class="text-gray-500 text-sm">Get started and build your site</p>
+              <p class="text-gray-500 text-sm">Launch your site for free</p>
             </div>
             <div class="mb-6">
               <span class="text-4xl font-black text-gray-900">$0</span>
@@ -48,10 +48,10 @@ import { SubscriptionService } from './subscription.service';
               <li class="flex items-start gap-2"><mat-icon class="text-green-500 text-[18px] shrink-0 mt-0.5">check_circle</mat-icon> Full site customisation</li>
               <li class="flex items-start gap-2"><mat-icon class="text-green-500 text-[18px] shrink-0 mt-0.5">check_circle</mat-icon> Page builder + all layouts</li>
               <li class="flex items-start gap-2"><mat-icon class="text-green-500 text-[18px] shrink-0 mt-0.5">check_circle</mat-icon> Custom contact forms</li>
+              <li class="flex items-start gap-2"><mat-icon class="text-green-500 text-[18px] shrink-0 mt-0.5">check_circle</mat-icon> Payment links (Stripe)</li>
               <li class="flex items-start gap-2"><mat-icon class="text-green-500 text-[18px] shrink-0 mt-0.5">check_circle</mat-icon> Up to 3 services</li>
               <li class="flex items-start gap-2"><mat-icon class="text-green-500 text-[18px] shrink-0 mt-0.5">check_circle</mat-icon> Up to 10 enquiries</li>
               <li class="flex items-start gap-2"><mat-icon class="text-gray-300 text-[18px] shrink-0 mt-0.5">cancel</mat-icon> <span class="text-gray-400">AI content tools (templates only)</span></li>
-              <li class="flex items-start gap-2"><mat-icon class="text-gray-300 text-[18px] shrink-0 mt-0.5">cancel</mat-icon> <span class="text-gray-400">Data export/import</span></li>
             </ul>
             @if (subService.tier() === 'free') {
               <div class="bg-gray-100 text-gray-500 text-center py-3 rounded-xl text-sm font-bold">Current Plan</div>
@@ -68,7 +68,7 @@ import { SubscriptionService } from './subscription.service';
               <p class="text-gray-500 text-sm">For growing businesses</p>
             </div>
             <div class="mb-6">
-              <span class="text-4xl font-black text-gray-900">$19</span>
+              <span class="text-4xl font-black text-gray-900">$14</span>
               <span class="text-gray-500 text-sm">/month</span>
             </div>
             <ul class="space-y-3 mb-8 flex-grow text-sm text-gray-600">
@@ -78,6 +78,7 @@ import { SubscriptionService } from './subscription.service';
               <li class="flex items-start gap-2"><mat-icon class="text-green-500 text-[18px] shrink-0 mt-0.5">check_circle</mat-icon> Unlimited enquiries</li>
               <li class="flex items-start gap-2"><mat-icon class="text-green-500 text-[18px] shrink-0 mt-0.5">check_circle</mat-icon> Data export &amp; import</li>
               <li class="flex items-start gap-2"><mat-icon class="text-green-500 text-[18px] shrink-0 mt-0.5">check_circle</mat-icon> Email notifications</li>
+              <li class="flex items-start gap-2"><mat-icon class="text-green-500 text-[18px] shrink-0 mt-0.5">check_circle</mat-icon> 3 site templates</li>
             </ul>
             @if (subService.tier() === 'pro') {
               <div class="bg-blue-50 text-blue-600 text-center py-3 rounded-xl text-sm font-bold">Current Plan</div>
@@ -95,7 +96,7 @@ import { SubscriptionService } from './subscription.service';
               <p class="text-gray-500 text-sm">For serious professionals</p>
             </div>
             <div class="mb-6">
-              <span class="text-4xl font-black text-gray-900">$39</span>
+              <span class="text-4xl font-black text-gray-900">$22</span>
               <span class="text-gray-500 text-sm">/month</span>
             </div>
             <ul class="space-y-3 mb-8 flex-grow text-sm text-gray-600">
@@ -105,6 +106,7 @@ import { SubscriptionService } from './subscription.service';
               <li class="flex items-start gap-2"><mat-icon class="text-green-500 text-[18px] shrink-0 mt-0.5">check_circle</mat-icon> Analytics dashboard</li>
               <li class="flex items-start gap-2"><mat-icon class="text-green-500 text-[18px] shrink-0 mt-0.5">check_circle</mat-icon> Priority support</li>
               <li class="flex items-start gap-2"><mat-icon class="text-green-500 text-[18px] shrink-0 mt-0.5">check_circle</mat-icon> Remove branding</li>
+              <li class="flex items-start gap-2"><mat-icon class="text-green-500 text-[18px] shrink-0 mt-0.5">check_circle</mat-icon> SEO tools</li>
             </ul>
             @if (subService.tier() === 'business') {
               <div class="bg-purple-50 text-purple-600 text-center py-3 rounded-xl text-sm font-bold">Current Plan</div>
@@ -118,7 +120,7 @@ import { SubscriptionService } from './subscription.service';
 
         <div class="mt-16 text-center">
           <p class="text-gray-500 text-sm mb-2">All plans include full site customisation — branding, layouts, fonts, colours, and all section types.</p>
-          <p class="text-gray-400 text-xs">Prices in USD. Cancel anytime. No long-term contracts.</p>
+          <p class="text-gray-400 text-xs">Prices in USD. Cancel anytime. No long-term contracts. Compare: Squarespace starts at $16/mo with no free tier.</p>
         </div>
       </main>
 
