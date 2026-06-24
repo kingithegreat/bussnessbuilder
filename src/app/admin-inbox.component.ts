@@ -17,7 +17,7 @@ import { MatIconModule } from '@angular/material/icon';
         <h2 class="text-xl font-bold tracking-tight text-gray-900">Enquiries</h2>
         <div class="relative">
           <mat-icon class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">search</mat-icon>
-          <input type="text" placeholder="Search..." [(ngModel)]="searchQuery" class="pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none w-64 shadow-sm bg-gray-50">
+          <input type="text" placeholder="Search..." [ngModel]="searchQuery()" (ngModelChange)="searchQuery.set($event)" class="pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none w-64 shadow-sm bg-gray-50">
         </div>
       </div>
       
@@ -72,8 +72,8 @@ import { MatIconModule } from '@angular/material/icon';
                 <div>
                   <h3 class="text-2xl font-black text-gray-900 mb-2">{{ enquiry.name }}</h3>
                   <div class="flex gap-4 text-sm text-gray-500 font-medium">
-                    <a href="mailto:{{ enquiry.email }}" class="flex items-center gap-1 hover:text-blue-600 transition-colors"><mat-icon class="text-[18px]">email</mat-icon> {{ enquiry.email }}</a>
-                    <a href="tel:{{ enquiry.phone }}" class="flex items-center gap-1 hover:text-blue-600 transition-colors"><mat-icon class="text-[18px]">phone</mat-icon> {{ enquiry.phone || 'N/A' }}</a>
+                    <a [href]="'mailto:' + enquiry.email" class="flex items-center gap-1 hover:text-blue-600 transition-colors"><mat-icon class="text-[18px]">email</mat-icon> {{ enquiry.email }}</a>
+                    <a [href]="'tel:' + enquiry.phone" class="flex items-center gap-1 hover:text-blue-600 transition-colors"><mat-icon class="text-[18px]">phone</mat-icon> {{ enquiry.phone || 'N/A' }}</a>
                   </div>
                 </div>
                 <select [ngModel]="enquiry.status" (ngModelChange)="updateStatus(enquiry.id, $event)" class="bg-gray-50 border border-gray-200 text-gray-700 text-xs font-bold rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2 outline-none uppercase tracking-wider">
@@ -155,7 +155,7 @@ import { MatIconModule } from '@angular/material/icon';
                      <button (click)="copyToClipboard(enquiry.draftReply)" class="bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 px-5 py-2.5 rounded-lg text-sm font-bold transition-colors flex items-center gap-2">
                        <mat-icon class="text-[18px]">content_copy</mat-icon> {{ copySuccess ? 'Copied!' : 'Copy' }}
                      </button>
-                     <a href="mailto:{{ enquiry.email }}?subject=Re: {{ enquiry.serviceInterest }}&body={{ enquiry.draftReply | encodeURIComponent }}" class="bg-blue-600 shadow-md shadow-blue-100 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg text-sm font-bold transition-colors flex items-center gap-2">
+                     <a [href]="'mailto:' + enquiry.email + '?subject=Re: ' + enquiry.serviceInterest + '&body=' + (enquiry.draftReply | encodeURIComponent)" class="bg-blue-600 shadow-md shadow-blue-100 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg text-sm font-bold transition-colors flex items-center gap-2">
                        <mat-icon class="text-[18px]">send</mat-icon> Open in Email Client
                      </a>
                   </div>

@@ -75,7 +75,7 @@ import { MatIconModule } from '@angular/material/icon';
         </nav>
         <div class="mt-auto pt-4 border-t border-gray-100">
           <div class="p-4 bg-gray-50 rounded-xl border border-gray-100 text-center">
-            <a routerLink="/public" target="_blank" class="flex items-center justify-center gap-2 w-full bg-white border border-gray-200 text-gray-900 px-4 py-2 rounded-lg transition-colors text-xs font-bold shadow-sm hover:bg-gray-50">
+            <a href="/public" target="_blank" class="flex items-center justify-center gap-2 w-full bg-white border border-gray-200 text-gray-900 px-4 py-2 rounded-lg transition-colors text-xs font-bold shadow-sm hover:bg-gray-50">
               <mat-icon class="text-[18px]">open_in_new</mat-icon> View Public Page
             </a>
           </div>

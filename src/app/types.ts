@@ -175,6 +175,14 @@ export interface PaymentSettings {
   paymentLinks: PaymentLink[];
 }
 
+export interface SiteTemplate {
+  id: string;
+  name: string;
+  createdAt: string;
+  updatedAt: string;
+  state: AppState;
+}
+
 export interface AppState {
   profile: BusinessProfile;
   services: Service[];

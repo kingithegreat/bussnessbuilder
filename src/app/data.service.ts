@@ -1,6 +1,6 @@
 import { Injectable, computed, signal, effect, PLATFORM_ID, inject } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
-import { AppState, BusinessProfile, Enquiry, FAQ, Service, Activity, Testimonial, ContentPage, NotificationPreferences, PaymentSettings } from './types';
+import { AppState, BusinessProfile, Enquiry, FAQ, Service, Activity, Testimonial, ContentPage, NotificationPreferences, PaymentSettings, SiteTemplate } from './types';
 import { FirestoreService } from './firestore.service';
 
 const defaultState: AppState = {
@@ -91,6 +91,10 @@ export class DataService {
   private pages = signal<ContentPage[]>([]);
   private notifPrefs = signal<NotificationPreferences>({ emailOnNewEnquiry: false, notificationEmail: '' });
   private paymentSettings = signal<PaymentSettings>({ enabled: false, paymentLinks: [] });
+  private _templates = signal<SiteTemplate[]>([]);
+  private _activeTemplateId = signal<string>('');
+  readonly templates = this._templates.asReadonly();
+  readonly activeTemplateId = this._activeTemplateId.asReadonly();
 
   readonly profile = computed(() => this.state().profile);
   readonly services = computed(() => this.state().services);
@@ -118,6 +122,7 @@ export class DataService {
     this.uid.set(uid);
 
     this.loadPaymentSettings(uid);
+    this.loadTemplates(uid);
 
     const firestoreData = await this.firestoreService.loadBusinessData(uid);
     if (firestoreData) {
@@ -351,5 +356,83 @@ export class DataService {
   async loadPaymentSettings(uid: string) {
     const settings = await this.firestoreService.loadPaymentSettings(uid);
     if (settings) this.paymentSettings.set(settings);
+  }
+
+  async loadTemplates(uid: string) {
+    const data = await this.firestoreService.loadTemplates(uid);
+    if (data) {
+      this._templates.set(data.templates);
+      this._activeTemplateId.set(data.activeTemplateId);
+    }
+  }
+
+  private saveTemplates() {
+    if (isPlatformBrowser(this.platformId) && this.uid()) {
+      this.firestoreService.saveTemplates(this.uid()!, {
+        templates: this._templates(),
+        activeTemplateId: this._activeTemplateId()
+      });
+    }
+  }
+
+  saveCurrentAsTemplate(name: string): boolean {
+    const templates = this._templates();
+    if (templates.length >= 3) return false;
+    const now = new Date().toISOString();
+    const template: SiteTemplate = {
+      id: 'tpl_' + Date.now(),
+      name,
+      createdAt: now,
+      updatedAt: now,
+      state: JSON.parse(JSON.stringify(this.state()))
+    };
+    this._templates.set([...templates, template]);
+    if (!this._activeTemplateId()) {
+      this._activeTemplateId.set(template.id);
+    }
+    this.saveTemplates();
+    return true;
+  }
+
+  updateTemplate(id: string) {
+    this._templates.update(list => list.map(t =>
+      t.id === id ? { ...t, state: JSON.parse(JSON.stringify(this.state())), updatedAt: new Date().toISOString() } : t
+    ));
+    this.saveTemplates();
+  }
+
+  loadTemplate(id: string) {
+    const template = this._templates().find(t => t.id === id);
+    if (template) {
+      this.state.set(JSON.parse(JSON.stringify(template.state)));
+    }
+  }
+
+  setActiveTemplate(id: string) {
+    const template = this._templates().find(t => t.id === id);
+    if (template) {
+      this._activeTemplateId.set(id);
+      this.state.set(JSON.parse(JSON.stringify(template.state)));
+      this.saveTemplates();
+    }
+  }
+
+  deleteTemplate(id: string) {
+    this._templates.update(list => list.filter(t => t.id !== id));
+    if (this._activeTemplateId() === id) {
+      const remaining = this._templates();
+      this._activeTemplateId.set(remaining.length > 0 ? remaining[0].id : '');
+      if (remaining.length > 0) {
+        this.state.set(JSON.parse(JSON.stringify(remaining[0].state)));
+      }
+    }
+    this.saveTemplates();
+  }
+
+  renameTemplate(id: string, name: string) {
+    this._templates.update(list => list.map(t =>
+      t.id === id ? { ...t, name } : t
+    ));
+    this.saveTemplates();
   }
 }

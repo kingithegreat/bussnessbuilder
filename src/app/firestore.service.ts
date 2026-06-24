@@ -6,7 +6,7 @@ import {
   getDoc,
   setDoc,
 } from '@angular/fire/firestore';
-import { AppState, ContentPage, NotificationPreferences, PaymentSettings } from './types';
+import { AppState, ContentPage, NotificationPreferences, PaymentSettings, SiteTemplate } from './types';
 
 @Injectable({ providedIn: 'root' })
 export class FirestoreService {
@@ -98,6 +98,28 @@ export class FirestoreService {
       await setDoc(ref, JSON.parse(JSON.stringify(settings)));
     } catch (e) {
       console.error('Failed to save payment settings', e);
+    }
+  }
+
+  async loadTemplates(uid: string): Promise<{ templates: SiteTemplate[], activeTemplateId: string } | null> {
+    if (!isPlatformBrowser(this.platformId)) return null;
+    try {
+      const ref = doc(this.firestore, 'users', uid, 'businessData', 'templates');
+      const snap = await getDoc(ref);
+      return snap.exists() ? (snap.data() as { templates: SiteTemplate[], activeTemplateId: string }) : null;
+    } catch (e) {
+      console.error('Failed to load templates', e);
+      return null;
+    }
+  }
+
+  async saveTemplates(uid: string, data: { templates: SiteTemplate[], activeTemplateId: string }): Promise<void> {
+    if (!isPlatformBrowser(this.platformId)) return;
+    try {
+      const ref = doc(this.firestore, 'users', uid, 'businessData', 'templates');
+      await setDoc(ref, JSON.parse(JSON.stringify(data)));
+    } catch (e) {
+      console.error('Failed to save templates', e);
     }
   }
 }

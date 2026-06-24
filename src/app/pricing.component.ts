@@ -1,5 +1,5 @@
 import { Component, inject } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { AuthService } from './auth.service';
 import { SubscriptionService } from './subscription.service';
@@ -134,12 +134,13 @@ import { SubscriptionService } from './subscription.service';
   `
 })
 export class PricingComponent {
+  private router = inject(Router);
   auth = inject(AuthService);
   subService = inject(SubscriptionService);
 
   async subscribe(tier: 'pro' | 'business') {
     if (!this.auth.isLoggedIn()) {
-      window.location.href = '/signup';
+      this.router.navigate(['/signup']);
       return;
     }
     const user = this.auth.currentUser();

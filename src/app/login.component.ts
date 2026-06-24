@@ -1,5 +1,5 @@
-import { Component, inject, signal } from '@angular/core';
-import { Router, RouterLink } from '@angular/router';
+import { Component, inject, signal, OnInit } from '@angular/core';
+import { Router, RouterLink, ActivatedRoute } from '@angular/router';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { AuthService } from './auth.service';
@@ -86,13 +86,20 @@ import { DataService } from './data.service';
     </div>
   `
 })
-export class LoginComponent {
+export class LoginComponent implements OnInit {
   private auth = inject(AuthService);
   private data = inject(DataService);
   private router = inject(Router);
+  private route = inject(ActivatedRoute);
   private fb = inject(FormBuilder);
 
   isSignUp = signal(false);
+
+  ngOnInit() {
+    if (this.router.url.includes('signup')) {
+      this.isSignUp.set(true);
+    }
+  }
   loading = signal(false);
   error = signal('');
 
