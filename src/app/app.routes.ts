@@ -27,7 +27,7 @@ export const routes: Routes = [
   { path: 'privacy', component: PrivacyPolicyComponent },
   { path: 'terms', component: TermsComponent },
   { path: 'pricing', component: PricingComponent },
-  { path: 'pages/:slug', component: ContentPageViewComponent },
+  { path: 'pages/:slug', component: ContentPageViewComponent, canActivate: [publicGuard] },
   { path: 'setup', component: SetupWizardComponent, canActivate: [setupGuard] },
   { path: 'public', component: PublicPageComponent, canActivate: [publicGuard] },
   {

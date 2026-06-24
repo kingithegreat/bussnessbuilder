@@ -261,13 +261,17 @@ export class AdminInboxComponent {
 
   async generateDraft(enquiry: Enquiry) {
     this.isGeneratingDraft = true;
-    const draft = await this.aiService.generateDraftReply(enquiry, this.dataService.profile());
-    this.dataService.updateEnquiry(enquiry.id, { draftReply: draft });
-    
-    // update local selection
-    if (this.selectedEnquiry()?.id === enquiry.id) {
-       this.selectedEnquiry.update(e => e ? {...e, draftReply: draft} : null);
+    try {
+      const draft = await this.aiService.generateDraftReply(enquiry, this.dataService.profile());
+      this.dataService.updateEnquiry(enquiry.id, { draftReply: draft });
+      if (this.selectedEnquiry()?.id === enquiry.id) {
+         this.selectedEnquiry.update(e => e ? {...e, draftReply: draft} : null);
+      }
+    } catch (e) {
+      console.error('Failed to generate draft reply:', e);
+      alert('Could not generate a draft reply. Please try again.');
+    } finally {
+      this.isGeneratingDraft = false;
     }
-    this.isGeneratingDraft = false;
   }
 }

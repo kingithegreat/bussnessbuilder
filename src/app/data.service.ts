@@ -127,6 +127,8 @@ export class DataService {
 
     this.loadPaymentSettings(uid);
     this.loadTemplates(uid);
+    this.loadPages(uid);
+    this.loadNotificationPrefs(uid);
 
     const firestoreData = await this.firestoreService.loadBusinessData(uid);
     if (firestoreData) {
