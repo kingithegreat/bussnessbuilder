@@ -29,11 +29,16 @@ import { RouterLink } from '@angular/router';
               <h2 class="text-lg font-bold text-gray-900 mb-3">2. Description of Service</h2>
               <p>BusinessFlow Studio is a web-based platform that enables small businesses to create and manage a public-facing business page, receive and manage enquiries, and use AI-powered tools to generate business content. The Service includes:</p>
               <ul class="list-disc pl-5 mt-2 space-y-1">
-                <li>A page builder with customisable sections and layout variants</li>
+                <li>A page builder with customisable sections, layout variants, and background images</li>
+                <li>Site templates — save up to 3 versions of your site and deploy one as your live page</li>
                 <li>An enquiry inbox for managing customer leads</li>
                 <li>AI content generation tools powered by Google Gemini</li>
-                <li>A form builder for custom contact forms</li>
+                <li>A form builder for custom contact forms with spam protection</li>
+                <li>Payment links integration via Stripe for accepting payments on your public page</li>
+                <li>Page view analytics and dashboard</li>
+                <li>Multi-page content management</li>
                 <li>Stock photo integration via Unsplash</li>
+                <li>SEO controls for search engines and social media</li>
                 <li>Data export and import tools</li>
               </ul>
             </section>
@@ -110,16 +115,28 @@ import { RouterLink } from '@angular/router';
                 <li>Refunds are handled on a case-by-case basis at our discretion</li>
                 <li>We reserve the right to change pricing with 30 days' notice</li>
               </ul>
-              <p class="mt-2">Free tier users have access to core site-building features with certain usage limits (e.g., number of services, enquiry volume). All site customisation features are available on all tiers.</p>
+              <p class="mt-2">Free tier users have access to core site-building features with certain usage limits (e.g., number of services, enquiry volume). All site customisation features — including the page builder, templates, gradients, background images, fonts, and layouts — are available on all tiers.</p>
             </section>
 
             <section>
-              <h2 class="text-lg font-bold text-gray-900 mb-3">9. Intellectual Property</h2>
+              <h2 class="text-lg font-bold text-gray-900 mb-3">9. Payment Links</h2>
+              <p>The Service allows you to add Stripe payment links to your public page. You acknowledge that:</p>
+              <ul class="list-disc pl-5 mt-2 space-y-1">
+                <li>You are responsible for creating and managing your own Stripe account and payment links</li>
+                <li>BusinessFlow Studio does not process, store, or handle payment card data</li>
+                <li>All payment transactions are between you and your customers, facilitated by Stripe</li>
+                <li>You must comply with Stripe's terms of service and all applicable payment regulations</li>
+                <li>We are not liable for payment disputes, chargebacks, or failed transactions</li>
+              </ul>
+            </section>
+
+            <section>
+              <h2 class="text-lg font-bold text-gray-900 mb-3">10. Intellectual Property</h2>
               <p>The Service, including its design, code, features, and branding (excluding User Content), is owned by BusinessFlow Studio and protected by intellectual property laws. You may not copy, modify, distribute, or reverse-engineer any part of the Service.</p>
             </section>
 
             <section>
-              <h2 class="text-lg font-bold text-gray-900 mb-3">10. Disclaimers</h2>
+              <h2 class="text-lg font-bold text-gray-900 mb-3">11. Disclaimers</h2>
               <p>The Service is provided "as is" and "as available" without warranties of any kind, whether express or implied, including but not limited to implied warranties of merchantability, fitness for a particular purpose, and non-infringement.</p>
               <p class="mt-2">We do not warrant that:</p>
               <ul class="list-disc pl-5 mt-2 space-y-1">
@@ -130,28 +147,28 @@ import { RouterLink } from '@angular/router';
             </section>
 
             <section>
-              <h2 class="text-lg font-bold text-gray-900 mb-3">11. Limitation of Liability</h2>
+              <h2 class="text-lg font-bold text-gray-900 mb-3">12. Limitation of Liability</h2>
               <p>To the maximum extent permitted by law, BusinessFlow Studio shall not be liable for any indirect, incidental, special, consequential, or punitive damages, including but not limited to loss of profits, data, or business opportunities, arising from your use of the Service.</p>
               <p class="mt-2">Our total liability for any claim arising from or related to the Service shall not exceed the amount you have paid us in the 12 months preceding the claim, or $100, whichever is greater.</p>
             </section>
 
             <section>
-              <h2 class="text-lg font-bold text-gray-900 mb-3">12. Indemnification</h2>
+              <h2 class="text-lg font-bold text-gray-900 mb-3">13. Indemnification</h2>
               <p>You agree to indemnify and hold harmless BusinessFlow Studio from any claims, damages, losses, or expenses (including legal fees) arising from your use of the Service, your User Content, or your violation of these Terms.</p>
             </section>
 
             <section>
-              <h2 class="text-lg font-bold text-gray-900 mb-3">13. Changes to Terms</h2>
+              <h2 class="text-lg font-bold text-gray-900 mb-3">14. Changes to Terms</h2>
               <p>We may update these Terms from time to time. We will notify you of material changes by posting the updated Terms on this page and updating the "Last updated" date. Your continued use of the Service after changes constitutes acceptance of the new Terms.</p>
             </section>
 
             <section>
-              <h2 class="text-lg font-bold text-gray-900 mb-3">14. Governing Law</h2>
+              <h2 class="text-lg font-bold text-gray-900 mb-3">15. Governing Law</h2>
               <p>These Terms shall be governed by and construed in accordance with applicable law, without regard to conflict of law principles. Any disputes arising from these Terms or your use of the Service shall be resolved through good-faith negotiation first, and if necessary, through binding arbitration or the courts of competent jurisdiction.</p>
             </section>
 
             <section>
-              <h2 class="text-lg font-bold text-gray-900 mb-3">15. Contact Us</h2>
+              <h2 class="text-lg font-bold text-gray-900 mb-3">16. Contact Us</h2>
               <p>If you have questions about these Terms, contact us at:</p>
               <p class="mt-2 font-medium text-gray-900">BusinessFlow Studio<br>Email: legal&#64;businessflow.studio</p>
             </section>

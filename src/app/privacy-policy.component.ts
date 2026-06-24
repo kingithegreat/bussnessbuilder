@@ -42,14 +42,21 @@ import { RouterLink } from '@angular/router';
                 <li>Contact details (business email, phone, address)</li>
                 <li>Service offerings and pricing</li>
                 <li>Testimonials, FAQs, and other content you create</li>
-                <li>Images you upload</li>
-                <li>Site customisation preferences (colours, fonts, layouts)</li>
+                <li>Images you upload (including logos and background images)</li>
+                <li>Site customisation preferences (colours, gradients, fonts, layouts)</li>
+                <li>Site templates (up to 3 saved versions of your website)</li>
+                <li>Payment link configurations (Stripe payment link URLs)</li>
+                <li>SEO settings (meta titles, descriptions, Open Graph images)</li>
+                <li>Content pages you create</li>
               </ul>
 
               <h3 class="font-semibold text-gray-900 mt-4 mb-2">2.3 Enquiry Data</h3>
               <p>When visitors submit enquiries through your public page, we collect the information they provide in the contact form (name, email, phone, message, and any custom form fields you configure).</p>
 
-              <h3 class="font-semibold text-gray-900 mt-4 mb-2">2.4 Usage Data</h3>
+              <h3 class="font-semibold text-gray-900 mt-4 mb-2">2.4 Analytics Data</h3>
+              <p>We collect page view statistics for your public page, including daily view counts. This data is aggregated and does not include personally identifiable information about your visitors.</p>
+
+              <h3 class="font-semibold text-gray-900 mt-4 mb-2">2.5 Usage Data</h3>
               <p>We automatically collect certain information when you use the Service, including browser type, device information, IP address, pages visited, and timestamps.</p>
             </section>
 
@@ -75,6 +82,7 @@ import { RouterLink } from '@angular/router';
                 <li><strong>Google Firebase</strong> — Authentication, database (Firestore), and file storage. Data is stored in Google Cloud (us-central1 region). See <a href="https://firebase.google.com/support/privacy" target="_blank" rel="noopener" class="text-blue-600 hover:underline">Firebase Privacy Policy</a>.</li>
                 <li><strong>Google Cloud Run</strong> — Hosts the application. See <a href="https://cloud.google.com/terms/cloud-privacy-notice" target="_blank" rel="noopener" class="text-blue-600 hover:underline">Google Cloud Privacy Notice</a>.</li>
                 <li><strong>Google Gemini AI</strong> — Powers AI content generation features. Content you submit for AI generation may be processed by Google. See <a href="https://ai.google.dev/terms" target="_blank" rel="noopener" class="text-blue-600 hover:underline">Gemini API Terms</a>.</li>
+                <li><strong>Stripe</strong> — Processes payments when you enable payment links. We store only your Stripe payment link URLs, not payment card data. See <a href="https://stripe.com/privacy" target="_blank" rel="noopener" class="text-blue-600 hover:underline">Stripe Privacy Policy</a>.</li>
                 <li><strong>Unsplash</strong> — Provides stock photography. No personal data is shared with Unsplash.</li>
               </ul>
             </section>
