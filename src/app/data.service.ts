@@ -149,6 +149,13 @@ export class DataService {
     this.state.set(defaultState);
   }
 
+  resetCustomization() {
+    this.state.update(s => ({
+      ...s,
+      customization: JSON.parse(JSON.stringify(defaultState.customization))
+    }));
+  }
+
   exportState(): string {
     return JSON.stringify(this.state(), null, 2);
   }

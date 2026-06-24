@@ -171,6 +171,122 @@ import { CustomizationSettings, SectionConfig, FormFieldConfig } from './types';
               </section>
             }
 
+            @case ('about') {
+              <section id="about" class="py-16 md:py-24">
+                <div class="max-w-5xl mx-auto px-6">
+                  <div class="mb-12">
+                    <h2 class="text-3xl font-black text-gray-900 mb-2">{{ section.heading }}</h2>
+                    <p class="text-gray-500 font-medium">{{ section.subheading }}</p>
+                  </div>
+
+                  @if (!section.layoutVariant || section.layoutVariant === 'default') {
+                    <div class="grid grid-cols-1 lg:grid-cols-5 gap-8">
+                      <div class="lg:col-span-3">
+                        <div [style.borderRadius]="cardRadius" class="bg-white p-10 border border-gray-100 shadow-sm h-full">
+                          <p class="text-lg text-gray-600 leading-relaxed whitespace-pre-line">{{ profile().description }}</p>
+                        </div>
+                      </div>
+                      <div class="lg:col-span-2 space-y-4">
+                        @if (profile().serviceArea) {
+                          <div [style.borderRadius]="cardRadius" class="bg-white p-6 border border-gray-100 shadow-sm flex items-start gap-4">
+                            <div [style.color]="customization().branding.primaryColor" [style.backgroundColor]="'color-mix(in srgb, ' + customization().branding.primaryColor + ' 10%, transparent)'" class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0">
+                              <mat-icon>location_on</mat-icon>
+                            </div>
+                            <div>
+                              <h4 class="font-bold text-gray-900 text-sm">Service Area</h4>
+                              <p class="text-gray-500 text-sm mt-1">{{ profile().serviceArea }}</p>
+                            </div>
+                          </div>
+                        }
+                        @if (profile().address) {
+                          <div [style.borderRadius]="cardRadius" class="bg-white p-6 border border-gray-100 shadow-sm flex items-start gap-4">
+                            <div [style.color]="customization().branding.primaryColor" [style.backgroundColor]="'color-mix(in srgb, ' + customization().branding.primaryColor + ' 10%, transparent)'" class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0">
+                              <mat-icon>business</mat-icon>
+                            </div>
+                            <div>
+                              <h4 class="font-bold text-gray-900 text-sm">Address</h4>
+                              <p class="text-gray-500 text-sm mt-1">{{ profile().address }}</p>
+                            </div>
+                          </div>
+                        }
+                        @if (profile().openingHours) {
+                          <div [style.borderRadius]="cardRadius" class="bg-white p-6 border border-gray-100 shadow-sm flex items-start gap-4">
+                            <div [style.color]="customization().branding.primaryColor" [style.backgroundColor]="'color-mix(in srgb, ' + customization().branding.primaryColor + ' 10%, transparent)'" class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0">
+                              <mat-icon>schedule</mat-icon>
+                            </div>
+                            <div>
+                              <h4 class="font-bold text-gray-900 text-sm">Business Hours</h4>
+                              <p class="text-gray-500 text-sm mt-1 whitespace-pre-wrap">{{ profile().openingHours }}</p>
+                            </div>
+                          </div>
+                        }
+                        @if (profile().trustBadges && profile().trustBadges.length) {
+                          <div [style.borderRadius]="cardRadius" class="bg-white p-6 border border-gray-100 shadow-sm">
+                            <h4 class="font-bold text-gray-900 text-sm mb-3">Why Choose Us</h4>
+                            <div class="space-y-2">
+                              @for (badge of profile().trustBadges; track badge) {
+                                <div class="flex items-center gap-2 text-sm text-gray-600">
+                                  <mat-icon [style.color]="customization().branding.primaryColor" class="text-[16px] w-[16px] h-[16px]">check_circle</mat-icon>
+                                  <span>{{ badge }}</span>
+                                </div>
+                              }
+                            </div>
+                          </div>
+                        }
+                      </div>
+                    </div>
+                  } @else if (section.layoutVariant === 'centered') {
+                    <div class="max-w-3xl mx-auto text-center">
+                      <div [style.borderRadius]="cardRadius" class="bg-white p-10 md:p-14 border border-gray-100 shadow-sm">
+                        @if (profile().tagline) {
+                          <p [style.color]="customization().branding.primaryColor" class="text-sm font-bold uppercase tracking-widest mb-4">{{ profile().tagline }}</p>
+                        }
+                        <p class="text-lg md:text-xl text-gray-600 leading-relaxed">{{ profile().description }}</p>
+                        @if (profile().trustBadges && profile().trustBadges.length) {
+                          <div class="mt-8 pt-6 border-t border-gray-100 flex flex-wrap justify-center gap-6">
+                            @for (badge of profile().trustBadges; track badge) {
+                              <div class="flex items-center gap-2 text-sm text-gray-500 font-medium">
+                                <mat-icon [style.color]="customization().branding.primaryColor" class="text-[16px] w-[16px] h-[16px]">verified</mat-icon>
+                                <span>{{ badge }}</span>
+                              </div>
+                            }
+                          </div>
+                        }
+                      </div>
+                    </div>
+                  } @else if (section.layoutVariant === 'split') {
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+                      <div [style.borderRadius]="cardRadius" class="aspect-[4/3] bg-gray-100 overflow-hidden relative shadow-lg order-2 lg:order-1">
+                        <div class="w-full h-full flex items-center justify-center">
+                          <mat-icon class="text-[64px] w-[64px] h-[64px] text-gray-300">storefront</mat-icon>
+                        </div>
+                      </div>
+                      <div class="order-1 lg:order-2">
+                        @if (profile().tagline) {
+                          <span [style.color]="customization().branding.primaryColor" class="inline-block text-sm font-bold uppercase tracking-widest mb-4">{{ profile().tagline }}</span>
+                        }
+                        <p class="text-lg text-gray-600 leading-relaxed mb-6">{{ profile().description }}</p>
+                        <div class="space-y-3">
+                          @if (profile().serviceArea) {
+                            <div class="flex items-center gap-3 text-sm text-gray-600">
+                              <mat-icon [style.color]="customization().branding.primaryColor" class="text-[18px]">location_on</mat-icon>
+                              <span>Serving {{ profile().serviceArea }}</span>
+                            </div>
+                          }
+                          @if (profile().openingHours) {
+                            <div class="flex items-center gap-3 text-sm text-gray-600">
+                              <mat-icon [style.color]="customization().branding.primaryColor" class="text-[18px]">schedule</mat-icon>
+                              <span>{{ profile().openingHours }}</span>
+                            </div>
+                          }
+                        </div>
+                      </div>
+                    </div>
+                  }
+                </div>
+              </section>
+            }
+
             @case ('services') {
               <!-- Services -->
               <section id="services" class="py-16 md:py-24">
@@ -563,7 +679,15 @@ import { CustomizationSettings, SectionConfig, FormFieldConfig } from './types';
                             }
 
                             @if (form.get(field.id)?.invalid && form.get(field.id)?.touched) {
-                              <p class="text-red-500 text-xs mt-1">This field is required or invalid</p>
+                              @if (form.get(field.id)?.hasError('required')) {
+                                <p class="text-red-500 text-xs mt-1">{{ field.label }} is required</p>
+                              } @else if (form.get(field.id)?.hasError('email')) {
+                                <p class="text-red-500 text-xs mt-1">Please enter a valid email address</p>
+                              } @else if (form.get(field.id)?.hasError('minlength')) {
+                                <p class="text-red-500 text-xs mt-1">{{ field.type === 'phone' ? 'Please enter a valid phone number' : 'Please enter at least 10 characters' }}</p>
+                              } @else {
+                                <p class="text-red-500 text-xs mt-1">This field is invalid</p>
+                              }
                             }
                           </div>
                         }

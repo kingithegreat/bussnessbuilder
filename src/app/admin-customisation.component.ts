@@ -343,13 +343,10 @@ export class AdminCustomisationComponent implements OnInit {
   }
 
   resetToDefaults() {
-    if (confirm('Are you sure you want to reset all customisation settings to their defaults?')) {
-      // Just re-initialize from default state
-      // We can grab default state by calling resetSetup() but that resets everything.
-      // So let's just trigger a reload or define default here.
-      // Easiest is to just tell data service to reset customization.
-      // I will just use a hardcoded fallback or reload.
-      alert('Reset to defaults is currently managed by resetting the whole app in settings.');
+    if (confirm('This will reset all branding, section layouts, form fields, and business rules to their original defaults. Your business profile, services, enquiries, and other data will not be affected.\n\nAre you sure?')) {
+      this.dataService.resetCustomization();
+      this.localCust = JSON.parse(JSON.stringify(this.dataService.customization()));
+      alert('Customisation settings have been reset to defaults.');
     }
   }
 

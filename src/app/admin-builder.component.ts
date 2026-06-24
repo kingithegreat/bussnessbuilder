@@ -161,6 +161,11 @@ export class AdminBuilderComponent implements OnInit {
         {id: 'minimal', label: 'Minimal Text'},
         {id: 'premium', label: 'Premium Card'}
       ];
+      case 'about': return [
+        {id: 'default', label: 'Side by Side (Default)'},
+        {id: 'centered', label: 'Centered Text'},
+        {id: 'split', label: 'Split with Image'}
+      ];
       case 'services': return [
         {id: 'grid', label: 'Grid Cards (Default)'},
         {id: 'list', label: 'List Layout'},
