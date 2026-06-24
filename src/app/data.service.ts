@@ -95,6 +95,8 @@ export class DataService {
   private _activeTemplateId = signal<string>('');
   readonly templates = this._templates.asReadonly();
   readonly activeTemplateId = this._activeTemplateId.asReadonly();
+  private _publicSiteUid = signal('');
+  readonly publicSiteUid = this._publicSiteUid.asReadonly();
 
   readonly profile = computed(() => this.state().profile);
   readonly services = computed(() => this.state().services);
@@ -441,5 +443,21 @@ export class DataService {
       t.id === id ? { ...t, name } : t
     ));
     this.saveTemplates();
+  }
+
+  loadPublicSite(uid: string, data: any) {
+    this._publicSiteUid.set(uid);
+    this.state.set({
+      ...defaultState,
+      profile: data.profile,
+      services: data.services || [],
+      testimonials: data.testimonials || [],
+      faqs: data.faqs || [],
+      customization: data.customization || defaultState.customization,
+      isSetupComplete: true,
+    });
+    if (data.paymentSettings) {
+      this.paymentSettings.set(data.paymentSettings);
+    }
   }
 }

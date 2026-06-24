@@ -18,6 +18,7 @@ import { AdminSettingsComponent } from './admin-settings.component';
 import { AdminPagesComponent } from './admin-pages.component';
 import { AdminPaymentsComponent } from './admin-payments.component';
 import { ContentPageViewComponent } from './content-page-view.component';
+import { SiteViewComponent } from './site-view.component';
 import { authGuard, setupGuard, publicGuard } from './auth.guard';
 
 export const routes: Routes = [
@@ -27,6 +28,7 @@ export const routes: Routes = [
   { path: 'privacy', component: PrivacyPolicyComponent },
   { path: 'terms', component: TermsComponent },
   { path: 'pricing', component: PricingComponent },
+  { path: 'site/:uid', component: SiteViewComponent },
   { path: 'pages/:slug', component: ContentPageViewComponent, canActivate: [publicGuard] },
   { path: 'setup', component: SetupWizardComponent, canActivate: [setupGuard] },
   { path: 'public', component: PublicPageComponent, canActivate: [publicGuard] },

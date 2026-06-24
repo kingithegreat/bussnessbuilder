@@ -19,6 +19,25 @@ import { DatePipe } from '@angular/common';
         <p class="text-sm text-gray-500 font-medium">Manage your account, domain, and notification preferences.</p>
       </div>
 
+      <!-- Public Site Link -->
+      <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+        <div class="p-6 border-b border-gray-100 bg-gray-50/50">
+          <h2 class="font-bold text-gray-900 flex items-center gap-2"><mat-icon class="text-[18px] text-gray-400">language</mat-icon> Your Public Site</h2>
+        </div>
+        <div class="p-6">
+          <p class="text-sm text-gray-500 mb-3">Share this link with customers so they can view your site and submit enquiries.</p>
+          <div class="flex items-center gap-2">
+            <input type="text" [value]="siteUrl" readonly class="flex-1 px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-mono text-gray-700 select-all">
+            <button (click)="copySiteUrl()" class="bg-blue-600 text-white px-4 py-2.5 rounded-xl text-sm font-bold hover:bg-blue-700 transition-colors flex items-center gap-1.5 shrink-0">
+              <mat-icon class="text-[18px]">content_copy</mat-icon> Copy
+            </button>
+          </div>
+          <a [href]="siteUrl" target="_blank" class="text-blue-600 text-xs font-bold hover:underline mt-2 inline-flex items-center gap-1">
+            <mat-icon class="text-[14px]">open_in_new</mat-icon> Open in new tab
+          </a>
+        </div>
+      </div>
+
       <!-- Subscription -->
       <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
         <div class="p-6 border-b border-gray-100 bg-gray-50/50">
@@ -203,6 +222,7 @@ export class AdminSettingsComponent implements OnInit {
   private authService = inject(AuthService);
 
   newTemplateName = '';
+  siteUrl = '';
 
   prefs: NotificationPreferences = {
     emailOnNewEnquiry: false,
@@ -218,6 +238,19 @@ export class AdminSettingsComponent implements OnInit {
     if (!this.prefs.notificationEmail) {
       const user = this.authService.currentUser();
       if (user?.email) this.prefs.notificationEmail = user.email;
+    }
+    const user = this.authService.currentUser();
+    if (user) {
+      this.siteUrl = `${window.location.origin}/site/${user.uid}`;
+    }
+  }
+
+  async copySiteUrl() {
+    try {
+      await navigator.clipboard.writeText(this.siteUrl);
+      alert('Site link copied!');
+    } catch {
+      alert(this.siteUrl);
     }
   }
 

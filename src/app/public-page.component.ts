@@ -1,6 +1,7 @@
 import { Component, inject, computed, input, output, effect, signal } from '@angular/core';
 import { DataService } from './data.service';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { HttpClient } from '@angular/common/http';
 import { Title, Meta } from '@angular/platform-browser';
 import { MatIconModule } from '@angular/material/icon';
 import { SlicePipe, NgTemplateOutlet } from '@angular/common';
@@ -812,6 +813,7 @@ import { AuthService } from './auth.service';
 export class PublicPageComponent {
   private dataService = inject(DataService);
   private fb = inject(FormBuilder);
+  private http = inject(HttpClient);
   private title = inject(Title);
   private meta = inject(Meta);
   private analyticsService = (() => {
@@ -1013,6 +1015,8 @@ export class PublicPageComponent {
       .filter(f => this.isFieldVisible(f));
   }
 
+  isSubmittingEnquiry = false;
+
   onSubmit() {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
@@ -1025,12 +1029,12 @@ export class PublicPageComponent {
       return;
     }
     const val = this.form.value as Record<string, string>;
-    
+
     let fullMessage = val['message'] || val['details'] || '';
     const fields = this.customization().formFields;
-    
+
     const formData: Record<string, { label: string; value: string; type: string }> = {};
-    
+
     fullMessage += '\n\n--- Form Details ---\n';
     fields.forEach(f => {
       if (this.isFieldVisible(f) && val[f.id]) {
@@ -1041,7 +1045,6 @@ export class PublicPageComponent {
       }
     });
 
-    // Try to guess core fields if they exist, otherwise fallback
     const findValue = (possibleIds: string[]) => {
       for (const id of possibleIds) {
         if (val[id]) return val[id];
@@ -1049,7 +1052,7 @@ export class PublicPageComponent {
       return '';
     };
 
-    this.dataService.addEnquiry({
+    const enquiry = {
       name: findValue(['name', 'fullName', 'first_name']) || 'Unknown',
       email: findValue(['email', 'emailAddress']) || 'unknown@example.com',
       phone: findValue(['phone', 'phoneNumber', 'mobile']) || '',
@@ -1057,10 +1060,27 @@ export class PublicPageComponent {
       preferredDateTime: findValue(['date', 'time', 'preferredDate']) || '',
       urgency: 'Medium',
       message: fullMessage,
-      formData: formData
-    });
+      formData: formData,
+    };
 
-    this.submitSuccess = true;
-    this.form.reset();
+    const publicUid = this.dataService.publicSiteUid();
+    if (publicUid) {
+      this.isSubmittingEnquiry = true;
+      this.http.post(`/api/site/${publicUid}/enquiry`, enquiry).subscribe({
+        next: () => {
+          this.submitSuccess = true;
+          this.form.reset();
+          this.isSubmittingEnquiry = false;
+        },
+        error: () => {
+          alert('Could not send your message. Please try again.');
+          this.isSubmittingEnquiry = false;
+        }
+      });
+    } else {
+      this.dataService.addEnquiry(enquiry);
+      this.submitSuccess = true;
+      this.form.reset();
+    }
   }
 }
