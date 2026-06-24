@@ -1,6 +1,7 @@
 import { Injectable, computed, signal, effect, PLATFORM_ID, inject } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { AppState, BusinessProfile, Enquiry, FAQ, Service, Activity, Testimonial } from './types';
+import { FirestoreService } from './firestore.service';
 
 const defaultState: AppState = {
   profile: {
@@ -14,7 +15,7 @@ const defaultState: AppState = {
     serviceArea: '',
     openingHours: '',
     toneOfVoice: 'Professional yet friendly',
-    brandColor: '#2563eb', // Apple blue-ish
+    brandColor: '#2563eb',
     heroCopy: '',
     ctaText: 'Get a Quote',
     trustBadges: [],
@@ -75,12 +76,13 @@ const defaultState: AppState = {
 @Injectable({ providedIn: 'root' })
 export class DataService {
   private platformId = inject(PLATFORM_ID);
+  private firestoreService = inject(FirestoreService);
 
-  private state = signal<AppState>(this.loadState());
+  private state = signal<AppState>(defaultState);
+  private uid = signal<string | null>(null);
+  private saveTimeout: any = null;
 
-  // Gemini API key is stored separately from app state so it is never included
-  // in profile exports/imports.
-  private geminiKey = signal<string>(this.loadKey());
+  private geminiKey = signal<string>('');
   readonly geminiApiKey = this.geminiKey.asReadonly();
 
   readonly profile = computed(() => this.state().profile);
@@ -94,43 +96,56 @@ export class DataService {
 
   constructor() {
     effect(() => {
-      if (isPlatformBrowser(this.platformId)) {
-        localStorage.setItem('businessflow_state', JSON.stringify(this.state()));
+      const currentState = this.state();
+      const currentUid = this.uid();
+      if (currentUid && isPlatformBrowser(this.platformId)) {
+        if (this.saveTimeout) clearTimeout(this.saveTimeout);
+        this.saveTimeout = setTimeout(() => {
+          this.firestoreService.saveBusinessData(currentUid, currentState);
+        }, 1500);
       }
     });
   }
 
-  private loadKey(): string {
-    if (isPlatformBrowser(this.platformId)) {
-      return localStorage.getItem('businessflow_gemini_key') || '';
-    }
-    return '';
-  }
+  async init(uid: string) {
+    this.uid.set(uid);
 
-  setGeminiApiKey(key: string) {
-    const trimmed = key.trim();
-    this.geminiKey.set(trimmed);
-    if (isPlatformBrowser(this.platformId)) {
-      if (trimmed) {
-        localStorage.setItem('businessflow_gemini_key', trimmed);
-      } else {
-        localStorage.removeItem('businessflow_gemini_key');
-      }
+    const firestoreData = await this.firestoreService.loadBusinessData(uid);
+    if (firestoreData) {
+      this.state.set(firestoreData);
+      this.clearLocalStorage();
+      return;
     }
-  }
 
-  private loadState(): AppState {
     if (isPlatformBrowser(this.platformId)) {
       const stored = localStorage.getItem('businessflow_state');
       if (stored) {
         try {
-          return JSON.parse(stored) as AppState;
+          const parsed = JSON.parse(stored) as AppState;
+          this.state.set(parsed);
+          await this.firestoreService.saveBusinessData(uid, parsed);
+          this.clearLocalStorage();
+          return;
         } catch (e) {
-          console.error('Failed to parse stored state', e);
+          console.error('Failed to migrate localStorage data', e);
         }
       }
+      const key = localStorage.getItem('businessflow_gemini_key');
+      if (key) this.geminiKey.set(key);
     }
-    return defaultState;
+
+    this.state.set(defaultState);
+  }
+
+  private clearLocalStorage() {
+    if (isPlatformBrowser(this.platformId)) {
+      localStorage.removeItem('businessflow_state');
+      localStorage.removeItem('businessflow_gemini_key');
+    }
+  }
+
+  setGeminiApiKey(key: string) {
+    this.geminiKey.set(key.trim());
   }
 
   updateProfile(profile: Partial<BusinessProfile>) {
@@ -144,7 +159,7 @@ export class DataService {
   completeSetup() {
     this.state.update(s => ({ ...s, isSetupComplete: true }));
   }
-  
+
   resetSetup() {
     this.state.set(defaultState);
   }
@@ -246,7 +261,7 @@ export class DataService {
     let statusChanged = false;
     let oldStatus = '';
     let name = '';
-    
+
     this.state.update(s => {
       const enquiry = s.enquiries.find(e => e.id === id);
       if (enquiry && updates.status && updates.status !== enquiry.status) {
@@ -259,7 +274,7 @@ export class DataService {
         enquiries: s.enquiries.map(e => e.id === id ? { ...e, ...updates } : e)
       };
     });
-    
+
     if (statusChanged) {
       this.addActivity({
         type: 'status_changed',

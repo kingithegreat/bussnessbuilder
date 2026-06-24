@@ -4,11 +4,12 @@ import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { DataService } from './data.service';
 import { CustomizationSettings } from './types';
+import { ImagePickerComponent } from './image-picker.component';
 
 @Component({
   selector: 'app-admin-customisation',
   standalone: true,
-  imports: [CommonModule, FormsModule, MatIconModule],
+  imports: [CommonModule, FormsModule, MatIconModule, ImagePickerComponent],
   template: `
     <div class="max-w-4xl mx-auto space-y-8 pb-12">
       <!-- Header -->
@@ -145,8 +146,13 @@ import { CustomizationSettings } from './types';
               
               <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                  <div>
-                   <span class="block text-sm font-bold text-gray-700 mb-2">Logo URL (Optional)</span>
-                   <input type="text" [(ngModel)]="localCust.branding.logoUrl" placeholder="https://..." class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+                   <span class="block text-sm font-bold text-gray-700 mb-2">Logo</span>
+                   <app-image-picker
+                     label="Business Logo"
+                     section="general"
+                     [currentUrl]="localCust.branding.logoUrl"
+                     (imageSelected)="localCust.branding.logoUrl = $event"
+                   ></app-image-picker>
                  </div>
                  <div>
                    <span class="block text-sm font-bold text-gray-700 mb-2">Main CTA Text</span>

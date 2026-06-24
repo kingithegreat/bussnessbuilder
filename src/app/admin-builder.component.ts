@@ -5,15 +5,16 @@ import { MatIconModule } from '@angular/material/icon';
 import { DataService } from './data.service';
 import { CustomizationSettings } from './types';
 import { PublicPageComponent } from './public-page.component';
+import { ImagePickerComponent } from './image-picker.component';
 
 @Component({
   selector: 'app-admin-builder',
   standalone: true,
-  imports: [CommonModule, FormsModule, MatIconModule, PublicPageComponent],
+  imports: [CommonModule, FormsModule, MatIconModule, PublicPageComponent, ImagePickerComponent],
   template: `
     <div class="h-full flex flex-col md:flex-row bg-[#F5F5F7]">
       <!-- Sidebar / Editor -->
-      <div class="w-full md:w-80 lg:w-96 bg-white border-r border-gray-200 shadow-sm flex flex-col h-full overflow-y-auto shrink-0 z-10">
+      <div class="w-full md:w-80 lg:w-96 bg-white border-r border-gray-200 shadow-sm flex flex-col max-h-[40vh] md:max-h-none md:h-full overflow-y-auto shrink-0 z-10">
         <div class="p-6 border-b border-gray-100 sticky top-0 bg-white/80 backdrop-blur z-10 flex justify-between items-center">
           <div>
             <h2 class="text-lg font-black text-gray-900 tracking-tight">Page Builder</h2>
@@ -60,31 +61,40 @@ import { PublicPageComponent } from './public-page.component';
                   <div class="flex items-center justify-between">
                     <label [for]="'visible_'+section.id" class="text-xs font-bold text-gray-700 cursor-pointer">Visible on Page</label>
                     <label class="relative inline-flex items-center cursor-pointer">
-                      <input [id]="'visible_'+section.id" type="checkbox" [(ngModel)]="section.visible" class="sr-only peer">
+                      <input [id]="'visible_'+section.id" type="checkbox" [(ngModel)]="section.visible" (ngModelChange)="onPreviewChange()" class="sr-only peer">
                       <div class="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600"></div>
                     </label>
                   </div>
                   
                   <div>
                     <label [for]="'heading_'+section.id" class="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Section Heading</label>
-                    <input [id]="'heading_'+section.id" type="text" [(ngModel)]="section.heading" class="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm text-gray-700">
+                    <input [id]="'heading_'+section.id" type="text" [(ngModel)]="section.heading" (ngModelChange)="onPreviewChange()" class="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm text-gray-700">
                   </div>
                   
                   <div>
                     <label [for]="'sub_'+section.id" class="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Subheading</label>
-                    <input [id]="'sub_'+section.id" type="text" [(ngModel)]="section.subheading" class="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm text-gray-700">
+                    <input [id]="'sub_'+section.id" type="text" [(ngModel)]="section.subheading" (ngModelChange)="onPreviewChange()" class="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm text-gray-700">
                   </div>
                   
                   @if (getVariants(section.id).length > 0) {
                     <div>
                       <label [for]="'var_'+section.id" class="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Layout Variant</label>
-                      <select [id]="'var_'+section.id" [(ngModel)]="section.layoutVariant" class="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm text-gray-700 font-medium">
+                      <select [id]="'var_'+section.id" [(ngModel)]="section.layoutVariant" (ngModelChange)="onPreviewChange()" class="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm text-gray-700 font-medium">
                         <option value="default">Default</option>
                         @for(variant of getVariants(section.id); track variant.id) {
                            <option [value]="variant.id">{{ variant.label }}</option>
                         }
                       </select>
                     </div>
+                  }
+
+                  @if (sectionSupportsImage(section.id, section.layoutVariant)) {
+                    <app-image-picker
+                      [label]="'Section Image'"
+                      [section]="getImageSection(section.id)"
+                      [currentUrl]="section.imageUrl || ''"
+                      (imageSelected)="onSectionImageSelected(section, $event)"
+                    ></app-image-picker>
                   }
                 </div>
               }
@@ -113,7 +123,7 @@ import { PublicPageComponent } from './public-page.component';
                [style.height]="previewMode === 'mobile' ? '812px' : previewMode === 'tablet' ? '1024px' : '100%'">
             <!-- Iframe approach or direct embed. Since styles are global, direct embed works well and is interactive -->
             <div class="w-full h-full overflow-y-auto overflow-x-hidden">
-               <app-public-page [previewCustomization]="localCust"></app-public-page>
+               <app-public-page [previewCustomization]="localCust" [editable]="true" (textEdited)="onTextEdited($event)"></app-public-page>
             </div>
           </div>
         </div>
@@ -208,6 +218,60 @@ export class AdminBuilderComponent implements OnInit {
 
   private reindex() {
     this.localCust.sections.forEach((s, i) => s.order = i + 1);
+    this.onPreviewChange();
+  }
+
+  sectionSupportsImage(sectionId: string, variant?: string): boolean {
+    if (sectionId === 'hero' && variant === 'split') return true;
+    if (sectionId === 'about' && variant === 'split') return true;
+    return false;
+  }
+
+  getImageSection(sectionId: string): 'hero' | 'about' | 'services' | 'general' {
+    if (sectionId === 'hero') return 'hero';
+    if (sectionId === 'about') return 'about';
+    return 'general';
+  }
+
+  onSectionImageSelected(section: any, url: string) {
+    section.imageUrl = url;
+    this.onPreviewChange();
+  }
+
+  onPreviewChange() {
+    this.localCust = { ...this.localCust, sections: [...this.localCust.sections] };
+  }
+
+  onTextEdited(event: {target: string, field: string, value: string, id?: string}) {
+    switch (event.target) {
+      case 'profile':
+        this.dataService.updateProfile({ [event.field]: event.value });
+        break;
+      case 'section': {
+        const section = this.localCust.sections.find(s => s.id === event.id);
+        if (section) (section as any)[event.field] = event.value;
+        this.onPreviewChange();
+        break;
+      }
+      case 'service': {
+        const services = [...this.dataService.services()];
+        const idx = services.findIndex(s => s.id === event.id);
+        if (idx >= 0) {
+          services[idx] = { ...services[idx], [event.field]: event.value };
+          this.dataService.setServices(services);
+        }
+        break;
+      }
+      case 'faq': {
+        const faqs = [...this.dataService.faqs()];
+        const idx = faqs.findIndex(f => f.id === event.id);
+        if (idx >= 0) {
+          faqs[idx] = { ...faqs[idx], [event.field]: event.value };
+          this.dataService.setFaqs(faqs);
+        }
+        break;
+      }
+    }
   }
 
   saveSettings() {

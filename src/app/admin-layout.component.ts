@@ -1,23 +1,35 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { RouterOutlet, RouterLink, RouterLinkActive, Router } from '@angular/router';
 import { DataService } from './data.service';
+import { AuthService } from './auth.service';
 import { MatIconModule } from '@angular/material/icon';
 
 @Component({
   selector: 'app-admin-layout',
   standalone: true,
   imports: [RouterOutlet, RouterLink, RouterLinkActive, MatIconModule],
+  styles: [`
+    @media (min-width: 768px) {
+      .admin-sidebar {
+        transform: translateX(0) !important;
+        position: relative !important;
+      }
+    }
+  `],
   template: `
-    <div class="min-h-screen bg-[#F5F5F7] flex font-sans text-gray-900 overflow-hidden">
+    <div class="h-screen bg-[#F5F5F7] flex font-sans text-gray-900 overflow-hidden relative">
+      @if (sidebarOpen()) {
+        <div (click)="sidebarOpen.set(false)" class="fixed inset-0 bg-black/50 z-40 md:hidden"></div>
+      }
       <!-- Sidebar -->
-      <aside class="w-64 h-full bg-white border-r border-gray-200 flex flex-col hidden md:flex p-6">
+      <aside class="admin-sidebar w-64 bg-white border-r border-gray-200 flex flex-col p-6 fixed inset-y-0 left-0 z-50 transition-transform duration-200" [style.transform]="sidebarOpen() ? 'translateX(0)' : 'translateX(-100%)'">
         <div class="flex items-center gap-3 mb-10">
           <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
             <div class="w-4 h-4 border-2 border-white rounded-sm"></div>
           </div>
           <span class="font-bold tracking-tight text-lg">{{ profile().name || 'BusinessFlow' }}</span>
         </div>
-        <nav class="flex flex-col gap-1 flex-1">
+        <nav class="flex flex-col gap-1 flex-1" (click)="sidebarOpen.set(false)">
           <a routerLink="/admin/dashboard" routerLinkActive="bg-blue-50 text-blue-600 font-medium" class="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-500 hover:bg-gray-50 font-medium transition-colors">
             <mat-icon class="w-5 h-5">dashboard</mat-icon> Dashboard
           </a>
@@ -54,21 +66,29 @@ import { MatIconModule } from '@angular/material/icon';
 
       <!-- Main Content -->
       <main class="flex-1 flex flex-col overflow-hidden">
-        <header class="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-8 shrink-0">
+        <header class="h-14 md:h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 md:px-8 shrink-0">
            <div class="flex items-center gap-2 text-sm text-gray-500">
-             <span>Admin</span>
-             <mat-icon class="text-[16px]">chevron_right</mat-icon>
+             <button (click)="sidebarOpen.set(!sidebarOpen())" class="md:hidden p-1.5 rounded-lg text-gray-500 hover:bg-gray-100 transition-colors">
+               <mat-icon>menu</mat-icon>
+             </button>
+             <span class="hidden sm:inline">Admin</span>
+             <mat-icon class="text-[16px] hidden sm:inline">chevron_right</mat-icon>
              <span class="text-gray-900 font-semibold">Workspace</span>
            </div>
-           <div class="flex items-center gap-4">
-             <button (click)="loadDemo()" class="bg-gray-100 text-gray-900 px-4 py-2 rounded-lg text-xs font-bold shadow-sm hover:bg-gray-200 transition-colors flex items-center gap-1"><mat-icon class="text-[14px]">auto_fix_high</mat-icon> Demo</button>
-             <button (click)="exportData()" class="bg-gray-100 text-gray-900 px-4 py-2 rounded-lg text-xs font-bold shadow-sm hover:bg-gray-200 transition-colors flex items-center gap-1"><mat-icon class="text-[14px]">download</mat-icon> Export</button>
-             <button (click)="fileInput.click()" class="bg-gray-100 text-gray-900 px-4 py-2 rounded-lg text-xs font-bold shadow-sm hover:bg-gray-200 transition-colors flex items-center gap-1"><mat-icon class="text-[14px]">upload</mat-icon> Import</button>
+           <div class="flex items-center gap-2 md:gap-4">
+             <button (click)="loadDemo()" class="hidden sm:flex bg-gray-100 text-gray-900 px-4 py-2 rounded-lg text-xs font-bold shadow-sm hover:bg-gray-200 transition-colors items-center gap-1"><mat-icon class="text-[14px]">auto_fix_high</mat-icon> Demo</button>
+             <button (click)="exportData()" class="hidden md:flex bg-gray-100 text-gray-900 px-4 py-2 rounded-lg text-xs font-bold shadow-sm hover:bg-gray-200 transition-colors items-center gap-1"><mat-icon class="text-[14px]">download</mat-icon> Export</button>
+             <button (click)="fileInput.click()" class="hidden md:flex bg-gray-100 text-gray-900 px-4 py-2 rounded-lg text-xs font-bold shadow-sm hover:bg-gray-200 transition-colors items-center gap-1"><mat-icon class="text-[14px]">upload</mat-icon> Import</button>
              <input type="file" #fileInput (change)="importData($event)" style="display:none" accept=".json">
-             <button (click)="logout()" class="bg-gray-100 text-gray-900 px-4 py-2 rounded-lg text-xs font-bold shadow-sm hover:bg-gray-200 transition-colors">Sign Out / Reset</button>
+             <div class="flex items-center gap-2 pl-2 border-l border-gray-200">
+               @if (authService.currentUser(); as user) {
+                 <div class="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold">{{ user.displayName ? user.displayName[0].toUpperCase() : user.email[0].toUpperCase() }}</div>
+               }
+               <button (click)="logout()" class="bg-gray-100 text-gray-900 px-3 py-1.5 md:px-4 md:py-2 rounded-lg text-xs font-bold shadow-sm hover:bg-gray-200 transition-colors">Sign Out</button>
+             </div>
            </div>
         </header>
-        <div class="flex-1 overflow-auto p-8">
+        <div class="flex-1 overflow-auto p-4 md:p-8">
            <router-outlet></router-outlet>
         </div>
       </main>
@@ -77,7 +97,9 @@ import { MatIconModule } from '@angular/material/icon';
 })
 export class AdminLayoutComponent {
   private dataService = inject(DataService);
+  authService = inject(AuthService);
   private router = inject(Router);
+  sidebarOpen = signal(false);
   
   profile = this.dataService.profile;
   enquiries = this.dataService.enquiries;
@@ -120,8 +142,7 @@ export class AdminLayoutComponent {
     alert('Demo data loaded!');
   }
 
-  logout() {
-    this.dataService.resetSetup();
-    this.router.navigate(['/']);
+  async logout() {
+    await this.authService.logout();
   }
 }

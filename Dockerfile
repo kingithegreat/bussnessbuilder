@@ -6,7 +6,7 @@ FROM node:22-slim AS build
 WORKDIR /app
 
 # Install dependencies against the lockfile for reproducible builds.
-COPY package.json package-lock.json ./
+COPY package.json package-lock.json .npmrc ./
 RUN npm ci
 
 # Build the production server bundle.

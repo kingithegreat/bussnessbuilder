@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { DataService } from './data.service';
 import { Service, Testimonial, FAQ } from './types';
+import { ImagePickerComponent } from './image-picker.component';
 
 type Tab = 'services' | 'testimonials' | 'faqs';
 
@@ -16,7 +17,7 @@ type Tab = 'services' | 'testimonials' | 'faqs';
 @Component({
   selector: 'app-admin-content',
   standalone: true,
-  imports: [FormsModule, MatIconModule, NgTemplateOutlet],
+  imports: [FormsModule, MatIconModule, NgTemplateOutlet, ImagePickerComponent],
   template: `
     <div class="max-w-3xl mx-auto">
       <div class="flex items-start justify-between mb-6">
@@ -84,6 +85,12 @@ type Tab = 'services' | 'testimonials' | 'faqs';
                     <input [id]="'su_'+item.id" type="text" [(ngModel)]="item.duration" placeholder="e.g. 2 hours" class="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm text-gray-700">
                   </div>
                 </div>
+                <app-image-picker
+                  label="Service Image"
+                  section="services"
+                  [currentUrl]="item.imageUrl || ''"
+                  (imageSelected)="item.imageUrl = $event"
+                ></app-image-picker>
                 <ng-container *ngTemplateOutlet="removeBtn; context: { i: i }"></ng-container>
               </div>
             }

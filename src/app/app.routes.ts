@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { LandingComponent } from './landing.component';
+import { LoginComponent } from './login.component';
 import { SetupWizardComponent } from './setup.component';
 import { PublicPageComponent } from './public-page.component';
 import { AdminLayoutComponent } from './admin-layout.component';
@@ -10,11 +11,13 @@ import { AdminAiToolsComponent } from './admin-ai.component';
 import { AdminCustomisationComponent } from './admin-customisation.component';
 import { AdminBuilderComponent } from './admin-builder.component';
 import { AdminFormBuilderComponent } from './admin-form-builder.component';
-import { authGuard, publicGuard } from './auth.guard';
+import { authGuard, setupGuard, publicGuard } from './auth.guard';
 
 export const routes: Routes = [
   { path: '', component: LandingComponent },
-  { path: 'setup', component: SetupWizardComponent },
+  { path: 'login', component: LoginComponent },
+  { path: 'signup', component: LoginComponent },
+  { path: 'setup', component: SetupWizardComponent, canActivate: [setupGuard] },
   { path: 'public', component: PublicPageComponent, canActivate: [publicGuard] },
   {
     path: 'admin',

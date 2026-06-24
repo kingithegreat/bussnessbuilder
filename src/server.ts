@@ -10,7 +10,9 @@ import {join} from 'node:path';
 const browserDistFolder = join(import.meta.dirname, '../browser');
 
 const app = express();
-const angularApp = new AngularNodeAppEngine();
+const angularApp = new AngularNodeAppEngine({
+  trustProxyHeaders: true,
+});
 
 /**
  * Liveness/readiness probe for Cloud Run (and any container orchestrator).

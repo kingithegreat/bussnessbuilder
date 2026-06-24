@@ -1,15 +1,16 @@
-import { Component, inject, computed, input, effect } from '@angular/core';
+import { Component, inject, computed, input, output, effect, signal } from '@angular/core';
 import { DataService } from './data.service';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Title, Meta } from '@angular/platform-browser';
 import { MatIconModule } from '@angular/material/icon';
 import { SlicePipe, NgTemplateOutlet } from '@angular/common';
 import { CustomizationSettings, SectionConfig, FormFieldConfig } from './types';
+import { EditableTextDirective } from './editable-text.directive';
 
 @Component({
   selector: 'app-public-page',
   standalone: true,
-  imports: [ReactiveFormsModule, MatIconModule, SlicePipe, NgTemplateOutlet],
+  imports: [ReactiveFormsModule, MatIconModule, SlicePipe, NgTemplateOutlet, EditableTextDirective],
   styles: [`
     .dark-mode {
       color: #e5e7eb;
@@ -28,17 +29,34 @@ import { CustomizationSettings, SectionConfig, FormFieldConfig } from './types';
     .dark-mode .text-gray-500 {
       color: #9ca3af !important;
     }
+    .editable-text {
+      cursor: text;
+      transition: outline 0.15s;
+      outline: 2px solid transparent;
+      outline-offset: 4px;
+      border-radius: 4px;
+    }
+    .editable-text:hover {
+      outline-color: rgba(59, 130, 246, 0.3);
+    }
+    .editable-text:focus {
+      outline-color: rgba(59, 130, 246, 0.7);
+    }
   `],
   template: `
-    <div [style]="wrapperStyles" class="min-h-screen font-sans text-gray-900 selection:bg-blue-100 flex flex-col transition-colors duration-300" [class.dark-mode]="customization().branding.themeMode === 'dark'">
+    <div [style]="wrapperStyles" class="min-h-screen font-sans text-gray-900 selection:bg-blue-100 flex flex-col transition-colors duration-300" [class.dark-mode]="customization().branding.themeMode === 'dark'" (click)="handlePreviewClick($event)">
       <!-- Navbar -->
       <nav class="border-b shadow-sm sticky top-0 z-50 transition-colors" [style.backgroundColor]="customization().branding.backgroundColor" [style.borderColor]="'color-mix(in srgb, ' + customization().branding.primaryColor + ' 10%, transparent)'">
-        <div class="max-w-5xl mx-auto px-6 h-20 flex items-center justify-between">
-          <div class="flex items-center gap-3">
-             <div class="w-8 h-8 rounded-lg flex items-center justify-center" [style.backgroundColor]="customization().branding.primaryColor">
-               <div class="w-4 h-4 border-2 border-white rounded-sm"></div>
-             </div>
-             <div class="font-bold text-xl tracking-tight" [style.color]="customization().branding.themeMode === 'dark' ? 'white' : 'black'">
+        <div class="max-w-5xl mx-auto px-4 md:px-6 h-16 md:h-20 flex items-center justify-between">
+          <div class="flex items-center gap-2 md:gap-3 min-w-0">
+             @if (customization().branding.logoUrl) {
+               <img [src]="customization().branding.logoUrl" alt="Logo" class="w-8 h-8 rounded-lg object-cover shrink-0" referrerpolicy="no-referrer">
+             } @else {
+               <div class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" [style.backgroundColor]="customization().branding.primaryColor">
+                 <div class="w-4 h-4 border-2 border-white rounded-sm"></div>
+               </div>
+             }
+             <div class="font-bold text-lg md:text-xl tracking-tight truncate" [style.color]="customization().branding.themeMode === 'dark' ? 'white' : 'black'" [editableText]="editable()" (textChange)="onTextEdit('profile', 'name', $event)">
                {{ profile().name || 'Your Business' }}
              </div>
           </div>
@@ -47,10 +65,24 @@ import { CustomizationSettings, SectionConfig, FormFieldConfig } from './types';
              <a href="#about" class="hover:opacity-80 transition-colors">About</a>
              <a href="#contact" class="hover:opacity-80 transition-colors">Contact</a>
           </div>
-          <a href="#contact" [style.backgroundColor]="customization().branding.primaryColor" [style.borderRadius]="buttonRadius" class="text-white px-5 py-2.5 text-sm font-bold shadow-md hover:opacity-90 transition-opacity">
-            Book Now
-          </a>
+          <div class="flex items-center gap-2">
+            <a href="#contact" [style.backgroundColor]="customization().branding.primaryColor" [style.borderRadius]="buttonRadius" class="text-white px-3 py-2 md:px-5 md:py-2.5 text-xs md:text-sm font-bold shadow-md hover:opacity-90 transition-opacity whitespace-nowrap">
+              Book Now
+            </a>
+            <button (click)="mobileMenuOpen.set(!mobileMenuOpen())" class="md:hidden p-2 rounded-lg text-gray-500 hover:bg-gray-100 transition-colors">
+              <mat-icon>{{ mobileMenuOpen() ? 'close' : 'menu' }}</mat-icon>
+            </button>
+          </div>
         </div>
+        @if (mobileMenuOpen()) {
+          <div class="md:hidden border-t border-gray-100 shadow-lg" [style.backgroundColor]="customization().branding.backgroundColor">
+            <div class="max-w-5xl mx-auto px-4 py-3 flex flex-col gap-1">
+              <a href="#services" (click)="mobileMenuOpen.set(false)" class="px-4 py-3 rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors">Services</a>
+              <a href="#about" (click)="mobileMenuOpen.set(false)" class="px-4 py-3 rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors">About</a>
+              <a href="#contact" (click)="mobileMenuOpen.set(false)" class="px-4 py-3 rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors">Contact</a>
+            </div>
+          </div>
+        }
       </nav>
 
       @for (section of sortedSections(); track section.id) {
@@ -61,12 +93,12 @@ import { CustomizationSettings, SectionConfig, FormFieldConfig } from './types';
                 <div class="max-w-5xl mx-auto px-6">
                   <!-- Centered Hero -->
                   @if (!section.layoutVariant || section.layoutVariant === 'centered') {
-                    <div [style.borderRadius]="cardRadius" class="bg-white p-10 md:p-16 shadow-sm border border-gray-100 text-center relative overflow-hidden flex flex-col items-center">
+                    <div [style.borderRadius]="cardRadius" class="bg-white p-6 sm:p-10 md:p-16 shadow-sm border border-gray-100 text-center relative overflow-hidden flex flex-col items-center">
                       <div class="absolute inset-0 bg-gradient-to-b from-gray-50 to-white -z-10"></div>
-                      <span class="inline-block py-1.5 px-3 rounded-full bg-blue-50 text-blue-600 text-[10px] font-bold uppercase tracking-widest mb-8 border border-blue-100">
+                      <span class="inline-block py-1.5 px-3 rounded-full bg-blue-50 text-blue-600 text-[10px] font-bold uppercase tracking-widest mb-6 md:mb-8 border border-blue-100">
                         {{ profile().type }} &bull; {{ profile().serviceArea }}
                       </span>
-                      <h1 class="text-4xl md:text-6xl font-black tracking-tight text-gray-900 mb-6 max-w-3xl leading-tight">
+                      <h1 class="text-3xl sm:text-4xl md:text-6xl font-black tracking-tight text-gray-900 mb-4 md:mb-6 max-w-3xl leading-tight" [editableText]="editable()" (textChange)="onTextEdit('profile', 'tagline', $event)">
                         {{ profile().tagline || 'Professional services you can trust.' }}
                       </h1>
                       <p class="text-lg md:text-xl text-gray-500 max-w-2xl mb-10 font-medium">
@@ -100,7 +132,7 @@ import { CustomizationSettings, SectionConfig, FormFieldConfig } from './types';
                         <span class="inline-block py-1.5 px-3 rounded-full bg-blue-50 text-blue-600 text-[10px] font-bold uppercase tracking-widest mb-6 border border-blue-100">
                           {{ profile().type }} &bull; {{ profile().serviceArea }}
                         </span>
-                        <h1 class="text-4xl md:text-5xl lg:text-6xl font-black tracking-tight text-gray-900 mb-6 leading-tight">
+                        <h1 class="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black tracking-tight text-gray-900 mb-4 md:mb-6 leading-tight" [editableText]="editable()" (textChange)="onTextEdit('profile', 'tagline', $event)">
                           {{ profile().tagline || 'Professional services you can trust.' }}
                         </h1>
                         <p class="text-lg text-gray-500 mb-8 font-medium">
@@ -123,7 +155,11 @@ import { CustomizationSettings, SectionConfig, FormFieldConfig } from './types';
                         }
                       </div>
                       <div [style.borderRadius]="cardRadius" class="aspect-square bg-gray-100 overflow-hidden relative shadow-lg">
-                        <img src="https://images.unsplash.com/photo-1556761175-5973dc0f32d7?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" alt="Hero" referrerpolicy="no-referrer" class="w-full h-full object-cover">
+                        @if (getSection('hero')?.imageUrl) {
+                          <img [src]="getSection('hero')!.imageUrl" alt="Hero" referrerpolicy="no-referrer" class="w-full h-full object-cover">
+                        } @else {
+                          <img src="https://images.unsplash.com/photo-1556761175-5973dc0f32d7?w=800&q=80" alt="Hero" referrerpolicy="no-referrer" class="w-full h-full object-cover">
+                        }
                       </div>
                     </div>
                   }
@@ -131,7 +167,7 @@ import { CustomizationSettings, SectionConfig, FormFieldConfig } from './types';
                   <!-- Minimal Hero -->
                   @else if (section.layoutVariant === 'minimal') {
                     <div class="text-center py-10 max-w-3xl mx-auto">
-                      <h1 class="text-5xl md:text-7xl font-black tracking-tight text-gray-900 mb-6 leading-none">
+                      <h1 class="text-3xl sm:text-5xl md:text-7xl font-black tracking-tight text-gray-900 mb-4 md:mb-6 leading-none" [editableText]="editable()" (textChange)="onTextEdit('profile', 'tagline', $event)">
                         {{ profile().tagline || 'Professional services you can trust.' }}
                       </h1>
                       <p class="text-xl text-gray-500 mb-10 font-medium">
@@ -146,12 +182,12 @@ import { CustomizationSettings, SectionConfig, FormFieldConfig } from './types';
                   
                   <!-- Premium Card Hero -->
                   @else if (section.layoutVariant === 'premium') {
-                    <div [style.borderRadius]="cardRadius" class="bg-gray-900 text-white p-12 md:p-20 shadow-2xl border border-gray-800 text-center relative overflow-hidden flex flex-col items-center">
+                    <div [style.borderRadius]="cardRadius" class="bg-gray-900 text-white p-6 sm:p-12 md:p-20 shadow-2xl border border-gray-800 text-center relative overflow-hidden flex flex-col items-center">
                       <div class="absolute inset-0 bg-gradient-to-tr from-gray-800/50 to-transparent -z-10"></div>
-                      <span class="inline-block py-1.5 px-3 rounded-full bg-white/10 text-gray-200 text-[10px] font-bold uppercase tracking-widest mb-8 border border-white/10">
+                      <span class="inline-block py-1.5 px-3 rounded-full bg-white/10 text-gray-200 text-[10px] font-bold uppercase tracking-widest mb-6 md:mb-8 border border-white/10">
                         Premium &bull; {{ profile().serviceArea }}
                       </span>
-                      <h1 class="text-4xl md:text-6xl font-black tracking-tight mb-6 max-w-3xl leading-tight">
+                      <h1 class="text-3xl sm:text-4xl md:text-6xl font-black tracking-tight mb-4 md:mb-6 max-w-3xl leading-tight" [editableText]="editable()" (textChange)="onTextEdit('profile', 'tagline', $event)">
                         {{ profile().tagline || 'Professional services you can trust.' }}
                       </h1>
                       <p class="text-lg md:text-xl text-gray-400 max-w-2xl mb-10 font-medium">
@@ -174,16 +210,16 @@ import { CustomizationSettings, SectionConfig, FormFieldConfig } from './types';
             @case ('about') {
               <section id="about" class="py-16 md:py-24">
                 <div class="max-w-5xl mx-auto px-6">
-                  <div class="mb-12">
-                    <h2 class="text-3xl font-black text-gray-900 mb-2">{{ section.heading }}</h2>
-                    <p class="text-gray-500 font-medium">{{ section.subheading }}</p>
+                  <div class="mb-8 md:mb-12">
+                    <h2 class="text-2xl md:text-3xl font-black text-gray-900 mb-2" [editableText]="editable()" (textChange)="onTextEdit('section', 'heading', $event, section.id)">{{ section.heading }}</h2>
+                    <p class="text-gray-500 font-medium" [editableText]="editable()" (textChange)="onTextEdit('section', 'subheading', $event, section.id)">{{ section.subheading }}</p>
                   </div>
 
                   @if (!section.layoutVariant || section.layoutVariant === 'default') {
                     <div class="grid grid-cols-1 lg:grid-cols-5 gap-8">
                       <div class="lg:col-span-3">
-                        <div [style.borderRadius]="cardRadius" class="bg-white p-10 border border-gray-100 shadow-sm h-full">
-                          <p class="text-lg text-gray-600 leading-relaxed whitespace-pre-line">{{ profile().description }}</p>
+                        <div [style.borderRadius]="cardRadius" class="bg-white p-6 md:p-10 border border-gray-100 shadow-sm h-full">
+                          <p class="text-base md:text-lg text-gray-600 leading-relaxed whitespace-pre-line" [editableText]="editable()" (textChange)="onTextEdit('profile', 'description', $event)">{{ profile().description }}</p>
                         </div>
                       </div>
                       <div class="lg:col-span-2 space-y-4">
@@ -237,11 +273,11 @@ import { CustomizationSettings, SectionConfig, FormFieldConfig } from './types';
                     </div>
                   } @else if (section.layoutVariant === 'centered') {
                     <div class="max-w-3xl mx-auto text-center">
-                      <div [style.borderRadius]="cardRadius" class="bg-white p-10 md:p-14 border border-gray-100 shadow-sm">
+                      <div [style.borderRadius]="cardRadius" class="bg-white p-6 md:p-10 lg:p-14 border border-gray-100 shadow-sm">
                         @if (profile().tagline) {
                           <p [style.color]="customization().branding.primaryColor" class="text-sm font-bold uppercase tracking-widest mb-4">{{ profile().tagline }}</p>
                         }
-                        <p class="text-lg md:text-xl text-gray-600 leading-relaxed">{{ profile().description }}</p>
+                        <p class="text-base md:text-lg lg:text-xl text-gray-600 leading-relaxed" [editableText]="editable()" (textChange)="onTextEdit('profile', 'description', $event)">{{ profile().description }}</p>
                         @if (profile().trustBadges && profile().trustBadges.length) {
                           <div class="mt-8 pt-6 border-t border-gray-100 flex flex-wrap justify-center gap-6">
                             @for (badge of profile().trustBadges; track badge) {
@@ -257,15 +293,19 @@ import { CustomizationSettings, SectionConfig, FormFieldConfig } from './types';
                   } @else if (section.layoutVariant === 'split') {
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
                       <div [style.borderRadius]="cardRadius" class="aspect-[4/3] bg-gray-100 overflow-hidden relative shadow-lg order-2 lg:order-1">
-                        <div class="w-full h-full flex items-center justify-center">
-                          <mat-icon class="text-[64px] w-[64px] h-[64px] text-gray-300">storefront</mat-icon>
-                        </div>
+                        @if (getSection('about')?.imageUrl) {
+                          <img [src]="getSection('about')!.imageUrl" alt="About" referrerpolicy="no-referrer" class="w-full h-full object-cover">
+                        } @else {
+                          <div class="w-full h-full flex items-center justify-center">
+                            <mat-icon class="text-[64px] w-[64px] h-[64px] text-gray-300">storefront</mat-icon>
+                          </div>
+                        }
                       </div>
                       <div class="order-1 lg:order-2">
                         @if (profile().tagline) {
                           <span [style.color]="customization().branding.primaryColor" class="inline-block text-sm font-bold uppercase tracking-widest mb-4">{{ profile().tagline }}</span>
                         }
-                        <p class="text-lg text-gray-600 leading-relaxed mb-6">{{ profile().description }}</p>
+                        <p class="text-base md:text-lg text-gray-600 leading-relaxed mb-6" [editableText]="editable()" (textChange)="onTextEdit('profile', 'description', $event)">{{ profile().description }}</p>
                         <div class="space-y-3">
                           @if (profile().serviceArea) {
                             <div class="flex items-center gap-3 text-sm text-gray-600">
@@ -291,28 +331,44 @@ import { CustomizationSettings, SectionConfig, FormFieldConfig } from './types';
               <!-- Services -->
               <section id="services" class="py-16 md:py-24">
                 <div class="max-w-5xl mx-auto px-6">
-                  <div class="mb-12 flex justify-between items-end">
+                  <div class="mb-8 md:mb-12 flex justify-between items-end">
                     <div>
-                      <h2 class="text-3xl font-black text-gray-900 mb-2">{{ section.heading }}</h2>
-                      <p class="text-gray-500 font-medium">{{ section.subheading }}</p>
+                      <h2 class="text-2xl md:text-3xl font-black text-gray-900 mb-2" [editableText]="editable()" (textChange)="onTextEdit('section', 'heading', $event, section.id)">{{ section.heading }}</h2>
+                      <p class="text-gray-500 font-medium" [editableText]="editable()" (textChange)="onTextEdit('section', 'subheading', $event, section.id)">{{ section.subheading }}</p>
                     </div>
                   </div>
                   
                   @if (!section.layoutVariant || section.layoutVariant === 'grid') {
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                       @for (service of services(); track service.id) {
-                        <div [style.borderRadius]="cardRadius" class="bg-white p-8 border border-gray-100 shadow-sm hover:shadow-md transition-shadow flex flex-col h-full">
-                          <div [style.color]="customization().branding.primaryColor" [style.backgroundColor]="'color-mix(in srgb, ' + customization().branding.primaryColor + ' 10%, transparent)'" class="w-12 h-12 rounded-xl flex items-center justify-center mb-6">
-                            <mat-icon>check_circle</mat-icon>
-                          </div>
-                          <h3 class="text-lg font-bold text-gray-900 mb-3">{{ service.name }}</h3>
-                          <p class="text-gray-500 mb-6 text-sm flex-grow leading-relaxed">{{ service.description }}</p>
-                          <div class="pt-4 border-t border-gray-50 mt-auto">
-                            <p class="font-bold text-gray-900 flex items-center justify-between text-sm">
-                              <span class="text-gray-400 text-[10px] uppercase tracking-wider">Starting at</span>
-                              {{ service.price }}
-                            </p>
-                          </div>
+                        <div [style.borderRadius]="cardRadius" class="bg-white border border-gray-100 shadow-sm hover:shadow-md transition-shadow flex flex-col h-full overflow-hidden">
+                          @if (service.imageUrl) {
+                            <img [src]="service.imageUrl" [alt]="service.name" referrerpolicy="no-referrer" class="w-full h-40 object-cover">
+                            <div class="p-8 flex flex-col flex-grow">
+                              <h3 class="text-lg font-bold text-gray-900 mb-3" [editableText]="editable()" (textChange)="onTextEdit('service', 'name', $event, service.id)">{{ service.name }}</h3>
+                              <p class="text-gray-500 mb-6 text-sm flex-grow leading-relaxed" [editableText]="editable()" (textChange)="onTextEdit('service', 'description', $event, service.id)">{{ service.description }}</p>
+                              <div class="pt-4 border-t border-gray-50 mt-auto">
+                                <p class="font-bold text-gray-900 flex items-center justify-between text-sm">
+                                  <span class="text-gray-400 text-[10px] uppercase tracking-wider">Starting at</span>
+                                  {{ service.price }}
+                                </p>
+                              </div>
+                            </div>
+                          } @else {
+                            <div class="p-8 flex flex-col flex-grow">
+                              <div [style.color]="customization().branding.primaryColor" [style.backgroundColor]="'color-mix(in srgb, ' + customization().branding.primaryColor + ' 10%, transparent)'" class="w-12 h-12 rounded-xl flex items-center justify-center mb-6">
+                                <mat-icon>check_circle</mat-icon>
+                              </div>
+                              <h3 class="text-lg font-bold text-gray-900 mb-3" [editableText]="editable()" (textChange)="onTextEdit('service', 'name', $event, service.id)">{{ service.name }}</h3>
+                              <p class="text-gray-500 mb-6 text-sm flex-grow leading-relaxed" [editableText]="editable()" (textChange)="onTextEdit('service', 'description', $event, service.id)">{{ service.description }}</p>
+                              <div class="pt-4 border-t border-gray-50 mt-auto">
+                                <p class="font-bold text-gray-900 flex items-center justify-between text-sm">
+                                  <span class="text-gray-400 text-[10px] uppercase tracking-wider">Starting at</span>
+                                  {{ service.price }}
+                                </p>
+                              </div>
+                            </div>
+                          }
                         </div>
                       }
                     </div>
@@ -326,8 +382,8 @@ import { CustomizationSettings, SectionConfig, FormFieldConfig } from './types';
                             <mat-icon>check_circle</mat-icon>
                           </div>
                           <div class="flex-grow">
-                            <h3 class="text-lg font-bold text-gray-900">{{ service.name }}</h3>
-                            <p class="text-gray-500 text-sm mt-1">{{ service.description }}</p>
+                            <h3 class="text-lg font-bold text-gray-900" [editableText]="editable()" (textChange)="onTextEdit('service', 'name', $event, service.id)">{{ service.name }}</h3>
+                            <p class="text-gray-500 text-sm mt-1" [editableText]="editable()" (textChange)="onTextEdit('service', 'description', $event, service.id)">{{ service.description }}</p>
                           </div>
                           <div class="shrink-0 text-left md:text-right">
                             <span class="text-gray-400 text-[10px] uppercase tracking-wider block">Starting at</span>
@@ -345,8 +401,8 @@ import { CustomizationSettings, SectionConfig, FormFieldConfig } from './types';
                           <div [style.borderRadius]="cardRadius" class="bg-gray-900 text-white p-10 md:col-span-2 flex flex-col md:flex-row gap-8 items-center shadow-lg">
                             <div class="flex-grow">
                               <span class="inline-block py-1 px-3 rounded-full bg-white/10 text-white text-[10px] font-bold uppercase tracking-widest mb-4">Featured Service</span>
-                              <h3 class="text-2xl md:text-3xl font-black mb-4">{{ service.name }}</h3>
-                              <p class="text-gray-400 mb-6 leading-relaxed">{{ service.description }}</p>
+                              <h3 class="text-2xl md:text-3xl font-black mb-4" [editableText]="editable()" (textChange)="onTextEdit('service', 'name', $event, service.id)">{{ service.name }}</h3>
+                              <p class="text-gray-400 mb-6 leading-relaxed" [editableText]="editable()" (textChange)="onTextEdit('service', 'description', $event, service.id)">{{ service.description }}</p>
                               <p class="font-bold text-xl">{{ service.price }}</p>
                             </div>
                             <div class="w-full md:w-1/3 aspect-video bg-white/5 rounded-xl flex items-center justify-center shrink-0">
@@ -355,8 +411,8 @@ import { CustomizationSettings, SectionConfig, FormFieldConfig } from './types';
                           </div>
                         } @else {
                           <div [style.borderRadius]="cardRadius" class="bg-white p-8 border border-gray-100 shadow-sm flex flex-col h-full">
-                            <h3 class="text-xl font-bold text-gray-900 mb-3">{{ service.name }}</h3>
-                            <p class="text-gray-500 mb-6 text-sm flex-grow">{{ service.description }}</p>
+                            <h3 class="text-xl font-bold text-gray-900 mb-3" [editableText]="editable()" (textChange)="onTextEdit('service', 'name', $event, service.id)">{{ service.name }}</h3>
+                            <p class="text-gray-500 mb-6 text-sm flex-grow" [editableText]="editable()" (textChange)="onTextEdit('service', 'description', $event, service.id)">{{ service.description }}</p>
                             <p class="font-bold text-gray-900">{{ service.price }}</p>
                           </div>
                         }
@@ -371,7 +427,7 @@ import { CustomizationSettings, SectionConfig, FormFieldConfig } from './types';
                           <div [style.color]="customization().branding.primaryColor" class="mb-3">
                             <mat-icon>business_center</mat-icon>
                           </div>
-                          <h3 class="text-sm font-bold text-gray-900 mb-2">{{ service.name }}</h3>
+                          <h3 class="text-sm font-bold text-gray-900 mb-2" [editableText]="editable()" (textChange)="onTextEdit('service', 'name', $event, service.id)">{{ service.name }}</h3>
                           <p class="font-bold text-gray-500 text-xs">{{ service.price }}</p>
                         </div>
                       }
@@ -384,11 +440,11 @@ import { CustomizationSettings, SectionConfig, FormFieldConfig } from './types';
             @case ('testimonials') {
               <!-- Testimonials -->
               @if (testimonials().length) {
-              <section id="testimonials" class="py-16 md:py-24 bg-gray-50 border-y border-gray-200">
-                <div class="max-w-5xl mx-auto px-6">
-                  <div class="text-center mb-12">
-                    <h2 class="text-3xl font-black text-gray-900 mb-2">{{ section.heading }}</h2>
-                    <p class="text-gray-500 font-medium">{{ section.subheading }}</p>
+              <section id="testimonials" class="py-12 md:py-24 bg-gray-50 border-y border-gray-200">
+                <div class="max-w-5xl mx-auto px-4 md:px-6">
+                  <div class="text-center mb-8 md:mb-12">
+                    <h2 class="text-2xl md:text-3xl font-black text-gray-900 mb-2" [editableText]="editable()" (textChange)="onTextEdit('section', 'heading', $event, section.id)">{{ section.heading }}</h2>
+                    <p class="text-gray-500 font-medium" [editableText]="editable()" (textChange)="onTextEdit('section', 'subheading', $event, section.id)">{{ section.subheading }}</p>
                   </div>
                   
                   @if (!section.layoutVariant || section.layoutVariant === 'quote') {
@@ -463,19 +519,19 @@ import { CustomizationSettings, SectionConfig, FormFieldConfig } from './types';
             @case ('faq') {
               <!-- FAQs -->
               @if (faqs().length) {
-              <section id="faqs" class="py-16 md:py-24 bg-white border-y border-gray-200">
-                <div class="max-w-5xl mx-auto px-6">
-                  <div class="text-center mb-12">
-                    <h2 class="text-3xl font-black text-gray-900 mb-2">{{ section.heading }}</h2>
-                    <p class="text-gray-500 font-medium">{{ section.subheading }}</p>
+              <section id="faqs" class="py-12 md:py-24 bg-white border-y border-gray-200">
+                <div class="max-w-5xl mx-auto px-4 md:px-6">
+                  <div class="text-center mb-8 md:mb-12">
+                    <h2 class="text-2xl md:text-3xl font-black text-gray-900 mb-2" [editableText]="editable()" (textChange)="onTextEdit('section', 'heading', $event, section.id)">{{ section.heading }}</h2>
+                    <p class="text-gray-500 font-medium" [editableText]="editable()" (textChange)="onTextEdit('section', 'subheading', $event, section.id)">{{ section.subheading }}</p>
                   </div>
                   
                   @if (!section.layoutVariant || section.layoutVariant === 'accordion') {
                     <div class="max-w-3xl mx-auto space-y-6">
                       @for (faq of faqs(); track faq.id) {
                         <div [style.borderRadius]="cardRadius" class="bg-gray-50 p-6 border border-gray-100">
-                          <h3 class="text-lg font-bold text-gray-900 mb-2">{{ faq.question }}</h3>
-                          <p class="text-gray-600 text-sm leading-relaxed">{{ faq.answer }}</p>
+                          <h3 class="text-lg font-bold text-gray-900 mb-2" [editableText]="editable()" (textChange)="onTextEdit('faq', 'question', $event, faq.id)">{{ faq.question }}</h3>
+                          <p class="text-gray-600 text-sm leading-relaxed" [editableText]="editable()" (textChange)="onTextEdit('faq', 'answer', $event, faq.id)">{{ faq.answer }}</p>
                         </div>
                       }
                     </div>
@@ -485,8 +541,8 @@ import { CustomizationSettings, SectionConfig, FormFieldConfig } from './types';
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                       @for (faq of faqs(); track faq.id) {
                         <div class="border-t border-gray-200 pt-6">
-                          <h3 class="text-lg font-bold text-gray-900 mb-3">{{ faq.question }}</h3>
-                          <p class="text-gray-600 text-sm leading-relaxed">{{ faq.answer }}</p>
+                          <h3 class="text-lg font-bold text-gray-900 mb-3" [editableText]="editable()" (textChange)="onTextEdit('faq', 'question', $event, faq.id)">{{ faq.question }}</h3>
+                          <p class="text-gray-600 text-sm leading-relaxed" [editableText]="editable()" (textChange)="onTextEdit('faq', 'answer', $event, faq.id)">{{ faq.answer }}</p>
                         </div>
                       }
                     </div>
@@ -502,10 +558,10 @@ import { CustomizationSettings, SectionConfig, FormFieldConfig } from './types';
                 <div class="max-w-5xl mx-auto px-6">
                   @if (!section.layoutVariant || section.layoutVariant === 'split') {
                     <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
-                      <div [style.borderRadius]="cardRadius" class="col-span-1 lg:col-span-5 bg-gray-900 text-white p-10 flex flex-col shadow-xl">
-                        <div class="mb-12">
-                          <h2 class="text-3xl font-black mb-4">{{ section.heading }}</h2>
-                          <p class="text-gray-400 text-sm leading-relaxed">{{ section.subheading }}</p>
+                      <div [style.borderRadius]="cardRadius" class="col-span-1 lg:col-span-5 bg-gray-900 text-white p-6 md:p-10 flex flex-col shadow-xl">
+                        <div class="mb-8 md:mb-12">
+                          <h2 class="text-2xl md:text-3xl font-black mb-4" [editableText]="editable()" (textChange)="onTextEdit('section', 'heading', $event, section.id)">{{ section.heading }}</h2>
+                          <p class="text-gray-400 text-sm leading-relaxed" [editableText]="editable()" (textChange)="onTextEdit('section', 'subheading', $event, section.id)">{{ section.subheading }}</p>
                         </div>
                         
                         <div class="space-y-6 mt-auto">
@@ -543,7 +599,7 @@ import { CustomizationSettings, SectionConfig, FormFieldConfig } from './types';
                         </div>
                       </div>
                       
-                      <div [style.borderRadius]="cardRadius" class="col-span-1 lg:col-span-7 bg-white text-gray-900 p-10 shadow-sm border border-gray-100">
+                      <div [style.borderRadius]="cardRadius" class="col-span-1 lg:col-span-7 bg-white text-gray-900 p-6 md:p-10 shadow-sm border border-gray-100">
                         <ng-container *ngTemplateOutlet="contactForm"></ng-container>
                       </div>
                     </div>
@@ -551,9 +607,9 @@ import { CustomizationSettings, SectionConfig, FormFieldConfig } from './types';
                   
                   @else if (section.layoutVariant === 'form-only') {
                     <div class="max-w-2xl mx-auto">
-                      <div class="text-center mb-10">
-                        <h2 class="text-3xl font-black mb-4">{{ section.heading }}</h2>
-                        <p class="text-gray-500 text-sm leading-relaxed">{{ section.subheading }}</p>
+                      <div class="text-center mb-8 md:mb-10">
+                        <h2 class="text-2xl md:text-3xl font-black mb-4" [editableText]="editable()" (textChange)="onTextEdit('section', 'heading', $event, section.id)">{{ section.heading }}</h2>
+                        <p class="text-gray-500 text-sm leading-relaxed" [editableText]="editable()" (textChange)="onTextEdit('section', 'subheading', $event, section.id)">{{ section.subheading }}</p>
                       </div>
                       <div [style.borderRadius]="cardRadius" class="bg-white text-gray-900 p-10 shadow-sm border border-gray-100">
                         <ng-container *ngTemplateOutlet="contactForm"></ng-container>
@@ -563,9 +619,9 @@ import { CustomizationSettings, SectionConfig, FormFieldConfig } from './types';
 
                   @else if (section.layoutVariant === 'form-details') {
                     <div class="max-w-4xl mx-auto">
-                      <div class="text-center mb-12">
-                        <h2 class="text-3xl font-black mb-4">{{ section.heading }}</h2>
-                        <p class="text-gray-500 text-sm leading-relaxed">{{ section.subheading }}</p>
+                      <div class="text-center mb-8 md:mb-12">
+                        <h2 class="text-2xl md:text-3xl font-black mb-4" [editableText]="editable()" (textChange)="onTextEdit('section', 'heading', $event, section.id)">{{ section.heading }}</h2>
+                        <p class="text-gray-500 text-sm leading-relaxed" [editableText]="editable()" (textChange)="onTextEdit('section', 'subheading', $event, section.id)">{{ section.subheading }}</p>
                       </div>
                       <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
                         <div [style.borderRadius]="cardRadius" class="bg-white p-6 border border-gray-100 text-center">
@@ -733,6 +789,9 @@ export class PublicPageComponent {
   private meta = inject(Meta);
 
   previewCustomization = input<CustomizationSettings | null>(null);
+  editable = input(false);
+  textEdited = output<{target: string, field: string, value: string, id?: string}>();
+  mobileMenuOpen = signal(false);
 
   profile = this.dataService.profile;
   services = this.dataService.services;
@@ -777,6 +836,16 @@ export class PublicPageComponent {
   get cardRadius() {
     const style = this.customization().branding.cardStyle;
     return style === 'bordered' ? '0px' : '1rem'; // Let's keep it simple
+  }
+
+  onTextEdit(target: string, field: string, value: string, id?: string) {
+    this.textEdited.emit({ target, field, value, id });
+  }
+
+  handlePreviewClick(event: Event) {
+    if (this.editable() && (event.target as HTMLElement).closest('a')) {
+      event.preventDefault();
+    }
   }
 
   submitSuccess = false;

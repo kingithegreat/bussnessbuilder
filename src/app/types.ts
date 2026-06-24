@@ -24,6 +24,7 @@ export interface Service {
   description: string;
   price?: string;
   duration?: string;
+  imageUrl?: string;
 }
 
 export interface Enquiry {
@@ -79,6 +80,7 @@ export interface SectionConfig {
   heading: string;
   subheading: string;
   layoutVariant?: string;
+  imageUrl?: string;
 }
 
 export interface FormFieldConfig {
