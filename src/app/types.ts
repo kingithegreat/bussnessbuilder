@@ -106,10 +106,18 @@ export interface CustomizationSettings {
     backgroundColor: string;
     buttonStyle: 'rounded' | 'pill' | 'square';
     cardStyle: 'soft' | 'flat' | 'glass' | 'bordered';
-    fontStyle: 'modern' | 'friendly' | 'professional';
+    fontStyle: 'modern' | 'friendly' | 'professional' | 'elegant' | 'clean' | 'minimal' | 'bold' | 'classic' | 'techy';
     themeMode: 'light' | 'dark';
     headerStyle: 'centered' | 'left' | 'split';
     ctaText: string;
+    gradientEnabled?: boolean;
+    gradientStartColor?: string;
+    gradientEndColor?: string;
+    gradientDirection?: 'to right' | 'to bottom' | 'to bottom right' | 'to bottom left';
+    backgroundImageUrl?: string;
+    seoTitle?: string;
+    seoDescription?: string;
+    ogImageUrl?: string;
   };
   sections: SectionConfig[];
   formFields: FormFieldConfig[];
@@ -117,6 +125,54 @@ export interface CustomizationSettings {
     statuses: string[];
     leadQualities: string[];
   };
+}
+
+export type SubscriptionTier = 'free' | 'pro' | 'business';
+
+export interface SubscriptionData {
+  tier: SubscriptionTier;
+  status: 'active' | 'canceled' | 'past_due' | 'trialing';
+  stripeCustomerId?: string;
+  stripeSubscriptionId?: string;
+  currentPeriodEnd?: string;
+  cancelAtPeriodEnd?: boolean;
+}
+
+export interface ContentPage {
+  id: string;
+  title: string;
+  slug: string;
+  content: string;
+  published: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SiteAnalytics {
+  totalViews: number;
+  viewsByDate: Record<string, number>;
+}
+
+export interface NotificationPreferences {
+  emailOnNewEnquiry: boolean;
+  notificationEmail: string;
+  customDomain?: string;
+}
+
+export interface PaymentLink {
+  id: string;
+  name: string;
+  description: string;
+  amount: number;
+  currency: string;
+  stripePaymentLink?: string;
+  active: boolean;
+}
+
+export interface PaymentSettings {
+  enabled: boolean;
+  stripeAccountId?: string;
+  paymentLinks: PaymentLink[];
 }
 
 export interface AppState {

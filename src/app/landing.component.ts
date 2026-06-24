@@ -160,7 +160,7 @@ import { AuthService } from './auth.service';
         <!-- Bottom CTA -->
         <section class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-20 text-center">
           <h2 class="text-2xl md:text-4xl font-bold tracking-tight text-gray-900 mb-4">Ready to build your site?</h2>
-          <p class="text-gray-500 mb-8 text-sm md:text-base max-w-xl mx-auto">Get started for free. No credit card required. Build your professional business page in minutes.</p>
+          <p class="text-gray-500 mb-8 text-sm md:text-base max-w-xl mx-auto">Get started for free. No credit card required. Build your professional business page in minutes. <a routerLink="/pricing" class="text-blue-600 font-medium hover:underline">See pricing</a></p>
           <a [routerLink]="auth.isLoggedIn() ? '/admin/dashboard' : '/signup'" class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-full text-base md:text-lg font-medium transition-colors shadow-sm">
             {{ auth.isLoggedIn() ? 'Go to Dashboard' : 'Get Started Free' }}
             <mat-icon>arrow_forward</mat-icon>
@@ -169,6 +169,11 @@ import { AuthService } from './auth.service';
       </main>
 
       <footer class="py-8 md:py-12 text-center text-gray-400 text-sm border-t border-gray-200">
+        <div class="flex items-center justify-center gap-4 mb-3">
+          <a routerLink="/privacy" class="hover:text-gray-600 transition-colors">Privacy Policy</a>
+          <span class="text-gray-300">|</span>
+          <a routerLink="/terms" class="hover:text-gray-600 transition-colors">Terms of Service</a>
+        </div>
         <p>&copy; 2026 BusinessFlow Studio.</p>
       </footer>
     </div>

@@ -4,13 +4,16 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Title, Meta } from '@angular/platform-browser';
 import { MatIconModule } from '@angular/material/icon';
 import { SlicePipe, NgTemplateOutlet } from '@angular/common';
+import { RouterLink } from '@angular/router';
 import { CustomizationSettings, SectionConfig, FormFieldConfig } from './types';
 import { EditableTextDirective } from './editable-text.directive';
+import { AnalyticsService } from './analytics.service';
+import { AuthService } from './auth.service';
 
 @Component({
   selector: 'app-public-page',
   standalone: true,
-  imports: [ReactiveFormsModule, MatIconModule, SlicePipe, NgTemplateOutlet, EditableTextDirective],
+  imports: [ReactiveFormsModule, MatIconModule, SlicePipe, NgTemplateOutlet, RouterLink, EditableTextDirective],
   styles: [`
     .dark-mode {
       color: #e5e7eb;
@@ -61,13 +64,13 @@ import { EditableTextDirective } from './editable-text.directive';
              </div>
           </div>
           <div class="hidden md:flex gap-8 text-sm font-semibold text-gray-500">
-             <a href="#services" class="hover:opacity-80 transition-colors">Services</a>
-             <a href="#about" class="hover:opacity-80 transition-colors">About</a>
-             <a href="#contact" class="hover:opacity-80 transition-colors">Contact</a>
+             <a href="#services" (click)="scrollTo('services', $event)" class="hover:opacity-80 transition-colors cursor-pointer">Services</a>
+             <a href="#about" (click)="scrollTo('about', $event)" class="hover:opacity-80 transition-colors cursor-pointer">About</a>
+             <a href="#contact" (click)="scrollTo('contact', $event)" class="hover:opacity-80 transition-colors cursor-pointer">Contact</a>
           </div>
           <div class="flex items-center gap-2">
-            <a href="#contact" [style.backgroundColor]="customization().branding.primaryColor" [style.borderRadius]="buttonRadius" class="text-white px-3 py-2 md:px-5 md:py-2.5 text-xs md:text-sm font-bold shadow-md hover:opacity-90 transition-opacity whitespace-nowrap">
-              Book Now
+            <a href="#contact" (click)="scrollTo('contact', $event)" [style.backgroundColor]="customization().branding.primaryColor" [style.borderRadius]="buttonRadius" class="text-white px-3 py-2 md:px-5 md:py-2.5 text-xs md:text-sm font-bold shadow-md hover:opacity-90 transition-opacity whitespace-nowrap cursor-pointer">
+              {{ customization().branding.ctaText || 'Book Now' }}
             </a>
             <button (click)="mobileMenuOpen.set(!mobileMenuOpen())" class="md:hidden p-2 rounded-lg text-gray-500 hover:bg-gray-100 transition-colors">
               <mat-icon>{{ mobileMenuOpen() ? 'close' : 'menu' }}</mat-icon>
@@ -77,9 +80,9 @@ import { EditableTextDirective } from './editable-text.directive';
         @if (mobileMenuOpen()) {
           <div class="md:hidden border-t border-gray-100 shadow-lg" [style.backgroundColor]="customization().branding.backgroundColor">
             <div class="max-w-5xl mx-auto px-4 py-3 flex flex-col gap-1">
-              <a href="#services" (click)="mobileMenuOpen.set(false)" class="px-4 py-3 rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors">Services</a>
-              <a href="#about" (click)="mobileMenuOpen.set(false)" class="px-4 py-3 rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors">About</a>
-              <a href="#contact" (click)="mobileMenuOpen.set(false)" class="px-4 py-3 rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors">Contact</a>
+              <a href="#services" (click)="scrollTo('services', $event); mobileMenuOpen.set(false)" class="px-4 py-3 rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer">Services</a>
+              <a href="#about" (click)="scrollTo('about', $event); mobileMenuOpen.set(false)" class="px-4 py-3 rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer">About</a>
+              <a href="#contact" (click)="scrollTo('contact', $event); mobileMenuOpen.set(false)" class="px-4 py-3 rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer">Contact</a>
             </div>
           </div>
         }
@@ -105,10 +108,10 @@ import { EditableTextDirective } from './editable-text.directive';
                         {{ profile().description | slice:0:120 }}...
                       </p>
                       <div class="flex gap-4">
-                         <a href="#contact" [style.backgroundColor]="customization().branding.primaryColor" [style.borderRadius]="buttonRadius" class="text-white px-8 py-4 text-sm font-bold shadow-lg hover:opacity-90 transition-opacity">
+                         <a href="#contact" (click)="scrollTo('contact', $event)" [style.backgroundColor]="customization().branding.primaryColor" [style.borderRadius]="buttonRadius" class="text-white px-8 py-4 text-sm font-bold shadow-lg hover:opacity-90 transition-opacity cursor-pointer">
                            {{ customization().branding.ctaText || profile().ctaText || 'Get a Quote' }}
                          </a>
-                         <a href="#services" [style.borderRadius]="buttonRadius" class="bg-gray-50 text-gray-900 border border-gray-200 px-8 py-4 text-sm font-bold hover:bg-gray-100 transition-colors">
+                         <a href="#services" (click)="scrollTo('services', $event)" [style.borderRadius]="buttonRadius" class="bg-gray-50 text-gray-900 border border-gray-200 px-8 py-4 text-sm font-bold hover:bg-gray-100 transition-colors cursor-pointer">
                            View Services
                          </a>
                       </div>
@@ -139,7 +142,7 @@ import { EditableTextDirective } from './editable-text.directive';
                           {{ profile().description | slice:0:120 }}...
                         </p>
                         <div class="flex flex-wrap gap-4">
-                           <a href="#contact" [style.backgroundColor]="customization().branding.primaryColor" [style.borderRadius]="buttonRadius" class="text-white px-8 py-4 text-sm font-bold shadow-lg hover:opacity-90 transition-opacity">
+                           <a href="#contact" (click)="scrollTo('contact', $event)" [style.backgroundColor]="customization().branding.primaryColor" [style.borderRadius]="buttonRadius" class="text-white px-8 py-4 text-sm font-bold shadow-lg hover:opacity-90 transition-opacity cursor-pointer">
                              {{ customization().branding.ctaText || profile().ctaText || 'Get a Quote' }}
                            </a>
                         </div>
@@ -173,7 +176,7 @@ import { EditableTextDirective } from './editable-text.directive';
                       <p class="text-xl text-gray-500 mb-10 font-medium">
                         {{ profile().description | slice:0:150 }}...
                       </p>
-                      <a href="#contact" [style.color]="customization().branding.primaryColor" class="inline-flex items-center gap-2 text-lg font-bold hover:opacity-80 transition-opacity">
+                      <a href="#contact" (click)="scrollTo('contact', $event)" [style.color]="customization().branding.primaryColor" class="inline-flex items-center gap-2 text-lg font-bold hover:opacity-80 transition-opacity cursor-pointer">
                         <span>{{ customization().branding.ctaText || profile().ctaText || 'Get a Quote' }}</span>
                         <mat-icon>arrow_forward</mat-icon>
                       </a>
@@ -194,10 +197,10 @@ import { EditableTextDirective } from './editable-text.directive';
                         {{ profile().description | slice:0:120 }}...
                       </p>
                       <div class="flex flex-col sm:flex-row gap-4">
-                         <a href="#contact" [style.backgroundColor]="customization().branding.primaryColor" [style.borderRadius]="buttonRadius" class="text-white px-8 py-4 text-sm font-bold shadow-lg hover:opacity-90 transition-opacity">
+                         <a href="#contact" (click)="scrollTo('contact', $event)" [style.backgroundColor]="customization().branding.primaryColor" [style.borderRadius]="buttonRadius" class="text-white px-8 py-4 text-sm font-bold shadow-lg hover:opacity-90 transition-opacity cursor-pointer">
                            {{ customization().branding.ctaText || profile().ctaText || 'Get a Quote' }}
                          </a>
-                         <a href="#services" [style.borderRadius]="buttonRadius" class="bg-white/10 text-white border border-white/20 px-8 py-4 text-sm font-bold hover:bg-white/20 transition-colors">
+                         <a href="#services" (click)="scrollTo('services', $event)" [style.borderRadius]="buttonRadius" class="bg-white/10 text-white border border-white/20 px-8 py-4 text-sm font-bold hover:bg-white/20 transition-colors cursor-pointer">
                            View Services
                          </a>
                       </div>
@@ -352,6 +355,11 @@ import { EditableTextDirective } from './editable-text.directive';
                                   <span class="text-gray-400 text-[10px] uppercase tracking-wider">Starting at</span>
                                   {{ service.price }}
                                 </p>
+                                @if (getPaymentLink(service.name); as payUrl) {
+                                  <a [href]="payUrl" target="_blank" rel="noopener" [style.backgroundColor]="customization().branding.primaryColor" [style.borderRadius]="buttonRadius" class="mt-3 inline-flex items-center justify-center gap-1.5 text-white px-4 py-2 text-xs font-bold shadow-sm hover:opacity-90 transition-opacity">
+                                    <mat-icon class="text-[16px]">payment</mat-icon> Pay Now
+                                  </a>
+                                }
                               </div>
                             </div>
                           } @else {
@@ -366,6 +374,11 @@ import { EditableTextDirective } from './editable-text.directive';
                                   <span class="text-gray-400 text-[10px] uppercase tracking-wider">Starting at</span>
                                   {{ service.price }}
                                 </p>
+                                @if (getPaymentLink(service.name); as payUrl) {
+                                  <a [href]="payUrl" target="_blank" rel="noopener" [style.backgroundColor]="customization().branding.primaryColor" [style.borderRadius]="buttonRadius" class="mt-3 inline-flex items-center justify-center gap-1.5 text-white px-4 py-2 text-xs font-bold shadow-sm hover:opacity-90 transition-opacity">
+                                    <mat-icon class="text-[16px]">payment</mat-icon> Pay Now
+                                  </a>
+                                }
                               </div>
                             </div>
                           }
@@ -388,12 +401,17 @@ import { EditableTextDirective } from './editable-text.directive';
                           <div class="shrink-0 text-left md:text-right">
                             <span class="text-gray-400 text-[10px] uppercase tracking-wider block">Starting at</span>
                             <p class="font-bold text-gray-900 text-lg">{{ service.price }}</p>
+                            @if (getPaymentLink(service.name); as payUrl) {
+                              <a [href]="payUrl" target="_blank" rel="noopener" [style.backgroundColor]="customization().branding.primaryColor" [style.borderRadius]="buttonRadius" class="mt-2 inline-flex items-center gap-1.5 text-white px-4 py-2 text-xs font-bold shadow-sm hover:opacity-90 transition-opacity">
+                                <mat-icon class="text-[16px]">payment</mat-icon> Pay Now
+                              </a>
+                            }
                           </div>
                         </div>
                       }
                     </div>
                   }
-                  
+
                   @else if (section.layoutVariant === 'featured') {
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                       @for (service of services(); track service.id; let i = $index) {
@@ -557,42 +575,42 @@ import { EditableTextDirective } from './editable-text.directive';
               <section id="contact" class="py-16 md:py-24">
                 <div class="max-w-5xl mx-auto px-6">
                   @if (!section.layoutVariant || section.layoutVariant === 'split') {
-                    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
-                      <div [style.borderRadius]="cardRadius" class="col-span-1 lg:col-span-5 bg-gray-900 text-white p-6 md:p-10 flex flex-col shadow-xl">
+                    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch overflow-hidden">
+                      <div [style.borderRadius]="cardRadius" class="col-span-1 lg:col-span-5 bg-gray-900 text-white p-6 md:p-10 flex flex-col shadow-xl overflow-hidden">
                         <div class="mb-8 md:mb-12">
                           <h2 class="text-2xl md:text-3xl font-black mb-4" [editableText]="editable()" (textChange)="onTextEdit('section', 'heading', $event, section.id)">{{ section.heading }}</h2>
                           <p class="text-gray-400 text-sm leading-relaxed" [editableText]="editable()" (textChange)="onTextEdit('section', 'subheading', $event, section.id)">{{ section.subheading }}</p>
                         </div>
                         
-                        <div class="space-y-6 mt-auto">
-                          <div class="flex items-center gap-4 bg-white/10 p-4 rounded-xl border border-white/5">
-                            <div class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center">
+                        <div class="space-y-4 mt-auto">
+                          <div class="flex items-center gap-3 bg-white/10 p-4 rounded-xl border border-white/5 min-w-0">
+                            <div class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center shrink-0">
                               <mat-icon class="text-[20px]">email</mat-icon>
                             </div>
-                            <div>
+                            <div class="min-w-0">
                               <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Email Us</p>
-                              <p class="font-medium text-sm">{{ profile().email }}</p>
+                              <p class="font-medium text-sm truncate">{{ profile().email }}</p>
                             </div>
                           </div>
                           @if(profile().phone) {
-                            <div class="flex items-center gap-4 bg-white/10 p-4 rounded-xl border border-white/5">
-                              <div class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center">
+                            <div class="flex items-center gap-3 bg-white/10 p-4 rounded-xl border border-white/5 min-w-0">
+                              <div class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center shrink-0">
                                 <mat-icon class="text-[20px]">phone</mat-icon>
                               </div>
-                              <div>
+                              <div class="min-w-0">
                                 <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Call Us</p>
                                 <p class="font-medium text-sm">{{ profile().phone }}</p>
                               </div>
                             </div>
                           }
                           @if(profile().openingHours) {
-                            <div class="flex gap-4 bg-white/10 p-4 rounded-xl border border-white/5">
+                            <div class="flex gap-3 bg-white/10 p-4 rounded-xl border border-white/5 min-w-0">
                               <div class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center shrink-0">
                                 <mat-icon class="text-[20px]">schedule</mat-icon>
                               </div>
-                              <div>
+                              <div class="min-w-0">
                                 <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Business Hours</p>
-                                <p class="font-medium text-sm whitespace-pre-wrap">{{ profile().openingHours }}</p>
+                                <p class="font-medium text-sm break-words">{{ profile().openingHours }}</p>
                               </div>
                             </div>
                           }
@@ -748,6 +766,10 @@ import { EditableTextDirective } from './editable-text.directive';
                           </div>
                         }
 
+                        <div style="position:absolute;left:-9999px" aria-hidden="true">
+                          <input type="text" name="website" tabindex="-1" autocomplete="off" #honeypot>
+                        </div>
+
                         <button type="submit" [disabled]="form.invalid" [style.backgroundColor]="customization().branding.primaryColor" [style.borderRadius]="buttonRadius" class="w-full text-white px-6 py-4 text-sm font-bold shadow-md disabled:opacity-50 hover:opacity-90 transition-opacity mt-2">
                           Send Message
                         </button>
@@ -777,6 +799,11 @@ import { EditableTextDirective } from './editable-text.directive';
       }
       
       <footer class="mt-auto py-10 bg-white border-t border-gray-200 text-center text-gray-400 text-[10px] font-bold uppercase tracking-widest">
+         <div class="flex items-center justify-center gap-3 mb-2">
+           <a routerLink="/privacy" class="hover:text-gray-600 transition-colors normal-case text-[11px] tracking-normal font-medium">Privacy</a>
+           <span class="text-gray-300">·</span>
+           <a routerLink="/terms" class="hover:text-gray-600 transition-colors normal-case text-[11px] tracking-normal font-medium">Terms</a>
+         </div>
          <p>&copy; 2026 {{ profile().name }}. Powered by BusinessFlow Studio.</p>
       </footer>
     </div>
@@ -787,6 +814,9 @@ export class PublicPageComponent {
   private fb = inject(FormBuilder);
   private title = inject(Title);
   private meta = inject(Meta);
+  private analyticsService = (() => {
+    try { return inject(AnalyticsService); } catch { return null; }
+  })();
 
   previewCustomization = input<CustomizationSettings | null>(null);
   editable = input(false);
@@ -797,6 +827,7 @@ export class PublicPageComponent {
   services = this.dataService.services;
   faqs = this.dataService.faqs;
   testimonials = this.dataService.testimonials;
+  paymentSettings = computed(() => this.dataService.getPaymentSettings());
   
   customization = computed(() => {
     return this.previewCustomization() || this.dataService.customization();
@@ -810,22 +841,50 @@ export class PublicPageComponent {
     return this.customization().sections.find(s => s.id === id);
   }
 
+  getPaymentLink(serviceName: string): string | null {
+    const ps = this.paymentSettings();
+    if (!ps.enabled) return null;
+    const link = ps.paymentLinks.find(l => l.active && l.name.toLowerCase() === serviceName.toLowerCase());
+    return link?.stripePaymentLink || null;
+  }
+
   get wrapperStyles() {
     const brand = this.customization().branding;
-    let fontFamily = 'sans-serif';
-    if (brand.fontStyle === 'modern') fontFamily = '"Inter", sans-serif';
-    if (brand.fontStyle === 'friendly') fontFamily = '"Nunito", "Quicksand", sans-serif';
-    if (brand.fontStyle === 'professional') fontFamily = '"Times New Roman", serif';
+    const fontMap: Record<string, string> = {
+      modern: '"Inter", sans-serif',
+      friendly: '"Nunito", sans-serif',
+      professional: '"Merriweather", serif',
+      elegant: '"Playfair Display", serif',
+      clean: '"Poppins", sans-serif',
+      minimal: '"DM Sans", sans-serif',
+      bold: '"Montserrat", sans-serif',
+      classic: '"Lora", serif',
+      techy: '"Space Grotesk", sans-serif',
+    };
+    const fontFamily = fontMap[brand.fontStyle] || '"Inter", sans-serif';
 
     let bgColor = brand.backgroundColor || '#F5F5F7';
-    if (brand.themeMode === 'dark') bgColor = '#111827'; // Dark gray
+    if (brand.themeMode === 'dark') bgColor = '#111827';
 
-    return {
+    const styles: Record<string, string> = {
       'background-color': bgColor,
       'font-family': fontFamily,
       '--primary-color': brand.primaryColor,
       '--secondary-color': brand.secondaryColor,
     };
+
+    if (brand.gradientEnabled && brand.gradientStartColor && brand.gradientEndColor) {
+      styles['background'] = `linear-gradient(${brand.gradientDirection || 'to right'}, ${brand.gradientStartColor}, ${brand.gradientEndColor})`;
+    }
+
+    if (brand.backgroundImageUrl) {
+      styles['background-image'] = `url(${brand.backgroundImageUrl})`;
+      styles['background-size'] = 'cover';
+      styles['background-position'] = 'center';
+      styles['background-attachment'] = 'fixed';
+    }
+
+    return styles;
   }
 
   get buttonRadius() {
@@ -848,13 +907,37 @@ export class PublicPageComponent {
     }
   }
 
+  scrollTo(sectionId: string, event?: Event) {
+    event?.preventDefault();
+    if (this.editable()) return;
+    const el = document.getElementById(sectionId);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }
+
   submitSuccess = false;
 
   form = this.fb.group({});
 
+  private authService = (() => {
+    try { return inject(AuthService); } catch { return null; }
+  })();
+
   constructor() {
     this.setupDynamicForm();
     this.setupSeo();
+    this.trackView();
+  }
+
+  private trackView() {
+    effect(() => {
+      if (this.previewCustomization()) return;
+      const user = this.authService?.currentUser();
+      if (user && this.analyticsService) {
+        this.analyticsService.trackPageView(user.uid);
+      }
+    });
   }
 
   /**
@@ -874,24 +957,26 @@ export class PublicPageComponent {
       const p = this.profile();
       if (!p.name) return;
 
-      const title = p.tagline ? `${p.name} — ${p.tagline}` : p.name;
-      const description = (p.description || p.tagline || `${p.name} in ${p.serviceArea || 'your area'}.`)
+      const brand = this.customization().branding;
+      const title = brand.seoTitle || (p.tagline ? `${p.name} — ${p.tagline}` : p.name);
+      const description = (brand.seoDescription || p.description || p.tagline || `${p.name} in ${p.serviceArea || 'your area'}.`)
         .replace(/\s+/g, ' ')
         .trim()
         .slice(0, 160);
+      const ogImage = brand.ogImageUrl || brand.logoUrl || '';
 
       this.title.setTitle(title);
       this.meta.updateTag({ name: 'description', content: description });
       this.meta.updateTag({ property: 'og:title', content: title });
       this.meta.updateTag({ property: 'og:description', content: description });
       this.meta.updateTag({ property: 'og:type', content: 'website' });
-      if (this.customization().branding.logoUrl) {
-        this.meta.updateTag({ property: 'og:image', content: this.customization().branding.logoUrl });
+      if (ogImage) {
+        this.meta.updateTag({ property: 'og:image', content: ogImage });
       }
       this.meta.updateTag({ name: 'twitter:card', content: 'summary_large_image' });
       this.meta.updateTag({ name: 'twitter:title', content: title });
       this.meta.updateTag({ name: 'twitter:description', content: description });
-      this.meta.updateTag({ name: 'theme-color', content: this.customization().branding.primaryColor || '#2563eb' });
+      this.meta.updateTag({ name: 'theme-color', content: brand.primaryColor || '#2563eb' });
     });
   }
 
@@ -931,6 +1016,12 @@ export class PublicPageComponent {
   onSubmit() {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
+      return;
+    }
+    const honeypot = document.querySelector<HTMLInputElement>('input[name="website"]');
+    if (honeypot && honeypot.value) {
+      this.submitSuccess = true;
+      this.form.reset();
       return;
     }
     const val = this.form.value as Record<string, string>;

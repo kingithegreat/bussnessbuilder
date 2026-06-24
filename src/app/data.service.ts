@@ -1,6 +1,6 @@
 import { Injectable, computed, signal, effect, PLATFORM_ID, inject } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
-import { AppState, BusinessProfile, Enquiry, FAQ, Service, Activity, Testimonial } from './types';
+import { AppState, BusinessProfile, Enquiry, FAQ, Service, Activity, Testimonial, ContentPage, NotificationPreferences, PaymentSettings } from './types';
 import { FirestoreService } from './firestore.service';
 
 const defaultState: AppState = {
@@ -41,7 +41,11 @@ const defaultState: AppState = {
       fontStyle: 'modern',
       themeMode: 'light',
       headerStyle: 'centered',
-      ctaText: 'Get a Quote'
+      ctaText: 'Get a Quote',
+      gradientEnabled: false,
+      gradientStartColor: '#2563eb',
+      gradientEndColor: '#7c3aed',
+      gradientDirection: 'to right'
     },
     sections: [
       { id: 'hero', visible: true, order: 1, heading: 'Hero', subheading: '', layoutVariant: 'centered' },
@@ -84,6 +88,9 @@ export class DataService {
 
   private geminiKey = signal<string>('');
   readonly geminiApiKey = this.geminiKey.asReadonly();
+  private pages = signal<ContentPage[]>([]);
+  private notifPrefs = signal<NotificationPreferences>({ emailOnNewEnquiry: false, notificationEmail: '' });
+  private paymentSettings = signal<PaymentSettings>({ enabled: false, paymentLinks: [] });
 
   readonly profile = computed(() => this.state().profile);
   readonly services = computed(() => this.state().services);
@@ -109,6 +116,8 @@ export class DataService {
 
   async init(uid: string) {
     this.uid.set(uid);
+
+    this.loadPaymentSettings(uid);
 
     const firestoreData = await this.firestoreService.loadBusinessData(uid);
     if (firestoreData) {
@@ -294,5 +303,53 @@ export class DataService {
 
   setTestimonials(testimonials: Testimonial[]) {
     this.state.update(s => ({ ...s, testimonials }));
+  }
+
+  getPages(): ContentPage[] {
+    return this.pages();
+  }
+
+  setPages(p: ContentPage[]) {
+    this.pages.set(p);
+    if (isPlatformBrowser(this.platformId) && this.uid()) {
+      this.firestoreService.savePages(this.uid()!, p);
+    }
+  }
+
+  async loadPages(uid: string) {
+    const p = await this.firestoreService.loadPages(uid);
+    if (p) this.pages.set(p);
+  }
+
+  getNotificationPrefs(): NotificationPreferences {
+    return this.notifPrefs();
+  }
+
+  setNotificationPrefs(prefs: NotificationPreferences) {
+    this.notifPrefs.set(prefs);
+    if (isPlatformBrowser(this.platformId) && this.uid()) {
+      this.firestoreService.saveNotificationPrefs(this.uid()!, prefs);
+    }
+  }
+
+  async loadNotificationPrefs(uid: string) {
+    const prefs = await this.firestoreService.loadNotificationPrefs(uid);
+    if (prefs) this.notifPrefs.set(prefs);
+  }
+
+  getPaymentSettings(): PaymentSettings {
+    return this.paymentSettings();
+  }
+
+  setPaymentSettings(settings: PaymentSettings) {
+    this.paymentSettings.set(settings);
+    if (isPlatformBrowser(this.platformId) && this.uid()) {
+      this.firestoreService.savePaymentSettings(this.uid()!, settings);
+    }
+  }
+
+  async loadPaymentSettings(uid: string) {
+    const settings = await this.firestoreService.loadPaymentSettings(uid);
+    if (settings) this.paymentSettings.set(settings);
   }
 }

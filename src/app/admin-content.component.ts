@@ -100,6 +100,22 @@ type Tab = 'services' | 'testimonials' | 'faqs';
 
       <!-- TESTIMONIALS -->
       @if (tab === 'testimonials') {
+        <div class="bg-blue-50 border border-blue-100 rounded-xl p-4 mb-4">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-sm font-bold text-blue-900 flex items-center gap-2"><mat-icon class="text-[18px]">rate_review</mat-icon> Import Reviews</span>
+            <button (click)="showImportReviews = !showImportReviews" class="text-xs text-blue-600 font-bold hover:underline">
+              {{ showImportReviews ? 'Close' : 'Paste reviews' }}
+            </button>
+          </div>
+          @if (showImportReviews) {
+            <div class="space-y-3 mt-3">
+              <p class="text-xs text-blue-700">Paste reviews from Google, Facebook, or any source. One per block — use the format below:</p>
+              <textarea [(ngModel)]="importReviewsText" rows="5" placeholder="5 stars - John D.&#10;Great service! Very professional and on time.&#10;&#10;4 stars - Sarah M. (Homeowner)&#10;Really happy with the work. Would recommend."
+                class="w-full px-3 py-2 bg-white border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm font-mono"></textarea>
+              <button (click)="parseAndImportReviews()" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-blue-700 transition-colors">Import</button>
+            </div>
+          }
+        </div>
         @if (testimonials.length === 0) { <ng-container *ngTemplateOutlet="empty"></ng-container> }
         @for (item of testimonials; track item.id; let i = $index) {
           <div class="bg-white rounded-xl border border-gray-200 mb-3 overflow-hidden shadow-sm">
@@ -279,6 +295,45 @@ export class AdminContentComponent implements OnInit {
     const list = this.currentList();
     if (index >= list.length - 1) return;
     [list[index + 1], list[index]] = [list[index], list[index + 1]];
+  }
+
+  showImportReviews = false;
+  importReviewsText = '';
+
+  parseAndImportReviews() {
+    if (!this.importReviewsText.trim()) return;
+    const blocks = this.importReviewsText.split(/\n\s*\n/).filter(b => b.trim());
+    let imported = 0;
+
+    for (const block of blocks) {
+      const lines = block.trim().split('\n');
+      if (lines.length < 2) continue;
+      const header = lines[0];
+      const text = lines.slice(1).join(' ').trim();
+
+      const starMatch = header.match(/(\d)\s*star/i);
+      const rating = starMatch ? parseInt(starMatch[1], 10) : 5;
+      const nameMatch = header.match(/[-–—]\s*(.+?)(?:\s*\((.+?)\))?\s*$/);
+      const author = nameMatch ? nameMatch[1].trim() : 'Anonymous';
+      const role = nameMatch?.[2]?.trim() || '';
+
+      this.testimonials.push({
+        id: 't_' + Date.now() + '_' + imported,
+        author,
+        role,
+        rating: Math.min(5, Math.max(1, rating)),
+        text,
+      });
+      imported++;
+    }
+
+    if (imported > 0) {
+      this.importReviewsText = '';
+      this.showImportReviews = false;
+      alert(`Imported ${imported} review${imported > 1 ? 's' : ''}. Click Save to keep them.`);
+    } else {
+      alert('Could not parse any reviews. Use the format: "5 stars - Author Name\\nReview text"');
+    }
   }
 
   save() {

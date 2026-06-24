@@ -105,16 +105,27 @@ import { ImagePickerComponent } from './image-picker.component';
 
       <!-- Preview Area -->
       <div class="flex-grow flex flex-col h-full bg-[#E5E5EA]">
-        <div class="h-14 border-b border-gray-200 bg-white flex items-center justify-center gap-2 shrink-0">
-          <button (click)="previewMode = 'desktop'" [class.bg-gray-100]="previewMode === 'desktop'" [class.text-blue-600]="previewMode === 'desktop'" class="p-2 rounded-lg text-gray-500 hover:text-gray-900 transition-colors">
-            <mat-icon class="text-[20px]">desktop_mac</mat-icon>
-          </button>
-          <button (click)="previewMode = 'tablet'" [class.bg-gray-100]="previewMode === 'tablet'" [class.text-blue-600]="previewMode === 'tablet'" class="p-2 rounded-lg text-gray-500 hover:text-gray-900 transition-colors">
-            <mat-icon class="text-[20px]">tablet_mac</mat-icon>
-          </button>
-          <button (click)="previewMode = 'mobile'" [class.bg-gray-100]="previewMode === 'mobile'" [class.text-blue-600]="previewMode === 'mobile'" class="p-2 rounded-lg text-gray-500 hover:text-gray-900 transition-colors">
-            <mat-icon class="text-[20px]">smartphone</mat-icon>
-          </button>
+        <div class="h-14 border-b border-gray-200 bg-white flex items-center justify-between px-4 shrink-0">
+          <div class="flex items-center gap-1">
+            <button (click)="undo()" [disabled]="!canUndo()" class="p-2 rounded-lg text-gray-500 hover:text-gray-900 disabled:opacity-30 transition-colors" title="Undo">
+              <mat-icon class="text-[20px]">undo</mat-icon>
+            </button>
+            <button (click)="redo()" [disabled]="!canRedo()" class="p-2 rounded-lg text-gray-500 hover:text-gray-900 disabled:opacity-30 transition-colors" title="Redo">
+              <mat-icon class="text-[20px]">redo</mat-icon>
+            </button>
+          </div>
+          <div class="flex items-center gap-2">
+            <button (click)="previewMode = 'desktop'" [class.bg-gray-100]="previewMode === 'desktop'" [class.text-blue-600]="previewMode === 'desktop'" class="p-2 rounded-lg text-gray-500 hover:text-gray-900 transition-colors">
+              <mat-icon class="text-[20px]">desktop_mac</mat-icon>
+            </button>
+            <button (click)="previewMode = 'tablet'" [class.bg-gray-100]="previewMode === 'tablet'" [class.text-blue-600]="previewMode === 'tablet'" class="p-2 rounded-lg text-gray-500 hover:text-gray-900 transition-colors">
+              <mat-icon class="text-[20px]">tablet_mac</mat-icon>
+            </button>
+            <button (click)="previewMode = 'mobile'" [class.bg-gray-100]="previewMode === 'mobile'" [class.text-blue-600]="previewMode === 'mobile'" class="p-2 rounded-lg text-gray-500 hover:text-gray-900 transition-colors">
+              <mat-icon class="text-[20px]">smartphone</mat-icon>
+            </button>
+          </div>
+          <div></div>
         </div>
         
         <div class="flex-grow overflow-auto p-4 md:p-8 flex items-start justify-center">
@@ -133,15 +144,44 @@ import { ImagePickerComponent } from './image-picker.component';
 })
 export class AdminBuilderComponent implements OnInit {
   dataService = inject(DataService);
-  
+
   localCust!: CustomizationSettings;
   expandedSection: string | null = null;
   previewMode: 'desktop' | 'tablet' | 'mobile' = 'desktop';
 
+  private history: string[] = [];
+  private historyIndex = -1;
+  private maxHistory = 50;
+
   ngOnInit() {
     this.localCust = JSON.parse(JSON.stringify(this.dataService.customization()));
-    // Sort sections just in case
     this.localCust.sections.sort((a, b) => a.order - b.order);
+    this.pushHistory();
+  }
+
+  private pushHistory() {
+    const snapshot = JSON.stringify(this.localCust);
+    if (this.historyIndex < this.history.length - 1) {
+      this.history = this.history.slice(0, this.historyIndex + 1);
+    }
+    this.history.push(snapshot);
+    if (this.history.length > this.maxHistory) this.history.shift();
+    this.historyIndex = this.history.length - 1;
+  }
+
+  canUndo() { return this.historyIndex > 0; }
+  canRedo() { return this.historyIndex < this.history.length - 1; }
+
+  undo() {
+    if (!this.canUndo()) return;
+    this.historyIndex--;
+    this.localCust = JSON.parse(this.history[this.historyIndex]);
+  }
+
+  redo() {
+    if (!this.canRedo()) return;
+    this.historyIndex++;
+    this.localCust = JSON.parse(this.history[this.historyIndex]);
   }
 
   getSectionName(id: string): string {
@@ -240,6 +280,7 @@ export class AdminBuilderComponent implements OnInit {
 
   onPreviewChange() {
     this.localCust = { ...this.localCust, sections: [...this.localCust.sections] };
+    this.pushHistory();
   }
 
   onTextEdited(event: {target: string, field: string, value: string, id?: string}) {

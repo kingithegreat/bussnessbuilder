@@ -75,6 +75,45 @@ import { ImagePickerComponent } from './image-picker.component';
                     <option value="dark">Dark Mode</option>
                   </select>
                 </div>
+
+                <div class="pt-4 border-t border-gray-100">
+                  <div class="flex items-center justify-between mb-3">
+                    <span class="text-sm font-bold text-gray-700">Gradient Background</span>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                      <input type="checkbox" [(ngModel)]="localCust.branding.gradientEnabled" class="sr-only peer">
+                      <div class="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600"></div>
+                    </label>
+                  </div>
+
+                  @if (localCust.branding.gradientEnabled) {
+                    <div class="space-y-3">
+                      <div>
+                        <span class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Start Colour</span>
+                        <div class="flex gap-3">
+                          <input type="color" [(ngModel)]="localCust.branding.gradientStartColor" class="h-10 w-10 rounded cursor-pointer border-0 p-0">
+                          <input type="text" [(ngModel)]="localCust.branding.gradientStartColor" class="flex-1 px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm uppercase">
+                        </div>
+                      </div>
+                      <div>
+                        <span class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">End Colour</span>
+                        <div class="flex gap-3">
+                          <input type="color" [(ngModel)]="localCust.branding.gradientEndColor" class="h-10 w-10 rounded cursor-pointer border-0 p-0">
+                          <input type="text" [(ngModel)]="localCust.branding.gradientEndColor" class="flex-1 px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm uppercase">
+                        </div>
+                      </div>
+                      <div>
+                        <span class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Direction</span>
+                        <select [(ngModel)]="localCust.branding.gradientDirection" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+                          <option value="to right">Left to Right</option>
+                          <option value="to bottom">Top to Bottom</option>
+                          <option value="to bottom right">Diagonal (↘)</option>
+                          <option value="to bottom left">Diagonal (↙)</option>
+                        </select>
+                      </div>
+                      <div class="h-10 rounded-xl border border-gray-200 overflow-hidden" [style.background]="'linear-gradient(' + (localCust.branding.gradientDirection || 'to right') + ', ' + (localCust.branding.gradientStartColor || '#2563eb') + ', ' + (localCust.branding.gradientEndColor || '#7c3aed') + ')'"></div>
+                    </div>
+                  }
+                </div>
               </div>
 
               <div class="space-y-6">
@@ -84,8 +123,14 @@ import { ImagePickerComponent } from './image-picker.component';
                   <span class="block text-sm font-bold text-gray-700 mb-2">Font Style</span>
                   <select [(ngModel)]="localCust.branding.fontStyle" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm">
                     <option value="modern">Modern (Inter)</option>
-                    <option value="friendly">Friendly (Quicksand)</option>
+                    <option value="friendly">Friendly (Nunito)</option>
                     <option value="professional">Professional (Merriweather)</option>
+                    <option value="elegant">Elegant (Playfair Display)</option>
+                    <option value="clean">Clean (Poppins)</option>
+                    <option value="minimal">Minimal (DM Sans)</option>
+                    <option value="bold">Bold (Montserrat)</option>
+                    <option value="classic">Classic (Lora)</option>
+                    <option value="techy">Techy (Space Grotesk)</option>
                   </select>
                 </div>
 
@@ -159,6 +204,22 @@ import { ImagePickerComponent } from './image-picker.component';
                    <input type="text" [(ngModel)]="localCust.branding.ctaText" placeholder="Get a Quote" class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm">
                  </div>
               </div>
+
+              <div class="pt-6 border-t border-gray-100">
+                <h3 class="font-bold text-gray-900 border-b border-gray-100 pb-2 mb-4">Background Image</h3>
+                <app-image-picker
+                  label="Background Image"
+                  section="general"
+                  [currentUrl]="localCust.branding.backgroundImageUrl || ''"
+                  (imageSelected)="localCust.branding.backgroundImageUrl = $event"
+                ></app-image-picker>
+                @if (localCust.branding.backgroundImageUrl) {
+                  <button (click)="localCust.branding.backgroundImageUrl = ''" class="mt-2 text-xs text-red-500 hover:text-red-700 font-bold flex items-center gap-1">
+                    <mat-icon class="text-[14px]">delete</mat-icon> Remove Background Image
+                  </button>
+                }
+                <p class="text-xs text-gray-400 mt-2">Adds a full-page background image behind all content. Works alongside your colour/gradient settings as a fallback.</p>
+              </div>
             </div>
           </div>
         }
@@ -198,6 +259,37 @@ import { ImagePickerComponent } from './image-picker.component';
                   </div>
                 </div>
               }
+            </div>
+          </div>
+        }
+
+        <!-- SEO Tab -->
+        @if (currentTab === 'seo') {
+          <div class="p-6 space-y-6">
+            <div>
+              <p class="text-sm text-gray-500 mb-6">Control how your site appears in search engines and when shared on social media.</p>
+            </div>
+            <div>
+              <span class="block text-sm font-bold text-gray-700 mb-2">SEO Title</span>
+              <input type="text" [(ngModel)]="localCust.branding.seoTitle" placeholder="Your Business — Tagline" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+              <p class="text-xs text-gray-400 mt-1">Appears in browser tabs and search results. Leave blank to auto-generate from your business name.</p>
+            </div>
+            <div>
+              <span class="block text-sm font-bold text-gray-700 mb-2">Meta Description</span>
+              <textarea [(ngModel)]="localCust.branding.seoDescription" rows="3" placeholder="A brief description of your business for search engines..." class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm"></textarea>
+              <p class="text-xs text-gray-400 mt-1">{{ (localCust.branding.seoDescription || '').length }}/160 characters recommended.</p>
+            </div>
+            <div>
+              <span class="block text-sm font-bold text-gray-700 mb-2">Social Share Image (Open Graph)</span>
+              <input type="text" [(ngModel)]="localCust.branding.ogImageUrl" placeholder="https://..." class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+              <p class="text-xs text-gray-400 mt-1">Image shown when your page is shared on social media. Recommended: 1200x630px.</p>
+            </div>
+
+            <div class="bg-gray-50 rounded-xl border border-gray-200 p-4">
+              <p class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Search Preview</p>
+              <div class="text-blue-700 text-lg font-medium truncate">{{ localCust.branding.seoTitle || (profile().name + ' — ' + profile().tagline) || 'Your Business' }}</div>
+              <div class="text-green-700 text-xs truncate mb-1">businessflow-722923667291.us-central1.run.app/public</div>
+              <div class="text-gray-600 text-sm line-clamp-2">{{ localCust.branding.seoDescription || profile().description || 'No description set.' }}</div>
             </div>
           </div>
         }
@@ -323,12 +415,14 @@ export class AdminCustomisationComponent implements OnInit {
   tabs = [
     { id: 'branding', label: 'Branding', icon: 'palette' },
     { id: 'sections', label: 'Page Sections', icon: 'view_agenda' },
+    { id: 'seo', label: 'SEO', icon: 'search' },
     { id: 'form', label: 'Contact Form', icon: 'list_alt' },
     { id: 'rules', label: 'Business Rules', icon: 'rule' }
   ];
   currentTab = 'branding';
 
   localCust!: CustomizationSettings;
+  profile = this.dataService.profile;
 
   ngOnInit() {
     // Create a deep copy of the customization settings

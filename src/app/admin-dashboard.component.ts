@@ -1,5 +1,7 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import { DataService } from './data.service';
+import { AnalyticsService } from './analytics.service';
+import { AuthService } from './auth.service';
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 
@@ -15,7 +17,7 @@ import { MatIconModule } from '@angular/material/icon';
       </div>
 
       <!-- Stats Row -->
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
         <!-- Card 1 -->
         <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 flex flex-col justify-between">
           <div class="flex items-center gap-3 mb-4">
@@ -45,6 +47,20 @@ import { MatIconModule } from '@angular/material/icon';
         </div>
         
         <!-- Card 3 -->
+        <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 flex flex-col justify-between">
+          <div class="flex items-center gap-3 mb-4">
+            <div class="w-8 h-8 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center">
+              <mat-icon class="text-sm">visibility</mat-icon>
+            </div>
+            <span class="text-xs font-bold text-gray-400 uppercase tracking-wider">Page Views</span>
+          </div>
+          <div class="flex items-end justify-between">
+            <span class="text-3xl font-bold text-gray-900">{{ analyticsService.data().totalViews }}</span>
+            <span class="text-purple-500 text-xs font-bold bg-purple-50 px-2 py-1 rounded">{{ analyticsService.viewsLast7Days() }} this week</span>
+          </div>
+        </div>
+
+        <!-- Card 4 -->
         <div class="bg-blue-600 rounded-2xl p-5 shadow-lg shadow-blue-100 flex flex-col justify-between">
           <div class="flex items-center gap-3 mb-4">
             <div class="w-8 h-8 rounded-lg bg-white/20 text-white flex items-center justify-center">
@@ -58,6 +74,25 @@ import { MatIconModule } from '@angular/material/icon';
               <div class="w-2 h-2 bg-white rounded-full animate-pulse"></div>
             </div>
           </div>
+        </div>
+      </div>
+
+      <!-- Views Chart -->
+      <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="font-bold text-sm text-gray-900 flex items-center gap-2"><mat-icon class="text-[18px] text-gray-400">analytics</mat-icon> Page Views (14 days)</h3>
+          <span class="text-xs text-gray-500 font-bold">{{ analyticsService.viewsLast30Days() }} views this month</span>
+        </div>
+        <div class="flex items-end gap-1 h-24">
+          @for (day of analyticsService.dailyViewsChart(); track day.date) {
+            <div class="flex-1 flex flex-col items-center gap-1">
+              <div class="w-full bg-blue-100 rounded-t-sm min-h-[2px] transition-all" [style.height.px]="maxChartView() > 0 ? (day.views / maxChartView()) * 80 + 2 : 2" [title]="day.date + ': ' + day.views + ' views'"></div>
+            </div>
+          }
+        </div>
+        <div class="flex justify-between mt-1 text-[9px] text-gray-400">
+          <span>14 days ago</span>
+          <span>Today</span>
         </div>
       </div>
 
@@ -167,10 +202,24 @@ import { MatIconModule } from '@angular/material/icon';
     </div>
   `
 })
-export class AdminDashboardComponent {
+export class AdminDashboardComponent implements OnInit {
   private dataService = inject(DataService);
+  analyticsService = inject(AnalyticsService);
+  private authService = inject(AuthService);
   enquiries = this.dataService.enquiries;
   activities = this.dataService.activities;
+
+  ngOnInit() {
+    const user = this.authService.currentUser();
+    if (user) {
+      this.analyticsService.loadAnalytics(user.uid);
+    }
+  }
+
+  maxChartView() {
+    const chart = this.analyticsService.dailyViewsChart();
+    return Math.max(...chart.map(d => d.views), 1);
+  }
   
   newEnquiries() {
     return this.enquiries().filter(e => e.status === 'New').length;

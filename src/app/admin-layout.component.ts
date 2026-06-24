@@ -2,6 +2,7 @@ import { Component, inject, signal } from '@angular/core';
 import { RouterOutlet, RouterLink, RouterLinkActive, Router } from '@angular/router';
 import { DataService } from './data.service';
 import { AuthService } from './auth.service';
+import { SubscriptionService } from './subscription.service';
 import { MatIconModule } from '@angular/material/icon';
 
 @Component({
@@ -28,6 +29,12 @@ import { MatIconModule } from '@angular/material/icon';
             <div class="w-4 h-4 border-2 border-white rounded-sm"></div>
           </div>
           <span class="font-bold tracking-tight text-lg">{{ profile().name || 'BusinessFlow' }}</span>
+          @if (subService.tier() !== 'free') {
+            <span class="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider"
+                  [class]="subService.tier() === 'pro' ? 'bg-blue-100 text-blue-600' : 'bg-purple-100 text-purple-600'">
+              {{ subService.tierLabel() }}
+            </span>
+          }
         </div>
         <nav class="flex flex-col gap-1 flex-1" (click)="sidebarOpen.set(false)">
           <a routerLink="/admin/dashboard" routerLinkActive="bg-blue-50 text-blue-600 font-medium" class="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-500 hover:bg-gray-50 font-medium transition-colors">
@@ -54,6 +61,17 @@ import { MatIconModule } from '@angular/material/icon';
           <a routerLink="/admin/form-builder" routerLinkActive="bg-blue-50 text-blue-600 font-medium" class="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-500 hover:bg-gray-50 font-medium transition-colors">
             <mat-icon class="w-5 h-5">dynamic_form</mat-icon> Form Builder
           </a>
+          <a routerLink="/admin/pages" routerLinkActive="bg-blue-50 text-blue-600 font-medium" class="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-500 hover:bg-gray-50 font-medium transition-colors">
+            <mat-icon class="w-5 h-5">article</mat-icon> Pages
+          </a>
+          <a routerLink="/admin/payments" routerLinkActive="bg-blue-50 text-blue-600 font-medium" class="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-500 hover:bg-gray-50 font-medium transition-colors">
+            <mat-icon class="w-5 h-5">payments</mat-icon> Payments
+          </a>
+          <div class="mt-4 pt-4 border-t border-gray-100">
+            <a routerLink="/admin/settings" routerLinkActive="bg-blue-50 text-blue-600 font-medium" class="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-500 hover:bg-gray-50 font-medium transition-colors">
+              <mat-icon class="w-5 h-5">tune</mat-icon> Settings
+            </a>
+          </div>
         </nav>
         <div class="mt-auto pt-4 border-t border-gray-100">
           <div class="p-4 bg-gray-50 rounded-xl border border-gray-100 text-center">
@@ -98,6 +116,7 @@ import { MatIconModule } from '@angular/material/icon';
 export class AdminLayoutComponent {
   private dataService = inject(DataService);
   authService = inject(AuthService);
+  subService = inject(SubscriptionService);
   private router = inject(Router);
   sidebarOpen = signal(false);
   
