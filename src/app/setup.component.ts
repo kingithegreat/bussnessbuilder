@@ -44,7 +44,7 @@ import { BUSINESS_PRESETS, getPreset } from './presets';
             <div class="space-y-6">
               
               <div>
-                <label class="block text-sm font-bold text-gray-900 mb-1">Business Name *</label>
+                <span class="block text-sm font-bold text-gray-900 mb-1">Business Name *</span>
                 <p class="text-[13px] text-gray-500 mb-2">What's the official name of your business?</p>
                 <input type="text" formControlName="name" class="w-full px-4 py-3 bg-[#F5F5F7] border border-transparent rounded-2xl focus:ring-2 focus:ring-blue-500 focus:bg-white focus:border-blue-500 outline-none transition-all" [class.border-red-300]="form.get('name')?.invalid && form.get('name')?.touched" placeholder="e.g. Apex Cleaners">
                 @if (form.get('name')?.invalid && form.get('name')?.touched) {
@@ -53,7 +53,7 @@ import { BUSINESS_PRESETS, getPreset } from './presets';
               </div>
               
               <div>
-                <label class="block text-sm font-bold text-gray-900 mb-1">Business Type *</label>
+                <span class="block text-sm font-bold text-gray-900 mb-1">Business Type *</span>
                 <p class="text-[13px] text-gray-500 mb-2">This helps us generate the right services and FAQs for you.</p>
                 <select formControlName="type" class="w-full px-4 py-3 bg-[#F5F5F7] border border-transparent rounded-2xl focus:ring-2 focus:ring-blue-500 focus:bg-white focus:border-blue-500 outline-none transition-all text-gray-900" [class.border-red-300]="form.get('type')?.invalid && form.get('type')?.touched">
                   <option value="" disabled>Select a type...</option>
@@ -68,13 +68,13 @@ import { BUSINESS_PRESETS, getPreset } from './presets';
               </div>
 
               <div>
-                <label class="block text-sm font-bold text-gray-900 mb-1">Tagline</label>
+                <span class="block text-sm font-bold text-gray-900 mb-1">Tagline</span>
                 <p class="text-[13px] text-gray-500 mb-2">A short, catchy phrase summarizing what you do.</p>
                 <input type="text" formControlName="tagline" class="w-full px-4 py-3 bg-[#F5F5F7] border border-transparent rounded-2xl focus:ring-2 focus:ring-blue-500 focus:bg-white focus:border-blue-500 outline-none transition-all" placeholder="e.g. Professional cleaning you can trust.">
               </div>
               
               <div>
-                <label class="block text-sm font-bold text-gray-900 mb-1">Email Address *</label>
+                <span class="block text-sm font-bold text-gray-900 mb-1">Email Address *</span>
                 <p class="text-[13px] text-gray-500 mb-2">Where should we send new customer enquiries?</p>
                 <input type="email" formControlName="email" class="w-full px-4 py-3 bg-[#F5F5F7] border border-transparent rounded-2xl focus:ring-2 focus:ring-blue-500 focus:bg-white focus:border-blue-500 outline-none transition-all" [class.border-red-300]="form.get('email')?.invalid && form.get('email')?.touched" placeholder="hello@example.com">
                 @if (form.get('email')?.invalid && form.get('email')?.touched) {
@@ -83,13 +83,13 @@ import { BUSINESS_PRESETS, getPreset } from './presets';
               </div>
               
               <div>
-                <label class="block text-sm font-bold text-gray-900 mb-1">Phone Number</label>
+                <span class="block text-sm font-bold text-gray-900 mb-1">Phone Number</span>
                 <p class="text-[13px] text-gray-500 mb-2">Optional. Customers can use this to call you directly.</p>
                 <input type="tel" formControlName="phone" class="w-full px-4 py-3 bg-[#F5F5F7] border border-transparent rounded-2xl focus:ring-2 focus:ring-blue-500 focus:bg-white focus:border-blue-500 outline-none transition-all" placeholder="(555) 123-4567">
               </div>
 
               <div>
-                <label class="block text-sm font-bold text-gray-900 mb-1">Service Area / Location</label>
+                <span class="block text-sm font-bold text-gray-900 mb-1">Service Area / Location</span>
                 <p class="text-[13px] text-gray-500 mb-2">The city or neighborhood where you operate.</p>
                 <input type="text" formControlName="serviceArea" class="w-full px-4 py-3 bg-[#F5F5F7] border border-transparent rounded-2xl focus:ring-2 focus:ring-blue-500 focus:bg-white focus:border-blue-500 outline-none transition-all" placeholder="e.g. Greater Seattle Area">
               </div>

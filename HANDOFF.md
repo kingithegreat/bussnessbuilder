@@ -11,9 +11,12 @@ Running log to hand off work between sessions. Keep the **Current state**,
 businesses spin up a public-facing site + lightweight admin/CRM. Uses Google
 Gemini (`@google/genai`) for AI features, Angular Material, and Tailwind v4.
 
-- **Stack:** Angular 21 (standalone components, SSR via `@angular/ssr`/Express),
-  Tailwind v4, Angular Material, Vitest, ESLint.
-- **AI:** `@google/genai` — requires `GEMINI_API_KEY` (see `.env.example`).
+- **Stack:** Angular 21 (standalone components, **static client-side SPA** —
+  SSR removed), Tailwind v4, Angular Material, Vitest, ESLint.
+- **AI:** `@google/genai` (lazy-loaded), real Gemini calls with template
+  fallback. Key entered at runtime in Admin → AI Tools (stored in browser) or
+  injected as a build/host-time `GEMINI_API_KEY` global. See `.env.example`.
+- **State:** local-first via `localStorage` (no backend).
 
 ### Key scripts
 - `npm install` — install deps
@@ -35,16 +38,24 @@ Gemini (`@google/genai`) for AI features, Angular Material, and Tailwind v4.
   `Testimonial`, `FAQ`, …), presets in `presets.ts`
 
 ## Current state
-- Branch: `claude/awesome-bell-t855cy` (clean, in sync with origin).
-- Two commits on history: initial commit + Angular project scaffold.
-- No open PRs or issues.
-- No active task in progress yet.
+- Branch: `claude/awesome-bell-t855cy`.
+- Refined for deployment: build/lint/tests all green; bundle under budget.
+- AI wired to real Gemini (lazy-loaded) with graceful template fallback.
+- Converted from SSR to a **static SPA**; SSR files/deps removed.
+- Deploy configs added: GitHub Pages workflow, Netlify, Vercel.
 
 ## Next steps
-- [ ] (fill in as work is assigned)
-
-## Open questions
-- (none yet)
+- [ ] Enable GitHub Pages once: **Settings → Pages → Source: GitHub Actions**.
+      Then each push auto-builds and publishes to a live URL.
+- [ ] (optional) Wire `@google/genai` streaming for faster perceived AI output.
 
 ## Notes / decisions
-- (none yet)
+- 2026-06-24: "Refine all features + get ready for deployment."
+  - Deployment target chosen: **static SPA host** (Netlify/Vercel/GitHub Pages).
+  - AI: **real Gemini**, browser-side, key resolved from runtime setting first,
+    then a build/host-time `GEMINI_API_KEY` global; falls back to deterministic
+    templates on missing key or error.
+  - Removed SSR (`server.ts`, `main.server.ts`, server configs) and the
+    `@angular/ssr`, `@angular/platform-server`, `express` deps.
+  - Fixed 18 a11y lint errors (caption `<label>`s → `<span>`).
+  - Bumped bundle warning budget to 600kB; `p-retry` allowed as CommonJS dep.

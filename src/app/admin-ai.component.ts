@@ -15,6 +15,45 @@ import { MatIconModule } from '@angular/material/icon';
         <p class="text-gray-500 text-sm">Generate high-converting content for your business profile in seconds.</p>
       </div>
 
+      <!-- Gemini API Key -->
+      <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mb-6">
+        <div class="px-6 py-5 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+          <h3 class="font-bold text-gray-900 flex items-center gap-3">
+            <div class="w-6 h-6 bg-purple-100 text-purple-600 rounded-md flex items-center justify-center">
+              <mat-icon class="text-[14px]">key</mat-icon>
+            </div>
+            Gemini API Key
+          </h3>
+          @if (isLive()) {
+            <span class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-green-100 text-green-700 flex items-center gap-1">
+              <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span> Live AI
+            </span>
+          } @else {
+            <span class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-gray-100 text-gray-500 flex items-center gap-1">
+              <span class="w-1.5 h-1.5 rounded-full bg-gray-400"></span> Templates
+            </span>
+          }
+        </div>
+        <div class="p-6">
+          <p class="text-[13px] text-gray-500 mb-3">
+            Add your Google Gemini API key to generate real AI content. Without a key, the tools use built-in templates. The key is stored only in this browser and is never exported with your profile.
+            <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener" class="text-blue-600 font-medium hover:underline">Get a key</a>.
+          </p>
+          <div class="flex flex-col sm:flex-row gap-3">
+            <input type="password" [(ngModel)]="apiKeyInput" placeholder="Paste your Gemini API key..." autocomplete="off" class="flex-1 px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm text-gray-700">
+            <div class="flex gap-2">
+              <button (click)="saveApiKey()" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl text-sm font-bold transition-colors shadow-sm">Save Key</button>
+              @if (isLive()) {
+                <button (click)="clearApiKey()" class="bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 px-4 py-2.5 rounded-xl text-sm font-bold transition-colors">Remove</button>
+              }
+            </div>
+          </div>
+          @if (keySaved) {
+            <p class="text-green-600 text-xs font-medium mt-2">API key saved.</p>
+          }
+        </div>
+      </div>
+
       <!-- Business Description -->
       <div class="bg-gray-900 rounded-2xl shadow-sm overflow-hidden flex flex-col mb-6">
         <div class="px-6 py-5 border-b border-gray-800 flex justify-between items-center">
@@ -116,6 +155,22 @@ export class AdminAiToolsComponent {
   socialDraft = '';
   
   copySuccess: 'google' | 'social' | null = null;
+
+  apiKeyInput = this.dataService.geminiApiKey();
+  keySaved = false;
+
+  isLive = () => this.aiService.isLive();
+
+  saveApiKey() {
+    this.dataService.setGeminiApiKey(this.apiKeyInput);
+    this.keySaved = true;
+    setTimeout(() => this.keySaved = false, 2500);
+  }
+
+  clearApiKey() {
+    this.apiKeyInput = '';
+    this.dataService.setGeminiApiKey('');
+  }
 
   async generateDesc() {
     this.isGeneratingDesc = true;

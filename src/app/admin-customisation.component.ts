@@ -52,7 +52,7 @@ import { CustomizationSettings } from './types';
                 <h3 class="font-bold text-gray-900 border-b border-gray-100 pb-2">Colours & Mode</h3>
                 
                 <div>
-                  <label class="block text-sm font-bold text-gray-700 mb-2">Primary Brand Colour</label>
+                  <span class="block text-sm font-bold text-gray-700 mb-2">Primary Brand Colour</span>
                   <div class="flex gap-3">
                     <input type="color" [(ngModel)]="localCust.branding.primaryColor" class="h-10 w-10 rounded cursor-pointer border-0 p-0">
                     <input type="text" [(ngModel)]="localCust.branding.primaryColor" class="flex-1 px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm uppercase">
@@ -60,7 +60,7 @@ import { CustomizationSettings } from './types';
                 </div>
 
                 <div>
-                  <label class="block text-sm font-bold text-gray-700 mb-2">Background Colour</label>
+                  <span class="block text-sm font-bold text-gray-700 mb-2">Background Colour</span>
                   <div class="flex gap-3">
                     <input type="color" [(ngModel)]="localCust.branding.backgroundColor" class="h-10 w-10 rounded cursor-pointer border-0 p-0">
                     <input type="text" [(ngModel)]="localCust.branding.backgroundColor" class="flex-1 px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm uppercase">
@@ -68,7 +68,7 @@ import { CustomizationSettings } from './types';
                 </div>
 
                 <div>
-                  <label class="block text-sm font-bold text-gray-700 mb-2">Theme Mode</label>
+                  <span class="block text-sm font-bold text-gray-700 mb-2">Theme Mode</span>
                   <select [(ngModel)]="localCust.branding.themeMode" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm">
                     <option value="light">Light Mode</option>
                     <option value="dark">Dark Mode</option>
@@ -80,7 +80,7 @@ import { CustomizationSettings } from './types';
                 <h3 class="font-bold text-gray-900 border-b border-gray-100 pb-2">Style & Typography</h3>
                 
                 <div>
-                  <label class="block text-sm font-bold text-gray-700 mb-2">Font Style</label>
+                  <span class="block text-sm font-bold text-gray-700 mb-2">Font Style</span>
                   <select [(ngModel)]="localCust.branding.fontStyle" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm">
                     <option value="modern">Modern (Inter)</option>
                     <option value="friendly">Friendly (Quicksand)</option>
@@ -89,7 +89,7 @@ import { CustomizationSettings } from './types';
                 </div>
 
                 <div>
-                  <label class="block text-sm font-bold text-gray-700 mb-2">Button Shape</label>
+                  <span class="block text-sm font-bold text-gray-700 mb-2">Button Shape</span>
                   <div class="grid grid-cols-3 gap-2">
                     <button (click)="localCust.branding.buttonStyle = 'rounded'" [class.border-blue-500]="localCust.branding.buttonStyle === 'rounded'" [class.bg-blue-50]="localCust.branding.buttonStyle === 'rounded'" class="py-2 border rounded-xl text-sm font-bold text-gray-700 transition-colors">Rounded</button>
                     <button (click)="localCust.branding.buttonStyle = 'pill'" [class.border-blue-500]="localCust.branding.buttonStyle === 'pill'" [class.bg-blue-50]="localCust.branding.buttonStyle === 'pill'" class="py-2 border rounded-xl text-sm font-bold text-gray-700 transition-colors">Pill</button>
@@ -98,7 +98,7 @@ import { CustomizationSettings } from './types';
                 </div>
 
                 <div>
-                  <label class="block text-sm font-bold text-gray-700 mb-2">Card Style</label>
+                  <span class="block text-sm font-bold text-gray-700 mb-2">Card Style</span>
                   <select [(ngModel)]="localCust.branding.cardStyle" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm">
                     <option value="soft">Soft Shadows</option>
                     <option value="flat">Flat Design</option>
@@ -114,7 +114,7 @@ import { CustomizationSettings } from './types';
               <h3 class="font-bold text-gray-900 border-b border-gray-100 pb-2">Hero / Header Settings</h3>
               
               <div>
-                <label class="block text-sm font-bold text-gray-700 mb-2">Header Layout</label>
+                <span class="block text-sm font-bold text-gray-700 mb-2">Header Layout</span>
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <button (click)="localCust.branding.headerStyle = 'centered'" [class.border-blue-500]="localCust.branding.headerStyle === 'centered'" [class.bg-blue-50]="localCust.branding.headerStyle === 'centered'" class="p-4 border rounded-xl flex flex-col items-center gap-2 transition-colors text-gray-700">
                     <div class="w-16 h-12 bg-gray-200 rounded flex flex-col items-center justify-center gap-1 p-1">
@@ -145,11 +145,11 @@ import { CustomizationSettings } from './types';
               
               <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                  <div>
-                   <label class="block text-sm font-bold text-gray-700 mb-2">Logo URL (Optional)</label>
+                   <span class="block text-sm font-bold text-gray-700 mb-2">Logo URL (Optional)</span>
                    <input type="text" [(ngModel)]="localCust.branding.logoUrl" placeholder="https://..." class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm">
                  </div>
                  <div>
-                   <label class="block text-sm font-bold text-gray-700 mb-2">Main CTA Text</label>
+                   <span class="block text-sm font-bold text-gray-700 mb-2">Main CTA Text</span>
                    <input type="text" [(ngModel)]="localCust.branding.ctaText" placeholder="Get a Quote" class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm">
                  </div>
               </div>
@@ -215,11 +215,11 @@ import { CustomizationSettings } from './types';
                   
                   <div class="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Label</label>
+                      <span class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Label</span>
                       <input type="text" [(ngModel)]="field.label" class="w-full px-3 py-2 border border-gray-200 rounded-lg outline-none text-sm">
                     </div>
                     <div>
-                      <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Type</label>
+                      <span class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Type</span>
                       <select [(ngModel)]="field.type" class="w-full px-3 py-2 border border-gray-200 rounded-lg outline-none text-sm">
                         <option value="text">Short Text</option>
                         <option value="textarea">Long Text</option>
@@ -233,7 +233,7 @@ import { CustomizationSettings } from './types';
 
                   @if (field.type === 'dropdown') {
                     <div class="flex-1">
-                      <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Options (comma separated)</label>
+                      <span class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Options (comma separated)</span>
                       <input type="text" [(ngModel)]="field.options" placeholder="Option 1, Option 2" class="w-full px-3 py-2 border border-gray-200 rounded-lg outline-none text-sm">
                     </div>
                   }

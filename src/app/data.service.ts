@@ -75,8 +75,13 @@ const defaultState: AppState = {
 @Injectable({ providedIn: 'root' })
 export class DataService {
   private platformId = inject(PLATFORM_ID);
-  
+
   private state = signal<AppState>(this.loadState());
+
+  // Gemini API key is stored separately from app state so it is never included
+  // in profile exports/imports.
+  private geminiKey = signal<string>(this.loadKey());
+  readonly geminiApiKey = this.geminiKey.asReadonly();
 
   readonly profile = computed(() => this.state().profile);
   readonly services = computed(() => this.state().services);
@@ -93,6 +98,25 @@ export class DataService {
         localStorage.setItem('businessflow_state', JSON.stringify(this.state()));
       }
     });
+  }
+
+  private loadKey(): string {
+    if (isPlatformBrowser(this.platformId)) {
+      return localStorage.getItem('businessflow_gemini_key') || '';
+    }
+    return '';
+  }
+
+  setGeminiApiKey(key: string) {
+    const trimmed = key.trim();
+    this.geminiKey.set(trimmed);
+    if (isPlatformBrowser(this.platformId)) {
+      if (trimmed) {
+        localStorage.setItem('businessflow_gemini_key', trimmed);
+      } else {
+        localStorage.removeItem('businessflow_gemini_key');
+      }
+    }
   }
 
   private loadState(): AppState {

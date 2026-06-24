@@ -1,0 +1,60 @@
+name: Deploy to GitHub Pages
+
+# Builds the static SPA and publishes it to GitHub Pages so changes can be
+# monitored on a live URL. Runs on pushes to main and the active feature
+# branch, and can be triggered manually from the Actions tab.
+#
+# One-time setup: Repo Settings → Pages → Build and deployment → Source:
+# "GitHub Actions".
+
+on:
+  push:
+    branches:
+      - main
+      - 'claude/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Allow one concurrent deployment; newer pushes cancel in-progress runs.
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Build (with project base-href)
+        run: npm run build -- --base-href "/${{ github.event.repository.name }}/"
+
+      - name: Add SPA fallback and disable Jekyll
+        run: |
+          cp dist/app/browser/index.html dist/app/browser/404.html
+          touch dist/app/browser/.nojekyll
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist/app/browser
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
