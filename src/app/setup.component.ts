@@ -1,4 +1,4 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, OnInit, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { DataService } from './data.service';
@@ -99,17 +99,17 @@ import { BUSINESS_PRESETS, getPreset } from './presets';
               <div class="text-[13px] text-gray-500 flex items-center gap-1">
                  <mat-icon class="text-[16px]">auto_awesome</mat-icon> AI will generate the rest
               </div>
-              <button type="button" (click)="onSubmit()" [disabled]="isSubmitting" class="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white px-8 py-3.5 rounded-full font-medium transition-colors disabled:opacity-50 flex items-center justify-center gap-2 shadow-sm">
-                @if (isSubmitting) {
+              <button type="button" (click)="onSubmit()" [disabled]="isSubmitting()" class="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white px-8 py-3.5 rounded-full font-medium transition-colors disabled:opacity-50 flex items-center justify-center gap-2 shadow-sm cursor-pointer">
+                @if (isSubmitting()) {
                   <span class="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full"></span>
-                  Generating...
+                  Generating your site...
                 } @else {
                   <span>Complete Setup</span>
                   <mat-icon class="text-sm">arrow_forward</mat-icon>
                 }
               </button>
-              @if (formError) {
-                <p class="text-red-500 text-sm font-medium w-full text-center mt-2">{{ formError }}</p>
+              @if (formError()) {
+                <p class="text-red-500 text-sm font-medium w-full text-center mt-2">{{ formError() }}</p>
               }
             </div>
           </form>
@@ -176,8 +176,8 @@ export class SetupWizardComponent implements OnInit {
   private aiService = inject(AiService);
   private router = inject(Router);
 
-  isSubmitting = false;
-  formError = '';
+  isSubmitting = signal(false);
+  formError = signal('');
   presets = BUSINESS_PRESETS;
 
   form = this.fb.group({
@@ -230,17 +230,23 @@ export class SetupWizardComponent implements OnInit {
   }
 
   async onSubmit() {
-    this.formError = '';
+    console.log('[Setup] Button clicked. Form valid:', this.form.valid, 'Form value:', this.form.value);
+    this.formError.set('');
+
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       const missing: string[] = [];
       if (this.form.get('name')?.invalid) missing.push('Business Name');
       if (this.form.get('type')?.invalid) missing.push('Business Type');
       if (this.form.get('email')?.invalid) missing.push('a valid Email');
-      this.formError = `Please fill in: ${missing.join(', ')}`;
+      const msg = `Please fill in: ${missing.join(', ')}`;
+      console.log('[Setup] Form invalid:', msg);
+      this.formError.set(msg);
       return;
     }
-    this.isSubmitting = true;
+
+    this.isSubmitting.set(true);
+    console.log('[Setup] Starting site generation...');
 
     try {
       const val = this.form.value;
@@ -264,6 +270,7 @@ export class SetupWizardComponent implements OnInit {
         enquiryFields: preset?.suggestedEnquiryFields || []
       };
 
+      console.log('[Setup] Generating description...');
       try {
         const generatedDesc = await this.aiService.generateBusinessDescription(profile);
         profile.description = generatedDesc;
@@ -271,6 +278,7 @@ export class SetupWizardComponent implements OnInit {
         profile.description = `Welcome to ${profile.name}! ${profile.tagline}. Our goal is to make your life easier through professional, reliable, and high-quality solutions.`;
       }
 
+      console.log('[Setup] Saving profile and data...');
       this.dataService.updateProfile(profile);
 
       if (preset) {
@@ -282,13 +290,17 @@ export class SetupWizardComponent implements OnInit {
         this.dataService.setFaqs([]);
       }
 
+      console.log('[Setup] Completing setup...');
       this.dataService.completeSetup();
-      this.router.navigate(['/admin/dashboard']);
+      console.log('[Setup] isSetupComplete:', this.dataService.isSetupComplete());
+      console.log('[Setup] Navigating to dashboard...');
+      await this.router.navigate(['/admin/dashboard']);
+      console.log('[Setup] Navigation complete.');
     } catch (e) {
-      console.error('Setup failed:', e);
-      alert('Something went wrong during setup. Please try again.');
+      console.error('[Setup] Failed:', e);
+      this.formError.set('Something went wrong. Please try again.');
     } finally {
-      this.isSubmitting = false;
+      this.isSubmitting.set(false);
     }
   }
 }
