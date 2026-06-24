@@ -1,0 +1,69 @@
+name: Deploy to Cloud Run
+
+# Builds the SSR container from the Dockerfile (via Cloud Build) and deploys it
+# to Google Cloud Run. Runs on pushes to main, and can be triggered manually
+# from the Actions tab to deploy any branch.
+#
+# ── One-time setup ──────────────────────────────────────────────────────────
+# Uses keyless auth (Workload Identity Federation) — no JSON service-account
+# keys. Configure these once and the job activates automatically:
+#
+# Repository VARIABLES (Settings → Secrets and variables → Actions → Variables):
+#   GCP_PROJECT_ID      e.g. my-project-123456   (required — gates this workflow)
+#   GCP_REGION          e.g. us-central1         (optional, default below)
+#   CLOUD_RUN_SERVICE   e.g. businessflow        (optional, default below)
+#
+# Repository SECRETS (Settings → Secrets and variables → Actions → Secrets):
+#   WIF_PROVIDER         projects/NUM/locations/global/workloadIdentityPools/POOL/providers/PROVIDER
+#   WIF_SERVICE_ACCOUNT  deployer@PROJECT.iam.gserviceaccount.com
+#
+# The service account needs: roles/run.admin, roles/cloudbuild.builds.editor,
+# roles/artifactregistry.writer, roles/storage.admin, and roles/iam.serviceAccountUser
+# on the Cloud Run runtime service account. Enable the Cloud Run, Cloud Build,
+# and Artifact Registry APIs. Setup guide:
+# https://github.com/google-github-actions/auth#setting-up-workload-identity-federation
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+# One deploy at a time; a newer run supersedes an in-progress one.
+concurrency:
+  group: cloud-run-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    # Skip (don't fail) until GCP_PROJECT_ID is set, so the repo stays green
+    # before deployment is configured.
+    if: vars.GCP_PROJECT_ID != ''
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write # required for Workload Identity Federation
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          project_id: ${{ vars.GCP_PROJECT_ID }}
+          workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
+          service_account: ${{ secrets.WIF_SERVICE_ACCOUNT }}
+
+      - id: deploy
+        uses: google-github-actions/deploy-cloudrun@v2
+        with:
+          service: ${{ vars.CLOUD_RUN_SERVICE || 'businessflow' }}
+          region: ${{ vars.GCP_REGION || 'us-central1' }}
+          source: .
+          # Cloud Run terminates TLS and proxies traffic, so the SSR host check
+          # is delegated to that layer. Lock this to your exact domain(s) to
+          # also enforce it in-app.
+          env_vars: |-
+            NG_ALLOWED_HOSTS=*
+
+      - name: Show service URL
+        run: echo "Deployed to ${{ steps.deploy.outputs.url }}"

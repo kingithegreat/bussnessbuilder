@@ -90,6 +90,15 @@ gcloud run deploy businessflow \
   --allow-unauthenticated
 ```
 
+### Continuous deployment
+
+`.github/workflows/deploy.yml` builds and deploys to Cloud Run on every push to
+`main` (and on manual dispatch for any branch). It uses keyless **Workload
+Identity Federation** — no JSON keys. The job stays dormant (skipped, not
+failed) until you set the `GCP_PROJECT_ID` repo variable; see the comments at
+the top of the workflow for the full list of variables/secrets and the IAM
+roles the deployer service account needs.
+
 ### SSR host check
 
 Angular's SSR layer validates the `Host` / `X-Forwarded-Host` header to prevent
