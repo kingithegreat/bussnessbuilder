@@ -231,46 +231,54 @@ export class SetupWizardComponent implements OnInit {
       return;
     }
     this.isSubmitting = true;
-    
-    const val = this.form.value;
-    const preset = getPreset(val.type as BusinessType);
-    
-    const profile = {
-      name: val.name!,
-      type: val.type as BusinessType,
-      tagline: val.tagline || '',
-      email: val.email!,
-      phone: val.phone || '',
-      serviceArea: val.serviceArea || '',
-      description: '', // Will be generated
-      address: '',
-      openingHours: 'Mon-Fri: 9am - 5pm',
-      toneOfVoice: preset?.suggestedTone || 'Professional yet friendly',
-      brandColor: '#2563eb',
-      heroCopy: preset?.suggestedHeroCopy || val.tagline || '',
-      ctaText: preset?.suggestedCtaText || 'Get Started',
-      trustBadges: preset?.trustBadges || [],
-      enquiryFields: preset?.suggestedEnquiryFields || []
-    };
 
-    // Simulate AI content generation
-    const generatedDesc = await this.aiService.generateBusinessDescription(profile);
-    profile.description = generatedDesc;
+    try {
+      const val = this.form.value;
+      const preset = getPreset(val.type as BusinessType);
 
-    this.dataService.updateProfile(profile);
-    
-    if (preset) {
-      this.dataService.setServices(preset.suggestedServices);
-      this.dataService.setFaqs(preset.suggestedFaqs);
-    } else {
-      const presetServices = this.aiService.getPresetServices(profile.type);
-      this.dataService.setServices(presetServices);
-      this.dataService.setFaqs([]);
+      const profile = {
+        name: val.name!,
+        type: val.type as BusinessType,
+        tagline: val.tagline || '',
+        email: val.email!,
+        phone: val.phone || '',
+        serviceArea: val.serviceArea || '',
+        description: '',
+        address: '',
+        openingHours: 'Mon-Fri: 9am - 5pm',
+        toneOfVoice: preset?.suggestedTone || 'Professional yet friendly',
+        brandColor: '#2563eb',
+        heroCopy: preset?.suggestedHeroCopy || val.tagline || '',
+        ctaText: preset?.suggestedCtaText || 'Get Started',
+        trustBadges: preset?.trustBadges || [],
+        enquiryFields: preset?.suggestedEnquiryFields || []
+      };
+
+      try {
+        const generatedDesc = await this.aiService.generateBusinessDescription(profile);
+        profile.description = generatedDesc;
+      } catch {
+        profile.description = `Welcome to ${profile.name}! ${profile.tagline}. Our goal is to make your life easier through professional, reliable, and high-quality solutions.`;
+      }
+
+      this.dataService.updateProfile(profile);
+
+      if (preset) {
+        this.dataService.setServices(preset.suggestedServices);
+        this.dataService.setFaqs(preset.suggestedFaqs);
+      } else {
+        const presetServices = this.aiService.getPresetServices(profile.type);
+        this.dataService.setServices(presetServices);
+        this.dataService.setFaqs([]);
+      }
+
+      this.dataService.completeSetup();
+      this.router.navigate(['/admin/dashboard']);
+    } catch (e) {
+      console.error('Setup failed:', e);
+      alert('Something went wrong during setup. Please try again.');
+    } finally {
+      this.isSubmitting = false;
     }
-    
-    this.dataService.completeSetup();
-    
-    this.isSubmitting = false;
-    this.router.navigate(['/admin/dashboard']);
   }
 }
