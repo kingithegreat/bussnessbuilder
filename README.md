@@ -2,10 +2,13 @@
 
 An all-in-one template for small businesses: answer a few questions in the setup
 wizard and instantly get a customizable public page, an enquiry inbox/CRM, and
-AI-powered content tools. Built with **Angular 21**, **Tailwind CSS v4**, and
-**Angular Material**, with optional **Google Gemini** content generation.
+AI-powered content tools. Built with **Angular 21** (server-side rendering),
+**Tailwind CSS v4**, and **Angular Material**, with optional **Google Gemini**
+content generation.
 
-State is stored locally in the browser (localStorage) — no backend required.
+The app is server-rendered by a small **Express** server and ships as a
+container for **Google Cloud Run**. User data is stored locally in the browser
+(localStorage) — the server only renders and serves the app.
 
 ## Run locally
 
@@ -36,33 +39,65 @@ exports. When no key is set, the tools fall back to templates automatically.
 > A key may also be injected at build/host time as a `GEMINI_API_KEY` global if
 > you prefer to bake it into a private deployment.
 
-## Build
+## Build & run the SSR server
 
 ```bash
-npm run build
+npm run build        # builds the browser bundle + Node SSR server into dist/app
+npm run serve:ssr:app # runs the server (defaults to http://localhost:4000)
 ```
 
-Produces a static client-side build in `dist/app/browser/`.
+The server listens on `$PORT` (default `4000` locally, `8080` in the container)
+and exposes a `GET /healthz` endpoint that returns `{"status":"ok"}`.
 
 ## Scripts
 
 | Script | Description |
 | --- | --- |
 | `npm run dev` | Dev server on port 3000 |
-| `npm run build` | Production static build |
+| `npm run build` | Production SSR build (browser + server) |
+| `npm run serve:ssr:app` | Run the built SSR server |
 | `npm test` | Unit tests (Vitest) |
 | `npm run lint` | ESLint |
 
-## Deployment
+## Deployment (Google Cloud Run)
 
-This is a static single-page app — deploy `dist/app/browser/` to any static
-host. SPA deep-link routing requires serving `index.html` for unknown paths;
-config is included for common hosts:
+The repo includes a multi-stage `Dockerfile` that builds the app and runs the
+Node SSR server. The container listens on `$PORT` (Cloud Run sets this to
+`8080`) and has a `/healthz` probe.
 
-- **GitHub Pages** — `.github/workflows/deploy.yml` builds and publishes on every
-  push. Enable it once via **Settings → Pages → Source: GitHub Actions**.
-- **Netlify** — `netlify.toml` (publish dir + SPA redirect).
-- **Vercel** — `vercel.json` (output dir + rewrites).
-- **Other hosts** — `public/_redirects` provides the SPA fallback for
-  Netlify-style hosts; otherwise configure your host to serve `index.html` for
-  all routes.
+Deploy straight from source — Cloud Build builds the `Dockerfile` for you:
+
+```bash
+gcloud run deploy businessflow \
+  --source . \
+  --region us-central1 \
+  --allow-unauthenticated
+```
+
+Or build and push the image yourself, then deploy:
+
+```bash
+# Build & test locally
+docker build -t businessflow .
+docker run --rm -p 8080:8080 businessflow   # http://localhost:8080
+
+# Push to Artifact Registry and deploy
+docker tag businessflow REGION-docker.pkg.dev/PROJECT/REPO/businessflow
+docker push REGION-docker.pkg.dev/PROJECT/REPO/businessflow
+gcloud run deploy businessflow \
+  --image REGION-docker.pkg.dev/PROJECT/REPO/businessflow \
+  --region us-central1 \
+  --allow-unauthenticated
+```
+
+### SSR host check
+
+Angular's SSR layer validates the `Host` / `X-Forwarded-Host` header to prevent
+SSRF. Cloud Run terminates TLS and proxies requests, so the image defaults
+`NG_ALLOWED_HOSTS=*` (validation delegated to that proxy). To also enforce it
+in-app, set `NG_ALLOWED_HOSTS` to your exact domain(s), comma-separated:
+
+```bash
+gcloud run services update businessflow \
+  --set-env-vars NG_ALLOWED_HOSTS=your-service-abc123-uc.a.run.app,www.example.com
+```

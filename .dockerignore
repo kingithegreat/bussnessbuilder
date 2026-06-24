@@ -1,0 +1,17 @@
+node_modules
+dist
+.angular
+.git
+.github
+.gitignore
+.env
+.env.*
+!.env.example
+npm-debug.log
+*.md
+.vscode
+.idea
+coverage
+out-tsc
+.DS_Store
+Thumbs.db

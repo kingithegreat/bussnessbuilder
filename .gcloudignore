@@ -1,0 +1,18 @@
+# Files not uploaded to Cloud Build when running `gcloud run deploy --source .`.
+# The Dockerfile builds the app from source, so local build output and deps are
+# excluded to keep the upload small.
+.git
+.github
+.gitignore
+node_modules
+dist
+.angular
+out-tsc
+coverage
+.env
+.env.*
+!.env.example
+.vscode
+.idea
+.DS_Store
+Thumbs.db
