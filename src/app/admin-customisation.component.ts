@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { DataService } from './data.service';
+import { ToastService } from './toast.service';
 import { CustomizationSettings } from './types';
 import { ImagePickerComponent } from './image-picker.component';
 
@@ -411,6 +412,7 @@ import { ImagePickerComponent } from './image-picker.component';
 })
 export class AdminCustomisationComponent implements OnInit {
   dataService = inject(DataService);
+  private toast = inject(ToastService);
   
   tabs = [
     { id: 'branding', label: 'Branding', icon: 'palette' },
@@ -439,14 +441,14 @@ export class AdminCustomisationComponent implements OnInit {
 
   saveCustomisation() {
     this.dataService.updateCustomization(this.localCust);
-    alert('Customisation settings saved successfully!');
+    this.toast.success('Customisation settings saved successfully!');
   }
 
   resetToDefaults() {
     if (confirm('This will reset all branding, section layouts, form fields, and business rules to their original defaults. Your business profile, services, enquiries, and other data will not be affected.\n\nAre you sure?')) {
       this.dataService.resetCustomization();
       this.localCust = JSON.parse(JSON.stringify(this.dataService.customization()));
-      alert('Customisation settings have been reset to defaults.');
+      this.toast.info('Customisation settings have been reset to defaults.');
     }
   }
 
@@ -484,12 +486,12 @@ export class AdminCustomisationComponent implements OnInit {
         const parsed = JSON.parse(e.target?.result as string);
         if (parsed.branding && parsed.sections) {
           this.localCust = parsed;
-          alert('Config imported successfully. Click Save to apply.');
+          this.toast.success('Config imported successfully. Click Save to apply.');
         } else {
-          alert('Invalid configuration file.');
+          this.toast.error('Invalid configuration file.');
         }
       } catch {
-        alert('Error parsing JSON file.');
+        this.toast.error('Error parsing JSON file.');
       }
     };
     reader.readAsText(file);

@@ -10,6 +10,7 @@ import { CustomizationSettings, SectionConfig, FormFieldConfig } from './types';
 import { EditableTextDirective } from './editable-text.directive';
 import { AnalyticsService } from './analytics.service';
 import { AuthService } from './auth.service';
+import { ToastService } from './toast.service';
 
 @Component({
   selector: 'app-public-page',
@@ -48,7 +49,7 @@ import { AuthService } from './auth.service';
     }
   `],
   template: `
-    <div [style]="wrapperStyles" class="min-h-screen font-sans text-gray-900 selection:bg-blue-100 flex flex-col transition-colors duration-300" [class.dark-mode]="customization().branding.themeMode === 'dark'" (click)="handlePreviewClick($event)">
+    <div [style]="wrapperStyles" class="min-h-screen font-sans text-gray-900 selection:bg-blue-100 flex flex-col transition-colors duration-300" [class.dark-mode]="customization().branding.themeMode === 'dark'" tabindex="0" (click)="handlePreviewClick($event)" (keydown.enter)="handlePreviewClick($event)">
       <!-- Navbar -->
       <nav class="border-b shadow-sm sticky top-0 z-50 transition-colors" [style.backgroundColor]="customization().branding.backgroundColor" [style.borderColor]="'color-mix(in srgb, ' + customization().branding.primaryColor + ' 10%, transparent)'">
         <div class="max-w-5xl mx-auto px-4 md:px-6 h-16 md:h-20 flex items-center justify-between">
@@ -60,7 +61,7 @@ import { AuthService } from './auth.service';
                  <div class="w-4 h-4 border-2 border-white rounded-sm"></div>
                </div>
              }
-             <div class="font-bold text-lg md:text-xl tracking-tight truncate" [style.color]="customization().branding.themeMode === 'dark' ? 'white' : 'black'" [editableText]="editable()" (textChange)="onTextEdit('profile', 'name', $event)">
+             <div class="font-bold text-lg md:text-xl tracking-tight truncate" [style.color]="customization().branding.themeMode === 'dark' ? 'white' : 'black'" [appEditableText]="editable()" (textChange)="onTextEdit('profile', 'name', $event)">
                {{ profile().name || 'Your Business' }}
              </div>
           </div>
@@ -102,7 +103,7 @@ import { AuthService } from './auth.service';
                       <span class="inline-block py-1.5 px-3 rounded-full bg-blue-50 text-blue-600 text-[10px] font-bold uppercase tracking-widest mb-6 md:mb-8 border border-blue-100">
                         {{ profile().type }} &bull; {{ profile().serviceArea }}
                       </span>
-                      <h1 class="text-3xl sm:text-4xl md:text-6xl font-black tracking-tight text-gray-900 mb-4 md:mb-6 max-w-3xl leading-tight" [editableText]="editable()" (textChange)="onTextEdit('profile', 'tagline', $event)">
+                      <h1 class="text-3xl sm:text-4xl md:text-6xl font-black tracking-tight text-gray-900 mb-4 md:mb-6 max-w-3xl leading-tight" [appEditableText]="editable()" (textChange)="onTextEdit('profile', 'tagline', $event)">
                         {{ profile().tagline || 'Professional services you can trust.' }}
                       </h1>
                       <p class="text-lg md:text-xl text-gray-500 max-w-2xl mb-10 font-medium">
@@ -136,7 +137,7 @@ import { AuthService } from './auth.service';
                         <span class="inline-block py-1.5 px-3 rounded-full bg-blue-50 text-blue-600 text-[10px] font-bold uppercase tracking-widest mb-6 border border-blue-100">
                           {{ profile().type }} &bull; {{ profile().serviceArea }}
                         </span>
-                        <h1 class="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black tracking-tight text-gray-900 mb-4 md:mb-6 leading-tight" [editableText]="editable()" (textChange)="onTextEdit('profile', 'tagline', $event)">
+                        <h1 class="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black tracking-tight text-gray-900 mb-4 md:mb-6 leading-tight" [appEditableText]="editable()" (textChange)="onTextEdit('profile', 'tagline', $event)">
                           {{ profile().tagline || 'Professional services you can trust.' }}
                         </h1>
                         <p class="text-lg text-gray-500 mb-8 font-medium">
@@ -171,7 +172,7 @@ import { AuthService } from './auth.service';
                   <!-- Minimal Hero -->
                   @else if (section.layoutVariant === 'minimal') {
                     <div class="text-center py-10 max-w-3xl mx-auto">
-                      <h1 class="text-3xl sm:text-5xl md:text-7xl font-black tracking-tight text-gray-900 mb-4 md:mb-6 leading-none" [editableText]="editable()" (textChange)="onTextEdit('profile', 'tagline', $event)">
+                      <h1 class="text-3xl sm:text-5xl md:text-7xl font-black tracking-tight text-gray-900 mb-4 md:mb-6 leading-none" [appEditableText]="editable()" (textChange)="onTextEdit('profile', 'tagline', $event)">
                         {{ profile().tagline || 'Professional services you can trust.' }}
                       </h1>
                       <p class="text-xl text-gray-500 mb-10 font-medium">
@@ -191,7 +192,7 @@ import { AuthService } from './auth.service';
                       <span class="inline-block py-1.5 px-3 rounded-full bg-white/10 text-gray-200 text-[10px] font-bold uppercase tracking-widest mb-6 md:mb-8 border border-white/10">
                         Premium &bull; {{ profile().serviceArea }}
                       </span>
-                      <h1 class="text-3xl sm:text-4xl md:text-6xl font-black tracking-tight mb-4 md:mb-6 max-w-3xl leading-tight" [editableText]="editable()" (textChange)="onTextEdit('profile', 'tagline', $event)">
+                      <h1 class="text-3xl sm:text-4xl md:text-6xl font-black tracking-tight mb-4 md:mb-6 max-w-3xl leading-tight" [appEditableText]="editable()" (textChange)="onTextEdit('profile', 'tagline', $event)">
                         {{ profile().tagline || 'Professional services you can trust.' }}
                       </h1>
                       <p class="text-lg md:text-xl text-gray-400 max-w-2xl mb-10 font-medium">
@@ -215,15 +216,15 @@ import { AuthService } from './auth.service';
               <section id="about" class="py-16 md:py-24">
                 <div class="max-w-5xl mx-auto px-6">
                   <div class="mb-8 md:mb-12">
-                    <h2 class="text-2xl md:text-3xl font-black text-gray-900 mb-2" [editableText]="editable()" (textChange)="onTextEdit('section', 'heading', $event, section.id)">{{ section.heading }}</h2>
-                    <p class="text-gray-500 font-medium" [editableText]="editable()" (textChange)="onTextEdit('section', 'subheading', $event, section.id)">{{ section.subheading }}</p>
+                    <h2 class="text-2xl md:text-3xl font-black text-gray-900 mb-2" [appEditableText]="editable()" (textChange)="onTextEdit('section', 'heading', $event, section.id)">{{ section.heading }}</h2>
+                    <p class="text-gray-500 font-medium" [appEditableText]="editable()" (textChange)="onTextEdit('section', 'subheading', $event, section.id)">{{ section.subheading }}</p>
                   </div>
 
                   @if (!section.layoutVariant || section.layoutVariant === 'default') {
                     <div class="grid grid-cols-1 lg:grid-cols-5 gap-8">
                       <div class="lg:col-span-3">
                         <div [style.borderRadius]="cardRadius" class="bg-white p-6 md:p-10 border border-gray-100 shadow-sm h-full">
-                          <p class="text-base md:text-lg text-gray-600 leading-relaxed whitespace-pre-line" [editableText]="editable()" (textChange)="onTextEdit('profile', 'description', $event)">{{ profile().description }}</p>
+                          <p class="text-base md:text-lg text-gray-600 leading-relaxed whitespace-pre-line" [appEditableText]="editable()" (textChange)="onTextEdit('profile', 'description', $event)">{{ profile().description }}</p>
                         </div>
                       </div>
                       <div class="lg:col-span-2 space-y-4">
@@ -281,7 +282,7 @@ import { AuthService } from './auth.service';
                         @if (profile().tagline) {
                           <p [style.color]="customization().branding.primaryColor" class="text-sm font-bold uppercase tracking-widest mb-4">{{ profile().tagline }}</p>
                         }
-                        <p class="text-base md:text-lg lg:text-xl text-gray-600 leading-relaxed" [editableText]="editable()" (textChange)="onTextEdit('profile', 'description', $event)">{{ profile().description }}</p>
+                        <p class="text-base md:text-lg lg:text-xl text-gray-600 leading-relaxed" [appEditableText]="editable()" (textChange)="onTextEdit('profile', 'description', $event)">{{ profile().description }}</p>
                         @if (profile().trustBadges && profile().trustBadges.length) {
                           <div class="mt-8 pt-6 border-t border-gray-100 flex flex-wrap justify-center gap-6">
                             @for (badge of profile().trustBadges; track badge) {
@@ -309,7 +310,7 @@ import { AuthService } from './auth.service';
                         @if (profile().tagline) {
                           <span [style.color]="customization().branding.primaryColor" class="inline-block text-sm font-bold uppercase tracking-widest mb-4">{{ profile().tagline }}</span>
                         }
-                        <p class="text-base md:text-lg text-gray-600 leading-relaxed mb-6" [editableText]="editable()" (textChange)="onTextEdit('profile', 'description', $event)">{{ profile().description }}</p>
+                        <p class="text-base md:text-lg text-gray-600 leading-relaxed mb-6" [appEditableText]="editable()" (textChange)="onTextEdit('profile', 'description', $event)">{{ profile().description }}</p>
                         <div class="space-y-3">
                           @if (profile().serviceArea) {
                             <div class="flex items-center gap-3 text-sm text-gray-600">
@@ -337,8 +338,8 @@ import { AuthService } from './auth.service';
                 <div class="max-w-5xl mx-auto px-6">
                   <div class="mb-8 md:mb-12 flex justify-between items-end">
                     <div>
-                      <h2 class="text-2xl md:text-3xl font-black text-gray-900 mb-2" [editableText]="editable()" (textChange)="onTextEdit('section', 'heading', $event, section.id)">{{ section.heading }}</h2>
-                      <p class="text-gray-500 font-medium" [editableText]="editable()" (textChange)="onTextEdit('section', 'subheading', $event, section.id)">{{ section.subheading }}</p>
+                      <h2 class="text-2xl md:text-3xl font-black text-gray-900 mb-2" [appEditableText]="editable()" (textChange)="onTextEdit('section', 'heading', $event, section.id)">{{ section.heading }}</h2>
+                      <p class="text-gray-500 font-medium" [appEditableText]="editable()" (textChange)="onTextEdit('section', 'subheading', $event, section.id)">{{ section.subheading }}</p>
                     </div>
                   </div>
                   
@@ -349,8 +350,8 @@ import { AuthService } from './auth.service';
                           @if (service.imageUrl) {
                             <img [src]="service.imageUrl" [alt]="service.name" referrerpolicy="no-referrer" class="w-full h-40 object-cover">
                             <div class="p-8 flex flex-col flex-grow">
-                              <h3 class="text-lg font-bold text-gray-900 mb-3" [editableText]="editable()" (textChange)="onTextEdit('service', 'name', $event, service.id)">{{ service.name }}</h3>
-                              <p class="text-gray-500 mb-6 text-sm flex-grow leading-relaxed" [editableText]="editable()" (textChange)="onTextEdit('service', 'description', $event, service.id)">{{ service.description }}</p>
+                              <h3 class="text-lg font-bold text-gray-900 mb-3" [appEditableText]="editable()" (textChange)="onTextEdit('service', 'name', $event, service.id)">{{ service.name }}</h3>
+                              <p class="text-gray-500 mb-6 text-sm flex-grow leading-relaxed" [appEditableText]="editable()" (textChange)="onTextEdit('service', 'description', $event, service.id)">{{ service.description }}</p>
                               <div class="pt-4 border-t border-gray-50 mt-auto">
                                 <p class="font-bold text-gray-900 flex items-center justify-between text-sm">
                                   <span class="text-gray-400 text-[10px] uppercase tracking-wider">Starting at</span>
@@ -368,8 +369,8 @@ import { AuthService } from './auth.service';
                               <div [style.color]="customization().branding.primaryColor" [style.backgroundColor]="'color-mix(in srgb, ' + customization().branding.primaryColor + ' 10%, transparent)'" class="w-12 h-12 rounded-xl flex items-center justify-center mb-6">
                                 <mat-icon>check_circle</mat-icon>
                               </div>
-                              <h3 class="text-lg font-bold text-gray-900 mb-3" [editableText]="editable()" (textChange)="onTextEdit('service', 'name', $event, service.id)">{{ service.name }}</h3>
-                              <p class="text-gray-500 mb-6 text-sm flex-grow leading-relaxed" [editableText]="editable()" (textChange)="onTextEdit('service', 'description', $event, service.id)">{{ service.description }}</p>
+                              <h3 class="text-lg font-bold text-gray-900 mb-3" [appEditableText]="editable()" (textChange)="onTextEdit('service', 'name', $event, service.id)">{{ service.name }}</h3>
+                              <p class="text-gray-500 mb-6 text-sm flex-grow leading-relaxed" [appEditableText]="editable()" (textChange)="onTextEdit('service', 'description', $event, service.id)">{{ service.description }}</p>
                               <div class="pt-4 border-t border-gray-50 mt-auto">
                                 <p class="font-bold text-gray-900 flex items-center justify-between text-sm">
                                   <span class="text-gray-400 text-[10px] uppercase tracking-wider">Starting at</span>
@@ -396,8 +397,8 @@ import { AuthService } from './auth.service';
                             <mat-icon>check_circle</mat-icon>
                           </div>
                           <div class="flex-grow">
-                            <h3 class="text-lg font-bold text-gray-900" [editableText]="editable()" (textChange)="onTextEdit('service', 'name', $event, service.id)">{{ service.name }}</h3>
-                            <p class="text-gray-500 text-sm mt-1" [editableText]="editable()" (textChange)="onTextEdit('service', 'description', $event, service.id)">{{ service.description }}</p>
+                            <h3 class="text-lg font-bold text-gray-900" [appEditableText]="editable()" (textChange)="onTextEdit('service', 'name', $event, service.id)">{{ service.name }}</h3>
+                            <p class="text-gray-500 text-sm mt-1" [appEditableText]="editable()" (textChange)="onTextEdit('service', 'description', $event, service.id)">{{ service.description }}</p>
                           </div>
                           <div class="shrink-0 text-left md:text-right">
                             <span class="text-gray-400 text-[10px] uppercase tracking-wider block">Starting at</span>
@@ -420,8 +421,8 @@ import { AuthService } from './auth.service';
                           <div [style.borderRadius]="cardRadius" class="bg-gray-900 text-white p-10 md:col-span-2 flex flex-col md:flex-row gap-8 items-center shadow-lg">
                             <div class="flex-grow">
                               <span class="inline-block py-1 px-3 rounded-full bg-white/10 text-white text-[10px] font-bold uppercase tracking-widest mb-4">Featured Service</span>
-                              <h3 class="text-2xl md:text-3xl font-black mb-4" [editableText]="editable()" (textChange)="onTextEdit('service', 'name', $event, service.id)">{{ service.name }}</h3>
-                              <p class="text-gray-400 mb-6 leading-relaxed" [editableText]="editable()" (textChange)="onTextEdit('service', 'description', $event, service.id)">{{ service.description }}</p>
+                              <h3 class="text-2xl md:text-3xl font-black mb-4" [appEditableText]="editable()" (textChange)="onTextEdit('service', 'name', $event, service.id)">{{ service.name }}</h3>
+                              <p class="text-gray-400 mb-6 leading-relaxed" [appEditableText]="editable()" (textChange)="onTextEdit('service', 'description', $event, service.id)">{{ service.description }}</p>
                               <p class="font-bold text-xl">{{ service.price }}</p>
                             </div>
                             <div class="w-full md:w-1/3 aspect-video bg-white/5 rounded-xl flex items-center justify-center shrink-0">
@@ -430,8 +431,8 @@ import { AuthService } from './auth.service';
                           </div>
                         } @else {
                           <div [style.borderRadius]="cardRadius" class="bg-white p-8 border border-gray-100 shadow-sm flex flex-col h-full">
-                            <h3 class="text-xl font-bold text-gray-900 mb-3" [editableText]="editable()" (textChange)="onTextEdit('service', 'name', $event, service.id)">{{ service.name }}</h3>
-                            <p class="text-gray-500 mb-6 text-sm flex-grow" [editableText]="editable()" (textChange)="onTextEdit('service', 'description', $event, service.id)">{{ service.description }}</p>
+                            <h3 class="text-xl font-bold text-gray-900 mb-3" [appEditableText]="editable()" (textChange)="onTextEdit('service', 'name', $event, service.id)">{{ service.name }}</h3>
+                            <p class="text-gray-500 mb-6 text-sm flex-grow" [appEditableText]="editable()" (textChange)="onTextEdit('service', 'description', $event, service.id)">{{ service.description }}</p>
                             <p class="font-bold text-gray-900">{{ service.price }}</p>
                           </div>
                         }
@@ -446,7 +447,7 @@ import { AuthService } from './auth.service';
                           <div [style.color]="customization().branding.primaryColor" class="mb-3">
                             <mat-icon>business_center</mat-icon>
                           </div>
-                          <h3 class="text-sm font-bold text-gray-900 mb-2" [editableText]="editable()" (textChange)="onTextEdit('service', 'name', $event, service.id)">{{ service.name }}</h3>
+                          <h3 class="text-sm font-bold text-gray-900 mb-2" [appEditableText]="editable()" (textChange)="onTextEdit('service', 'name', $event, service.id)">{{ service.name }}</h3>
                           <p class="font-bold text-gray-500 text-xs">{{ service.price }}</p>
                         </div>
                       }
@@ -462,8 +463,8 @@ import { AuthService } from './auth.service';
               <section id="testimonials" class="py-12 md:py-24 bg-gray-50 border-y border-gray-200">
                 <div class="max-w-5xl mx-auto px-4 md:px-6">
                   <div class="text-center mb-8 md:mb-12">
-                    <h2 class="text-2xl md:text-3xl font-black text-gray-900 mb-2" [editableText]="editable()" (textChange)="onTextEdit('section', 'heading', $event, section.id)">{{ section.heading }}</h2>
-                    <p class="text-gray-500 font-medium" [editableText]="editable()" (textChange)="onTextEdit('section', 'subheading', $event, section.id)">{{ section.subheading }}</p>
+                    <h2 class="text-2xl md:text-3xl font-black text-gray-900 mb-2" [appEditableText]="editable()" (textChange)="onTextEdit('section', 'heading', $event, section.id)">{{ section.heading }}</h2>
+                    <p class="text-gray-500 font-medium" [appEditableText]="editable()" (textChange)="onTextEdit('section', 'subheading', $event, section.id)">{{ section.subheading }}</p>
                   </div>
                   
                   @if (!section.layoutVariant || section.layoutVariant === 'quote') {
@@ -541,16 +542,16 @@ import { AuthService } from './auth.service';
               <section id="faqs" class="py-12 md:py-24 bg-white border-y border-gray-200">
                 <div class="max-w-5xl mx-auto px-4 md:px-6">
                   <div class="text-center mb-8 md:mb-12">
-                    <h2 class="text-2xl md:text-3xl font-black text-gray-900 mb-2" [editableText]="editable()" (textChange)="onTextEdit('section', 'heading', $event, section.id)">{{ section.heading }}</h2>
-                    <p class="text-gray-500 font-medium" [editableText]="editable()" (textChange)="onTextEdit('section', 'subheading', $event, section.id)">{{ section.subheading }}</p>
+                    <h2 class="text-2xl md:text-3xl font-black text-gray-900 mb-2" [appEditableText]="editable()" (textChange)="onTextEdit('section', 'heading', $event, section.id)">{{ section.heading }}</h2>
+                    <p class="text-gray-500 font-medium" [appEditableText]="editable()" (textChange)="onTextEdit('section', 'subheading', $event, section.id)">{{ section.subheading }}</p>
                   </div>
                   
                   @if (!section.layoutVariant || section.layoutVariant === 'accordion') {
                     <div class="max-w-3xl mx-auto space-y-6">
                       @for (faq of faqs(); track faq.id) {
                         <div [style.borderRadius]="cardRadius" class="bg-gray-50 p-6 border border-gray-100">
-                          <h3 class="text-lg font-bold text-gray-900 mb-2" [editableText]="editable()" (textChange)="onTextEdit('faq', 'question', $event, faq.id)">{{ faq.question }}</h3>
-                          <p class="text-gray-600 text-sm leading-relaxed" [editableText]="editable()" (textChange)="onTextEdit('faq', 'answer', $event, faq.id)">{{ faq.answer }}</p>
+                          <h3 class="text-lg font-bold text-gray-900 mb-2" [appEditableText]="editable()" (textChange)="onTextEdit('faq', 'question', $event, faq.id)">{{ faq.question }}</h3>
+                          <p class="text-gray-600 text-sm leading-relaxed" [appEditableText]="editable()" (textChange)="onTextEdit('faq', 'answer', $event, faq.id)">{{ faq.answer }}</p>
                         </div>
                       }
                     </div>
@@ -560,8 +561,8 @@ import { AuthService } from './auth.service';
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                       @for (faq of faqs(); track faq.id) {
                         <div class="border-t border-gray-200 pt-6">
-                          <h3 class="text-lg font-bold text-gray-900 mb-3" [editableText]="editable()" (textChange)="onTextEdit('faq', 'question', $event, faq.id)">{{ faq.question }}</h3>
-                          <p class="text-gray-600 text-sm leading-relaxed" [editableText]="editable()" (textChange)="onTextEdit('faq', 'answer', $event, faq.id)">{{ faq.answer }}</p>
+                          <h3 class="text-lg font-bold text-gray-900 mb-3" [appEditableText]="editable()" (textChange)="onTextEdit('faq', 'question', $event, faq.id)">{{ faq.question }}</h3>
+                          <p class="text-gray-600 text-sm leading-relaxed" [appEditableText]="editable()" (textChange)="onTextEdit('faq', 'answer', $event, faq.id)">{{ faq.answer }}</p>
                         </div>
                       }
                     </div>
@@ -579,8 +580,8 @@ import { AuthService } from './auth.service';
                     <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch overflow-hidden">
                       <div [style.borderRadius]="cardRadius" class="col-span-1 lg:col-span-5 bg-gray-900 text-white p-6 md:p-10 flex flex-col shadow-xl overflow-hidden">
                         <div class="mb-8 md:mb-12">
-                          <h2 class="text-2xl md:text-3xl font-black mb-4" [editableText]="editable()" (textChange)="onTextEdit('section', 'heading', $event, section.id)">{{ section.heading }}</h2>
-                          <p class="text-gray-400 text-sm leading-relaxed" [editableText]="editable()" (textChange)="onTextEdit('section', 'subheading', $event, section.id)">{{ section.subheading }}</p>
+                          <h2 class="text-2xl md:text-3xl font-black mb-4" [appEditableText]="editable()" (textChange)="onTextEdit('section', 'heading', $event, section.id)">{{ section.heading }}</h2>
+                          <p class="text-gray-400 text-sm leading-relaxed" [appEditableText]="editable()" (textChange)="onTextEdit('section', 'subheading', $event, section.id)">{{ section.subheading }}</p>
                         </div>
                         
                         <div class="space-y-4 mt-auto">
@@ -627,8 +628,8 @@ import { AuthService } from './auth.service';
                   @else if (section.layoutVariant === 'form-only') {
                     <div class="max-w-2xl mx-auto">
                       <div class="text-center mb-8 md:mb-10">
-                        <h2 class="text-2xl md:text-3xl font-black mb-4" [editableText]="editable()" (textChange)="onTextEdit('section', 'heading', $event, section.id)">{{ section.heading }}</h2>
-                        <p class="text-gray-500 text-sm leading-relaxed" [editableText]="editable()" (textChange)="onTextEdit('section', 'subheading', $event, section.id)">{{ section.subheading }}</p>
+                        <h2 class="text-2xl md:text-3xl font-black mb-4" [appEditableText]="editable()" (textChange)="onTextEdit('section', 'heading', $event, section.id)">{{ section.heading }}</h2>
+                        <p class="text-gray-500 text-sm leading-relaxed" [appEditableText]="editable()" (textChange)="onTextEdit('section', 'subheading', $event, section.id)">{{ section.subheading }}</p>
                       </div>
                       <div [style.borderRadius]="cardRadius" class="bg-white text-gray-900 p-10 shadow-sm border border-gray-100">
                         <ng-container *ngTemplateOutlet="contactForm"></ng-container>
@@ -639,8 +640,8 @@ import { AuthService } from './auth.service';
                   @else if (section.layoutVariant === 'form-details') {
                     <div class="max-w-4xl mx-auto">
                       <div class="text-center mb-8 md:mb-12">
-                        <h2 class="text-2xl md:text-3xl font-black mb-4" [editableText]="editable()" (textChange)="onTextEdit('section', 'heading', $event, section.id)">{{ section.heading }}</h2>
-                        <p class="text-gray-500 text-sm leading-relaxed" [editableText]="editable()" (textChange)="onTextEdit('section', 'subheading', $event, section.id)">{{ section.subheading }}</p>
+                        <h2 class="text-2xl md:text-3xl font-black mb-4" [appEditableText]="editable()" (textChange)="onTextEdit('section', 'heading', $event, section.id)">{{ section.heading }}</h2>
+                        <p class="text-gray-500 text-sm leading-relaxed" [appEditableText]="editable()" (textChange)="onTextEdit('section', 'subheading', $event, section.id)">{{ section.subheading }}</p>
                       </div>
                       <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
                         <div [style.borderRadius]="cardRadius" class="bg-white p-6 border border-gray-100 text-center">
@@ -816,6 +817,7 @@ export class PublicPageComponent {
   private http = inject(HttpClient);
   private title = inject(Title);
   private meta = inject(Meta);
+  private toast = inject(ToastService);
   private analyticsService = (() => {
     try { return inject(AnalyticsService); } catch { return null; }
   })();
@@ -1073,7 +1075,7 @@ export class PublicPageComponent {
           this.isSubmittingEnquiry = false;
         },
         error: () => {
-          alert('Could not send your message. Please try again.');
+          this.toast.error('Could not send your message. Please try again.');
           this.isSubmittingEnquiry = false;
         }
       });

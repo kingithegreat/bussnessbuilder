@@ -23,8 +23,8 @@ import { MatIconModule } from '@angular/material/icon';
             </div>
 
             <div>
-              <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Quality</label>
-              <input type="range" [(ngModel)]="quality" min="0.3" max="1" step="0.1" class="w-full accent-blue-600">
+              <label for="cropQuality" class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Quality</label>
+              <input id="cropQuality" type="range" [(ngModel)]="quality" min="0.3" max="1" step="0.1" class="w-full accent-blue-600">
               <div class="flex justify-between text-[10px] text-gray-400 mt-1">
                 <span>Smaller file</span>
                 <span>{{ (quality * 100).toFixed(0) }}%</span>
@@ -33,7 +33,7 @@ import { MatIconModule } from '@angular/material/icon';
             </div>
 
             <div>
-              <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Max Width (px)</label>
+              <div class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Max Width (px)</div>
               <div class="flex gap-2">
                 @for (w of widthPresets; track w) {
                   <button (click)="maxWidth = w; redraw()" [class.border-blue-500]="maxWidth === w" [class.bg-blue-50]="maxWidth === w" class="flex-1 py-1.5 border rounded-lg text-xs font-bold text-gray-700 transition-colors">{{ w }}</button>

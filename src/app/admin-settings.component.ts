@@ -1,11 +1,12 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { RouterLink } from '@angular/router';
 import { DataService } from './data.service';
 import { SubscriptionService } from './subscription.service';
 import { AuthService } from './auth.service';
-import { NotificationPreferences, SiteTemplate } from './types';
+import { ToastService } from './toast.service';
+import { NotificationPreferences } from './types';
 import { DatePipe } from '@angular/common';
 
 @Component({
@@ -220,6 +221,7 @@ export class AdminSettingsComponent implements OnInit {
   dataService = inject(DataService);
   subService = inject(SubscriptionService);
   private authService = inject(AuthService);
+  private toast = inject(ToastService);
 
   newTemplateName = '';
   siteUrl = '';
@@ -248,15 +250,15 @@ export class AdminSettingsComponent implements OnInit {
   async copySiteUrl() {
     try {
       await navigator.clipboard.writeText(this.siteUrl);
-      alert('Site link copied!');
+      this.toast.success('Site link copied!');
     } catch {
-      alert(this.siteUrl);
+      this.toast.info(this.siteUrl);
     }
   }
 
   saveSettings() {
     this.dataService.setNotificationPrefs(this.prefs);
-    alert('Settings saved successfully!');
+    this.toast.success('Settings saved successfully!');
   }
 
   async openPortal() {
@@ -264,7 +266,7 @@ export class AdminSettingsComponent implements OnInit {
     if (!user) return;
     const url = await this.subService.openCustomerPortal(user.uid);
     if (url) window.location.href = url;
-    else alert('Billing portal is not yet configured.');
+    else this.toast.error('Billing portal is not yet configured.');
   }
 
   saveAsTemplate() {
@@ -272,23 +274,23 @@ export class AdminSettingsComponent implements OnInit {
     if (!name) return;
     if (this.dataService.saveCurrentAsTemplate(name)) {
       this.newTemplateName = '';
-      alert(`Template "${name}" saved!`);
+      this.toast.success(`Template "${name}" saved!`);
     } else {
-      alert('Maximum of 3 templates reached.');
+      this.toast.error('Maximum of 3 templates reached.');
     }
   }
 
   deployTemplate(id: string) {
     if (confirm('This will switch your live public page to this template. Continue?')) {
       this.dataService.setActiveTemplate(id);
-      alert('Template deployed! Your public page now shows this version.');
+      this.toast.success('Template deployed! Your public page now shows this version.');
     }
   }
 
   loadTemplate(id: string) {
     if (confirm('This will load this template into the editor. Any unsaved changes to your current site will be lost. Continue?')) {
       this.dataService.loadTemplate(id);
-      alert('Template loaded into editor. Make changes and save when ready.');
+      this.toast.info('Template loaded into editor. Make changes and save when ready.');
     }
   }
 
@@ -296,7 +298,7 @@ export class AdminSettingsComponent implements OnInit {
     const activeId = this.dataService.activeTemplateId();
     if (activeId) {
       this.dataService.updateTemplate(activeId);
-      alert('Template updated with current changes!');
+      this.toast.success('Template updated with current changes!');
     }
   }
 
@@ -308,7 +310,7 @@ export class AdminSettingsComponent implements OnInit {
 
   confirmDelete() {
     if (confirm('Are you sure you want to delete your account? This action cannot be undone. All your data will be permanently removed.')) {
-      alert('Account deletion will be processed within 30 days. You will receive a confirmation email.');
+      this.toast.info('Account deletion will be processed within 30 days. You will receive a confirmation email.');
     }
   }
 }

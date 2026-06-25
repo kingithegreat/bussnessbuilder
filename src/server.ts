@@ -7,8 +7,10 @@ import {
 import express from 'express';
 import {join} from 'node:path';
 import { randomUUID } from 'node:crypto';
+import type Stripe from 'stripe';
+import type { Firestore } from 'firebase-admin/firestore';
 
-let _db: any = null;
+let _db: Firestore | null = null;
 async function getDb() {
   if (_db) return _db;
   const admin = await import('firebase-admin/app');
@@ -18,6 +20,21 @@ async function getDb() {
   }
   _db = firestore.getFirestore();
   return _db;
+}
+
+async function verifyFirebaseUser(req: express.Request, uid: string): Promise<boolean> {
+  const authHeader = req.header('authorization') || '';
+  const [, token] = authHeader.match(/^Bearer (.+)$/) || [];
+  if (!token) return false;
+
+  try {
+    const auth = await import('firebase-admin/auth');
+    const decoded = await auth.getAuth().verifyIdToken(token);
+    return decoded.uid === uid;
+  } catch (e) {
+    console.warn('Firebase auth verification failed:', e);
+    return false;
+  }
 }
 
 const browserDistFolder = join(import.meta.dirname, '../browser');
@@ -74,41 +91,75 @@ app.get('/api/site/:uid', async (req, res) => {
   }
 });
 
+const enquiryAttempts = new Map<string, { count: number; resetAt: number }>();
+const ENQUIRY_WINDOW_MS = 60_000;
+const ENQUIRY_LIMIT = 5;
+
+function isRateLimited(key: string): boolean {
+  const now = Date.now();
+  const current = enquiryAttempts.get(key);
+  if (!current || current.resetAt <= now) {
+    enquiryAttempts.set(key, { count: 1, resetAt: now + ENQUIRY_WINDOW_MS });
+    return false;
+  }
+  current.count += 1;
+  return current.count > ENQUIRY_LIMIT;
+}
+
+function asTrimmedString(value: unknown, maxLength: number): string {
+  return typeof value === 'string' ? value.trim().slice(0, maxLength) : '';
+}
+
+function sanitizeFormData(value: unknown): Record<string, { label: string; value: string; type: string }> {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
+  const entries = Object.entries(value as Record<string, unknown>).slice(0, 30);
+  return Object.fromEntries(entries.map(([key, raw]) => {
+    const item = raw && typeof raw === 'object' ? raw as Record<string, unknown> : {};
+    return [key.slice(0, 80), {
+      label: asTrimmedString(item['label'], 120),
+      value: asTrimmedString(item['value'], 1000),
+      type: asTrimmedString(item['type'], 40),
+    }];
+  }));
+}
+
 /**
  * Public API: submit an enquiry to a user's site (no auth required).
  */
 app.post('/api/site/:uid/enquiry', express.json(), async (req, res) => {
   try {
+    const ip = req.ip || req.socket.remoteAddress || 'unknown';
+    if (isRateLimited(`${req.params.uid}:${ip}`)) {
+      res.status(429).json({ error: 'Too many enquiries. Please try again shortly.' });
+      return;
+    }
+
     const db = await getDb();
     const uid = req.params.uid;
     const mainRef = db.doc(`users/${uid}/businessData/main`);
-    const mainSnap = await mainRef.get();
-    if (!mainSnap.exists) {
-      res.status(404).json({ error: 'Site not found' });
-      return;
-    }
 
     const body = req.body;
-    if (!body.name || !body.email) {
-      res.status(400).json({ error: 'Name and email are required' });
+    const email = asTrimmedString(body.email, 200);
+    const name = asTrimmedString(body.name, 200);
+    if (!name || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      res.status(400).json({ error: 'A valid name and email are required' });
       return;
     }
 
-    const data = mainSnap.data()!;
     const enquiry = {
       id: randomUUID(),
       date: new Date().toISOString(),
       status: 'New',
-      name: String(body.name).slice(0, 200),
-      email: String(body.email).slice(0, 200),
-      phone: String(body.phone || '').slice(0, 50),
-      serviceInterest: String(body.serviceInterest || 'Other').slice(0, 200),
-      preferredDateTime: String(body.preferredDateTime || '').slice(0, 100),
+      name,
+      email,
+      phone: asTrimmedString(body.phone, 50),
+      serviceInterest: asTrimmedString(body.serviceInterest, 200) || 'Other',
+      preferredDateTime: asTrimmedString(body.preferredDateTime, 100),
       urgency: 'Medium',
-      message: String(body.message || '').slice(0, 5000),
+      message: asTrimmedString(body.message, 5000),
       leadScore: 'Warm',
       nextAction: 'Review and reply',
-      formData: body.formData || {},
+      formData: sanitizeFormData(body.formData),
     };
 
     const activity = {
@@ -119,12 +170,23 @@ app.post('/api/site/:uid/enquiry', express.json(), async (req, res) => {
       date: new Date().toISOString(),
     };
 
-    data['enquiries'] = [enquiry, ...(data['enquiries'] || [])];
-    data['activities'] = [activity, ...(data['activities'] || [])];
+    await db.runTransaction(async transaction => {
+      const mainSnap = await transaction.get(mainRef);
+      if (!mainSnap.exists) throw new Error('SITE_NOT_FOUND');
 
-    await mainRef.set(data);
+      const data = mainSnap.data() || {};
+      transaction.set(mainRef, {
+        ...data,
+        enquiries: [enquiry, ...(Array.isArray(data['enquiries']) ? data['enquiries'] : [])],
+        activities: [activity, ...(Array.isArray(data['activities']) ? data['activities'] : [])],
+      });
+    });
     res.json({ success: true });
   } catch (e) {
+    if (e instanceof Error && e.message === 'SITE_NOT_FOUND') {
+      res.status(404).json({ error: 'Site not found' });
+      return;
+    }
     console.error('Error submitting enquiry:', e);
     res.status(500).json({ error: 'Server error' });
   }
@@ -132,25 +194,33 @@ app.post('/api/site/:uid/enquiry', express.json(), async (req, res) => {
 
 // --- Stripe subscription endpoints ---
 
-let _stripe: any = null;
-async function getStripe() {
+let _stripe: Stripe | null = null;
+async function getStripe(): Promise<Stripe> {
   if (_stripe) return _stripe;
   const { default: Stripe } = await import('stripe');
-  _stripe = new Stripe(process.env['STRIPE_SECRET_KEY'] || '', { apiVersion: '2026-06-24.dahlia' as any });
+  const secretKey = process.env['STRIPE_SECRET_KEY'];
+  if (!secretKey) {
+    throw new Error('Missing STRIPE_SECRET_KEY');
+  }
+  _stripe = new Stripe(secretKey);
   return _stripe;
 }
 
 const PRICE_IDS: Record<string, string> = {
-  pro: process.env['STRIPE_PRO_PRICE_ID'] || '',
-  business: process.env['STRIPE_BUSINESS_PRICE_ID'] || '',
+  pro: process.env['STRIPE_PRICE_ID_PRO'] || process.env['STRIPE_PRO_PRICE_ID'] || '',
+  business: process.env['STRIPE_PRICE_ID_BUSINESS'] || process.env['STRIPE_BUSINESS_PRICE_ID'] || '',
 };
 
 app.post('/api/stripe/create-checkout-session', express.json(), async (req, res) => {
   try {
     const stripe = await getStripe();
     const { uid, tier } = req.body;
-    if (!uid || !PRICE_IDS[tier]) {
+    if (typeof uid !== 'string' || typeof tier !== 'string' || !PRICE_IDS[tier]) {
       res.status(400).json({ error: 'Invalid request' });
+      return;
+    }
+    if (!await verifyFirebaseUser(req, uid)) {
+      res.status(401).json({ error: 'Unauthorized' });
       return;
     }
 
@@ -180,6 +250,15 @@ app.post('/api/stripe/customer-portal', express.json(), async (req, res) => {
   try {
     const stripe = await getStripe();
     const { uid } = req.body;
+    if (typeof uid !== 'string') {
+      res.status(400).json({ error: 'Invalid request' });
+      return;
+    }
+    if (!await verifyFirebaseUser(req, uid)) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
     const db = await getDb();
     const subSnap = await db.doc(`subscriptions/${uid}`).get();
     if (!subSnap.exists || !subSnap.data()?.['stripeCustomerId']) {
@@ -201,13 +280,24 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
   try {
     const stripe = await getStripe();
     const db = await getDb();
-    const event = req.body;
-    const parsed = typeof event === 'string' ? JSON.parse(event) : JSON.parse(event.toString());
+    const webhookSecret = process.env['STRIPE_WEBHOOK_SECRET'];
+    if (!webhookSecret) {
+      res.status(500).json({ error: 'Webhook secret is not configured' });
+      return;
+    }
+
+    const signature = req.header('stripe-signature');
+    if (!signature) {
+      res.status(400).json({ error: 'Missing Stripe signature' });
+      return;
+    }
+
+    const parsed = stripe.webhooks.constructEvent(req.body, signature, webhookSecret);
 
     if (parsed.type === 'checkout.session.completed') {
       const session = parsed.data.object;
-      const uid = session.client_reference_id || session.metadata?.uid;
-      const tier = session.metadata?.tier || 'pro';
+      const uid = session.client_reference_id || session.metadata?.['uid'];
+      const tier = session.metadata?.['tier'] || 'pro';
       if (uid) {
         await db.doc(`subscriptions/${uid}`).set({
           tier,
@@ -221,7 +311,7 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
     }
 
     if (parsed.type === 'customer.subscription.updated' || parsed.type === 'customer.subscription.deleted') {
-      const sub = parsed.data.object;
+      const sub = parsed.data.object as Stripe.Subscription & { current_period_end?: number };
       const customerId = sub.customer;
       const subsSnap = await db.collection('subscriptions').where('stripeCustomerId', '==', customerId).get();
       if (!subsSnap.empty) {
@@ -232,7 +322,7 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
           await docRef.update({
             status: sub.status === 'active' ? 'active' : sub.status === 'past_due' ? 'past_due' : sub.status,
             cancelAtPeriodEnd: sub.cancel_at_period_end || false,
-            currentPeriodEnd: new Date(sub.current_period_end * 1000).toISOString(),
+            currentPeriodEnd: sub.current_period_end ? new Date(sub.current_period_end * 1000).toISOString() : null,
           });
         }
       }

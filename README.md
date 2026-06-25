@@ -1,14 +1,23 @@
 # BusinessFlow Studio
 
-An all-in-one template for small businesses: answer a few questions in the setup
-wizard and instantly get a customizable public page, an enquiry inbox/CRM, and
-AI-powered content tools. Built with **Angular 21** (server-side rendering),
-**Tailwind CSS v4**, and **Angular Material**, with optional **Google Gemini**
-content generation.
+An all-in-one SaaS website builder for small businesses. Answer a few questions in
+the setup wizard and instantly get a customizable public page, an enquiry inbox/CRM,
+AI-powered content tools, and subscription billing. Built with **Angular 21** (SSR),
+**Tailwind CSS v4**, **Angular Material**, **Firebase** (Auth, Firestore, Storage),
+and **Stripe** subscriptions.
 
-The app is server-rendered by a small **Express** server and ships as a
-container for **Google Cloud Run**. User data is stored locally in the browser
-(localStorage) — the server only renders and serves the app.
+**Live:** https://businessflow-722923667291.us-central1.run.app
+
+## Architecture
+
+- **Frontend:** Angular 21 standalone components, signal-based state management
+- **Server:** Express SSR server (`src/server.ts`) with API endpoints
+- **Auth:** Firebase Auth (Email/Password + Google sign-in)
+- **Database:** Firestore — per-user data at `/users/{uid}/businessData/main`
+- **Storage:** Firebase Storage for user image uploads
+- **AI:** Google Gemini (`@google/genai`) with template fallback
+- **Payments:** Stripe subscriptions (Free / Pro $14/mo / Business $22/mo)
+- **Deploy:** Google Cloud Run (project: `sitebuilder-b2ee6`)
 
 ## Run locally
 
@@ -18,36 +27,52 @@ container for **Google Cloud Run**. User data is stored locally in the browser
    ```bash
    npm install
    ```
-2. Start the dev server (http://localhost:3000):
+2. Set up Firebase:
+   - Create a Firebase project or use the existing `sitebuilder-b2ee6`
+   - Enable Auth providers: Email/Password + Google
+   - Create Firestore database
+   - Copy your web app config to `src/environments/environment.ts`
+   - For server-side Firestore: set `GOOGLE_APPLICATION_CREDENTIALS` to a service account key
+
+3. Start the dev server (http://localhost:3000):
    ```bash
    npm run dev
    ```
 
+## Environment Variables
+
+See `.env.example` for all variables. Key ones:
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `GOOGLE_APPLICATION_CREDENTIALS` | Local dev | Path to Firebase service account JSON |
+| `STRIPE_SECRET_KEY` | For payments | Stripe secret key |
+| `STRIPE_PRICE_ID_PRO` | For payments | Stripe Price ID for Pro tier |
+| `STRIPE_PRICE_ID_BUSINESS` | For payments | Stripe Price ID for Business tier |
+| `STRIPE_WEBHOOK_SECRET` | For payments | Stripe webhook signing secret |
+| `NG_ALLOWED_HOSTS` | Cloud Run | Angular SSR host check (`*` for Cloud Run) |
+
 ## Enabling AI (Google Gemini)
 
-AI content tools (business description, enquiry reply drafts, Google Business
-posts, social captions) work out of the box using built-in templates. To
-generate real AI content:
+AI content tools work out of the box using built-in templates. For real AI:
 
 1. Get a Gemini API key: https://aistudio.google.com/apikey
-2. In the app, go to **Admin → AI Tools** and paste your key into the
-   **Gemini API Key** panel, then **Save Key**.
+2. In the app: **Admin → AI Tools → Gemini API Key → Save Key**
 
-The key is stored only in your browser and is never included in profile
-exports. When no key is set, the tools fall back to templates automatically.
+The key is stored only in the user's browser.
 
-> A key may also be injected at build/host time as a `GEMINI_API_KEY` global if
-> you prefer to bake it into a private deployment.
-
-## Build & run the SSR server
+## Build & deploy
 
 ```bash
-npm run build        # builds the browser bundle + Node SSR server into dist/app
-npm run serve:ssr:app # runs the server (defaults to http://localhost:4000)
-```
+npm run build              # Production SSR build
+npm run serve:ssr:app      # Run locally (http://localhost:4000)
 
-The server listens on `$PORT` (default `4000` locally, `8080` in the container)
-and exposes a `GET /healthz` endpoint that returns `{"status":"ok"}`.
+# Deploy to Cloud Run
+gcloud run deploy businessflow \
+  --source . \
+  --region us-central1 \
+  --set-env-vars="NG_ALLOWED_HOSTS=*"
+```
 
 ## Scripts
 
@@ -59,54 +84,21 @@ and exposes a `GET /healthz` endpoint that returns `{"status":"ok"}`.
 | `npm test` | Unit tests (Vitest) |
 | `npm run lint` | ESLint |
 
-## Deployment (Google Cloud Run)
+## API Endpoints
 
-The repo includes a multi-stage `Dockerfile` that builds the app and runs the
-Node SSR server. The container listens on `$PORT` (Cloud Run sets this to
-`8080`) and has a `/healthz` probe.
+| Endpoint | Auth | Description |
+|----------|------|-------------|
+| `GET /healthz` | None | Liveness probe |
+| `GET /api/site/:uid` | None | Load published site data |
+| `POST /api/site/:uid/enquiry` | None (rate-limited) | Submit enquiry |
+| `POST /api/stripe/create-checkout-session` | Firebase token | Create Stripe checkout |
+| `POST /api/stripe/customer-portal` | Firebase token | Open billing portal |
+| `POST /api/stripe/webhook` | Stripe signature | Handle Stripe events |
 
-Deploy straight from source — Cloud Build builds the `Dockerfile` for you:
+## Continuous Deployment
 
-```bash
-gcloud run deploy businessflow \
-  --source . \
-  --region us-central1 \
-  --allow-unauthenticated
-```
+`.github/workflows/deploy.yml` builds and deploys on push to `main` using
+Workload Identity Federation. Set these GitHub repo variables/secrets:
 
-Or build and push the image yourself, then deploy:
-
-```bash
-# Build & test locally
-docker build -t businessflow .
-docker run --rm -p 8080:8080 businessflow   # http://localhost:8080
-
-# Push to Artifact Registry and deploy
-docker tag businessflow REGION-docker.pkg.dev/PROJECT/REPO/businessflow
-docker push REGION-docker.pkg.dev/PROJECT/REPO/businessflow
-gcloud run deploy businessflow \
-  --image REGION-docker.pkg.dev/PROJECT/REPO/businessflow \
-  --region us-central1 \
-  --allow-unauthenticated
-```
-
-### Continuous deployment
-
-`.github/workflows/deploy.yml` builds and deploys to Cloud Run on every push to
-`main` (and on manual dispatch for any branch). It uses keyless **Workload
-Identity Federation** — no JSON keys. The job stays dormant (skipped, not
-failed) until you set the `GCP_PROJECT_ID` repo variable; see the comments at
-the top of the workflow for the full list of variables/secrets and the IAM
-roles the deployer service account needs.
-
-### SSR host check
-
-Angular's SSR layer validates the `Host` / `X-Forwarded-Host` header to prevent
-SSRF. Cloud Run terminates TLS and proxies requests, so the image defaults
-`NG_ALLOWED_HOSTS=*` (validation delegated to that proxy). To also enforce it
-in-app, set `NG_ALLOWED_HOSTS` to your exact domain(s), comma-separated:
-
-```bash
-gcloud run services update businessflow \
-  --set-env-vars NG_ALLOWED_HOSTS=your-service-abc123-uc.a.run.app,www.example.com
-```
+- Variables: `GCP_PROJECT_ID`, `GCP_REGION`, `CLOUD_RUN_SERVICE`
+- Secrets: `WIF_PROVIDER`, `WIF_SERVICE_ACCOUNT`

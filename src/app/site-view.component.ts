@@ -5,6 +5,7 @@ import { HttpClient } from '@angular/common/http';
 import { MatIconModule } from '@angular/material/icon';
 import { DataService } from './data.service';
 import { PublicPageComponent } from './public-page.component';
+import { PublicSiteData } from './types';
 
 @Component({
   selector: 'app-site-view',
@@ -50,7 +51,7 @@ export class SiteViewComponent implements OnInit {
     }
 
     if (isPlatformBrowser(this.platformId)) {
-      this.http.get<any>(`/api/site/${uid}`).subscribe({
+      this.http.get<PublicSiteData>(`/api/site/${uid}`).subscribe({
         next: (data) => {
           this.dataService.loadPublicSite(uid, data);
           this.loading.set(false);

@@ -3,7 +3,8 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { DataService } from './data.service';
-import { CustomizationSettings } from './types';
+import { ToastService } from './toast.service';
+import { CustomizationSettings, SectionConfig } from './types';
 import { PublicPageComponent } from './public-page.component';
 import { ImagePickerComponent } from './image-picker.component';
 
@@ -144,6 +145,7 @@ import { ImagePickerComponent } from './image-picker.component';
 })
 export class AdminBuilderComponent implements OnInit {
   dataService = inject(DataService);
+  private toast = inject(ToastService);
 
   localCust!: CustomizationSettings;
   expandedSection: string | null = null;
@@ -273,7 +275,7 @@ export class AdminBuilderComponent implements OnInit {
     return 'general';
   }
 
-  onSectionImageSelected(section: any, url: string) {
+  onSectionImageSelected(section: SectionConfig, url: string) {
     section.imageUrl = url;
     this.onPreviewChange();
   }
@@ -290,7 +292,9 @@ export class AdminBuilderComponent implements OnInit {
         break;
       case 'section': {
         const section = this.localCust.sections.find(s => s.id === event.id);
-        if (section) (section as any)[event.field] = event.value;
+        if (section && (event.field === 'heading' || event.field === 'subheading' || event.field === 'layoutVariant' || event.field === 'imageUrl')) {
+          section[event.field] = event.value;
+        }
         this.onPreviewChange();
         break;
       }
@@ -317,6 +321,6 @@ export class AdminBuilderComponent implements OnInit {
 
   saveSettings() {
     this.dataService.updateCustomization(this.localCust);
-    alert('Page layouts saved successfully!');
+    this.toast.success('Page layouts saved successfully!');
   }
 }

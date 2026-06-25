@@ -2,7 +2,8 @@ import { Component, inject, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { DataService } from './data.service';
-import { PaymentSettings, PaymentLink } from './types';
+import { ToastService } from './toast.service';
+import { PaymentSettings } from './types';
 
 @Component({
   selector: 'app-admin-payments',
@@ -121,6 +122,7 @@ import { PaymentSettings, PaymentLink } from './types';
 })
 export class AdminPaymentsComponent implements OnInit {
   private dataService = inject(DataService);
+  private toast = inject(ToastService);
 
   settings: PaymentSettings = {
     enabled: false,
@@ -149,6 +151,6 @@ export class AdminPaymentsComponent implements OnInit {
 
   save() {
     this.dataService.setPaymentSettings(this.settings);
-    alert('Payment settings saved!');
+    this.toast.success('Payment settings saved!');
   }
 }

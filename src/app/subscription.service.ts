@@ -1,6 +1,7 @@
 import { Injectable, inject, signal, computed, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
-import { Firestore, doc, getDoc, setDoc } from '@angular/fire/firestore';
+import { Auth } from '@angular/fire/auth';
+import { Firestore, doc, getDoc } from '@angular/fire/firestore';
 import { SubscriptionTier, SubscriptionData } from './types';
 
 const TIER_LIMITS = {
@@ -12,6 +13,7 @@ const TIER_LIMITS = {
 @Injectable({ providedIn: 'root' })
 export class SubscriptionService {
   private platformId = inject(PLATFORM_ID);
+  private auth = inject(Auth);
   private firestore = inject(Firestore);
 
   private sub = signal<SubscriptionData>({
@@ -55,6 +57,11 @@ export class SubscriptionService {
     return this.tier() === 'free' ? 'gray' : this.tier() === 'pro' ? 'blue' : 'purple';
   }
 
+  private async authHeaders(): Promise<HeadersInit | null> {
+    const token = await this.auth.currentUser?.getIdToken();
+    return token ? { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` } : null;
+  }
+
   async loadSubscription(uid: string) {
     if (!isPlatformBrowser(this.platformId)) return;
     try {
@@ -70,9 +77,11 @@ export class SubscriptionService {
 
   async createCheckoutSession(uid: string, tier: 'pro' | 'business', discountCode?: string): Promise<string | null> {
     try {
+      const headers = await this.authHeaders();
+      if (!headers) return null;
       const resp = await fetch('/api/stripe/create-checkout-session', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({ uid, tier, discountCode }),
       });
       const data = await resp.json();
@@ -84,9 +93,11 @@ export class SubscriptionService {
 
   async openCustomerPortal(uid: string): Promise<string | null> {
     try {
+      const headers = await this.authHeaders();
+      if (!headers) return null;
       const resp = await fetch('/api/stripe/customer-portal', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({ uid }),
       });
       const data = await resp.json();

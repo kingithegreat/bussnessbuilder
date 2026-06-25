@@ -1,6 +1,7 @@
 import { Component, inject } from '@angular/core';
 import { DataService } from './data.service';
 import { AiService } from './ai.service';
+import { ToastService } from './toast.service';
 import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 
@@ -142,6 +143,7 @@ import { MatIconModule } from '@angular/material/icon';
 export class AdminAiToolsComponent {
   private dataService = inject(DataService);
   private aiService = inject(AiService);
+  private toast = inject(ToastService);
 
   localDesc = this.dataService.profile().description;
   isGeneratingDesc = false;
@@ -204,6 +206,6 @@ export class AdminAiToolsComponent {
 
   saveDesc() {
     this.dataService.updateProfile({ description: this.localDesc });
-    alert('Description saved successfully!');
+    this.toast.success('Description saved successfully!');
   }
 }

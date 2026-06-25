@@ -2,6 +2,7 @@ import { Component, inject, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { DataService } from './data.service';
+import { ToastService } from './toast.service';
 import { ContentPage } from './types';
 
 @Component({
@@ -29,7 +30,7 @@ import { ContentPage } from './types';
 
       @for (page of pages; track page.id; let i = $index) {
         <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-          <div class="p-4 flex items-center justify-between cursor-pointer hover:bg-gray-50 transition-colors"
+          <button type="button" class="w-full p-4 flex items-center justify-between text-left cursor-pointer hover:bg-gray-50 transition-colors"
                (click)="expanded === page.id ? expanded = null : expanded = page.id">
             <div class="flex items-center gap-3 min-w-0">
               <mat-icon class="text-gray-300">article</mat-icon>
@@ -43,7 +44,7 @@ import { ContentPage } from './types';
               </div>
             </div>
             <mat-icon class="text-gray-400 text-[20px] transition-transform" [class.rotate-180]="expanded === page.id">expand_more</mat-icon>
-          </div>
+          </button>
 
           @if (expanded === page.id) {
             <div class="p-4 border-t border-gray-100 space-y-4">
@@ -89,6 +90,7 @@ import { ContentPage } from './types';
 })
 export class AdminPagesComponent implements OnInit {
   private dataService = inject(DataService);
+  private toast = inject(ToastService);
 
   pages: ContentPage[] = [];
   expanded: string | null = null;
@@ -129,6 +131,6 @@ export class AdminPagesComponent implements OnInit {
   savePages() {
     this.pages.forEach(p => p.updatedAt = new Date().toISOString());
     this.dataService.setPages(this.pages);
-    alert('Pages saved successfully!');
+    this.toast.success('Pages saved successfully!');
   }
 }

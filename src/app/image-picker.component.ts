@@ -1,9 +1,9 @@
-import { Component, inject, input, output, signal, computed, OnInit } from '@angular/core';
+import { Component, inject, input, output, signal, computed } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
 import { StorageService } from './storage.service';
 import { AuthService } from './auth.service';
 import { DataService } from './data.service';
-import { StockImage, ImageSection, getStockImages } from './stock-images';
+import { ImageSection, getStockImages } from './stock-images';
 
 @Component({
   selector: 'app-image-picker',
@@ -11,7 +11,7 @@ import { StockImage, ImageSection, getStockImages } from './stock-images';
   imports: [MatIconModule],
   template: `
     <div class="space-y-3">
-      <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-wider">{{ label() }}</label>
+      <div class="block text-[10px] font-bold text-gray-500 uppercase tracking-wider">{{ label() }}</div>
 
       @if (currentUrl()) {
         <div class="relative group rounded-xl overflow-hidden border border-gray-200 bg-gray-50">
@@ -33,8 +33,9 @@ import { StockImage, ImageSection, getStockImages } from './stock-images';
       }
 
       @if (showPicker()) {
-        <div class="fixed inset-0 z-[999] bg-black/50 flex items-center justify-center p-4" (click)="showPicker.set(false)">
-          <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[80vh] flex flex-col overflow-hidden" (click)="$event.stopPropagation()">
+        <div class="fixed inset-0 z-[999] flex items-center justify-center p-4">
+          <button type="button" aria-label="Close image picker" class="absolute inset-0 bg-black/50" (click)="showPicker.set(false)"></button>
+          <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[80vh] flex flex-col overflow-hidden">
             <div class="p-5 border-b border-gray-100 flex items-center justify-between shrink-0">
               <h3 class="text-lg font-black text-gray-900">Choose Image</h3>
               <button (click)="showPicker.set(false)" class="text-gray-400 hover:text-gray-600 p-1 rounded-lg hover:bg-gray-100">
@@ -78,11 +79,11 @@ import { StockImage, ImageSection, getStockImages } from './stock-images';
 
               @if (activeTab() === 'upload') {
                 <div class="space-y-4">
-                  <label class="block w-full h-40 border-2 border-dashed border-gray-200 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors cursor-pointer flex flex-col items-center justify-center gap-2 text-gray-400 hover:text-gray-600">
+                  <label for="imageUploadInput" class="block w-full h-40 border-2 border-dashed border-gray-200 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors cursor-pointer flex flex-col items-center justify-center gap-2 text-gray-400 hover:text-gray-600">
                     <mat-icon class="text-3xl">cloud_upload</mat-icon>
                     <span class="text-sm font-bold">Click to upload</span>
                     <span class="text-xs text-gray-400">JPG, PNG, WebP up to 5MB</span>
-                    <input type="file" class="hidden" accept="image/jpeg,image/png,image/webp" (change)="onFileSelected($event)">
+                    <input id="imageUploadInput" type="file" class="hidden" accept="image/jpeg,image/png,image/webp" (change)="onFileSelected($event)">
                   </label>
 
                   @if (storageService.uploading()) {
@@ -103,8 +104,8 @@ import { StockImage, ImageSection, getStockImages } from './stock-images';
               @if (activeTab() === 'url') {
                 <div class="space-y-4">
                   <div>
-                    <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Image URL</label>
-                    <input #urlInput type="url" placeholder="https://example.com/image.jpg" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+                    <label for="imageUrlInput" class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Image URL</label>
+                    <input id="imageUrlInput" #urlInput type="url" placeholder="https://example.com/image.jpg" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm">
                   </div>
                   <button (click)="selectImage(urlInput.value)" [disabled]="!urlInput.value" class="w-full bg-blue-600 text-white px-4 py-2.5 rounded-xl text-sm font-bold shadow-md hover:bg-blue-700 disabled:opacity-50 transition-colors">
                     Use This Image
@@ -118,7 +119,7 @@ import { StockImage, ImageSection, getStockImages } from './stock-images';
     </div>
   `
 })
-export class ImagePickerComponent implements OnInit {
+export class ImagePickerComponent {
   readonly storageService = inject(StorageService);
   private authService = inject(AuthService);
   private dataService = inject(DataService);
@@ -136,8 +137,6 @@ export class ImagePickerComponent implements OnInit {
     const businessType = this.dataService.profile().type || 'other';
     return getStockImages(businessType, this.section());
   });
-
-  ngOnInit() {}
 
   selectImage(url: string) {
     if (!url) return;
@@ -170,8 +169,8 @@ export class ImagePickerComponent implements OnInit {
       const url = await this.storageService.uploadImage(uid, file, this.section());
       this.imageSelected.emit(url);
       this.showPicker.set(false);
-    } catch (err: any) {
-      this.uploadError.set(err?.message || 'Upload failed. Please try again.');
+    } catch (err: unknown) {
+      this.uploadError.set(err instanceof Error ? err.message : 'Upload failed. Please try again.');
     }
   }
 }

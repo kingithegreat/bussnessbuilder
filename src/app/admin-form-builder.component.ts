@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { DataService } from './data.service';
+import { ToastService } from './toast.service';
 import { FormFieldConfig, CustomizationSettings } from './types';
 
 @Component({
@@ -243,6 +244,7 @@ import { FormFieldConfig, CustomizationSettings } from './types';
 })
 export class AdminFormBuilderComponent implements OnInit {
   dataService = inject(DataService);
+  private toast = inject(ToastService);
   
   fields: FormFieldConfig[] = [];
   expandedField: string | null = null;
@@ -316,6 +318,6 @@ export class AdminFormBuilderComponent implements OnInit {
       formFields: this.fields
     };
     this.dataService.updateCustomization(updatedSettings);
-    alert('Form fields saved successfully!');
+    this.toast.success('Form fields saved successfully!');
   }
 }

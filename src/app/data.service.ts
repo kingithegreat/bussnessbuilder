@@ -1,6 +1,6 @@
 import { Injectable, computed, signal, effect, PLATFORM_ID, inject } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
-import { AppState, BusinessProfile, Enquiry, FAQ, Service, Activity, Testimonial, ContentPage, NotificationPreferences, PaymentSettings, SiteTemplate } from './types';
+import { AppState, BusinessProfile, Enquiry, FAQ, Service, Activity, Testimonial, ContentPage, NotificationPreferences, PaymentSettings, SiteTemplate, PublicSiteData } from './types';
 import { FirestoreService } from './firestore.service';
 
 const defaultState: AppState = {
@@ -84,7 +84,7 @@ export class DataService {
 
   private state = signal<AppState>(defaultState);
   private uid = signal<string | null>(null);
-  private saveTimeout: any = null;
+  private saveTimeout: ReturnType<typeof setTimeout> | null = null;
 
   private geminiKey = signal<string>('');
   readonly geminiApiKey = this.geminiKey.asReadonly();
@@ -445,7 +445,7 @@ export class DataService {
     this.saveTemplates();
   }
 
-  loadPublicSite(uid: string, data: any) {
+  loadPublicSite(uid: string, data: PublicSiteData) {
     this._publicSiteUid.set(uid);
     this.state.set({
       ...defaultState,

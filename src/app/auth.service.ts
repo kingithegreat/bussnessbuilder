@@ -94,8 +94,9 @@ export class AuthService {
     const provider = new GoogleAuthProvider();
     try {
       return await signInWithPopup(this.auth, provider);
-    } catch (e: any) {
-      if (e?.code === 'auth/popup-blocked' || e?.code === 'auth/cancelled-popup-request') {
+    } catch (e: unknown) {
+      const code = e && typeof e === 'object' && 'code' in e ? e.code : undefined;
+      if (code === 'auth/popup-blocked' || code === 'auth/cancelled-popup-request') {
         return signInWithRedirect(this.auth, provider);
       }
       throw e;

@@ -3,6 +3,7 @@ import { NgTemplateOutlet } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { DataService } from './data.service';
+import { ToastService } from './toast.service';
 import { Service, Testimonial, FAQ } from './types';
 import { ImagePickerComponent } from './image-picker.component';
 
@@ -223,6 +224,7 @@ type Tab = 'services' | 'testimonials' | 'faqs';
 })
 export class AdminContentComponent implements OnInit {
   private dataService = inject(DataService);
+  private toast = inject(ToastService);
 
   tab: Tab = 'services';
   expanded: string | null = null;
@@ -330,9 +332,9 @@ export class AdminContentComponent implements OnInit {
     if (imported > 0) {
       this.importReviewsText = '';
       this.showImportReviews = false;
-      alert(`Imported ${imported} review${imported > 1 ? 's' : ''}. Click Save to keep them.`);
+      this.toast.success(`Imported ${imported} review${imported > 1 ? 's' : ''}. Click Save to keep them.`);
     } else {
-      alert('Could not parse any reviews. Use the format: "5 stars - Author Name\\nReview text"');
+      this.toast.error('Could not parse any reviews. Use the format: "5 stars - Author Name\\nReview text"');
     }
   }
 
@@ -346,6 +348,6 @@ export class AdminContentComponent implements OnInit {
     } else {
       this.dataService.setFaqs(this.faqs);
     }
-    alert(this.tabLabel() + ' saved successfully!');
+    this.toast.success(this.tabLabel() + ' saved successfully!');
   }
 }

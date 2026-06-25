@@ -4,6 +4,7 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { AuthService } from './auth.service';
 import { DataService } from './data.service';
+import { ToastService } from './toast.service';
 
 @Component({
   selector: 'app-login',
@@ -37,17 +38,17 @@ import { DataService } from './data.service';
           <form [formGroup]="form" (ngSubmit)="onSubmit()">
             @if (isSignUp()) {
               <div class="mb-4">
-                <label class="block text-sm font-medium text-gray-700 mb-1.5">Full Name</label>
-                <input formControlName="displayName" type="text" placeholder="Your name" class="w-full px-4 py-3 bg-gray-50 border border-transparent rounded-xl focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none text-sm transition-all">
+                <label for="displayName" class="block text-sm font-medium text-gray-700 mb-1.5">Full Name</label>
+                <input id="displayName" formControlName="displayName" type="text" placeholder="Your name" class="w-full px-4 py-3 bg-gray-50 border border-transparent rounded-xl focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none text-sm transition-all">
               </div>
             }
             <div class="mb-4">
-              <label class="block text-sm font-medium text-gray-700 mb-1.5">Email</label>
-              <input formControlName="email" type="email" placeholder="you&#64;example.com" class="w-full px-4 py-3 bg-gray-50 border border-transparent rounded-xl focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none text-sm transition-all">
+              <label for="email" class="block text-sm font-medium text-gray-700 mb-1.5">Email</label>
+              <input id="email" formControlName="email" type="email" placeholder="you&#64;example.com" class="w-full px-4 py-3 bg-gray-50 border border-transparent rounded-xl focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none text-sm transition-all">
             </div>
             <div class="mb-6">
-              <label class="block text-sm font-medium text-gray-700 mb-1.5">Password</label>
-              <input formControlName="password" type="password" placeholder="At least 6 characters" class="w-full px-4 py-3 bg-gray-50 border border-transparent rounded-xl focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none text-sm transition-all">
+              <label for="password" class="block text-sm font-medium text-gray-700 mb-1.5">Password</label>
+              <input id="password" formControlName="password" type="password" placeholder="At least 6 characters" class="w-full px-4 py-3 bg-gray-50 border border-transparent rounded-xl focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none text-sm transition-all">
               @if (form.get('password')?.invalid && form.get('password')?.touched) {
                 <p class="text-red-500 text-xs mt-1">Password must be at least 6 characters</p>
               }
@@ -89,6 +90,7 @@ import { DataService } from './data.service';
 export class LoginComponent implements OnInit {
   private auth = inject(AuthService);
   private data = inject(DataService);
+  private toast = inject(ToastService);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
   private fb = inject(FormBuilder);
@@ -128,8 +130,8 @@ export class LoginComponent implements OnInit {
         await this.auth.signInWithEmail(email!, password!);
       }
       await this.navigateAfterAuth();
-    } catch (e: any) {
-      this.error.set(this.friendlyError(e?.code || e?.message || 'unknown'));
+    } catch (e: unknown) {
+      this.error.set(this.friendlyError(this.errorCode(e)));
     } finally {
       this.loading.set(false);
     }
@@ -141,9 +143,10 @@ export class LoginComponent implements OnInit {
     try {
       await this.auth.signInWithGoogle();
       await this.navigateAfterAuth();
-    } catch (e: any) {
-      if (e?.code !== 'auth/popup-closed-by-user') {
-        this.error.set(this.friendlyError(e?.code || e?.message || 'unknown'));
+    } catch (e: unknown) {
+      const code = this.errorCode(e);
+      if (code !== 'auth/popup-closed-by-user') {
+        this.error.set(this.friendlyError(code));
       }
     } finally {
       this.loading.set(false);
@@ -159,9 +162,9 @@ export class LoginComponent implements OnInit {
     try {
       await this.auth.resetPassword(email);
       this.error.set('');
-      alert('Password reset email sent! Check your inbox.');
-    } catch (e: any) {
-      this.error.set(this.friendlyError(e.code));
+      this.toast.success('Password reset email sent! Check your inbox.');
+    } catch (e: unknown) {
+      this.error.set(this.friendlyError(this.errorCode(e)));
     }
   }
 
@@ -175,6 +178,16 @@ export class LoginComponent implements OnInit {
         this.router.navigate(['/setup']);
       }
     }
+  }
+
+  private errorCode(error: unknown): string {
+    if (error && typeof error === 'object') {
+      const code = 'code' in error ? error.code : undefined;
+      const message = 'message' in error ? error.message : undefined;
+      if (typeof code === 'string') return code;
+      if (typeof message === 'string') return message;
+    }
+    return 'unknown';
   }
 
   private friendlyError(code: string): string {

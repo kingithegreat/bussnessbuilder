@@ -1,5 +1,6 @@
 import { Component, inject, signal } from '@angular/core';
 import { DataService } from './data.service';
+import { ToastService } from './toast.service';
 import { Enquiry } from './types';
 import { DatePipe } from '@angular/common';
 import { AiService } from './ai.service';
@@ -182,6 +183,7 @@ import { MatIconModule } from '@angular/material/icon';
 export class AdminInboxComponent {
   private dataService = inject(DataService);
   private aiService = inject(AiService);
+  private toast = inject(ToastService);
   
   searchQuery = signal('');
   selectedEnquiry = signal<Enquiry | null>(null);
@@ -253,7 +255,7 @@ export class AdminInboxComponent {
     
     try {
       await navigator.clipboard.writeText(details);
-      alert('Customer details copied to clipboard!');
+      this.toast.success('Customer details copied to clipboard!');
     } catch (err) {
       console.error('Failed to copy details', err);
     }
@@ -269,7 +271,7 @@ export class AdminInboxComponent {
       }
     } catch (e) {
       console.error('Failed to generate draft reply:', e);
-      alert('Could not generate a draft reply. Please try again.');
+      this.toast.error('Could not generate a draft reply. Please try again.');
     } finally {
       this.isGeneratingDraft = false;
     }

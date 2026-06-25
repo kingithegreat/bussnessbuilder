@@ -175,6 +175,15 @@ export interface PaymentSettings {
   paymentLinks: PaymentLink[];
 }
 
+export interface PublicSiteData {
+  profile: BusinessProfile;
+  services?: Service[];
+  testimonials?: Testimonial[];
+  faqs?: FAQ[];
+  customization?: CustomizationSettings;
+  paymentSettings?: PaymentSettings | null;
+}
+
 export interface SiteTemplate {
   id: string;
   name: string;

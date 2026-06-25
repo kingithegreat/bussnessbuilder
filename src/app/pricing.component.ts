@@ -3,6 +3,7 @@ import { Router, RouterLink } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { AuthService } from './auth.service';
 import { SubscriptionService } from './subscription.service';
+import { ToastService } from './toast.service';
 
 @Component({
   selector: 'app-pricing',
@@ -139,6 +140,7 @@ export class PricingComponent {
   private router = inject(Router);
   auth = inject(AuthService);
   subService = inject(SubscriptionService);
+  private toast = inject(ToastService);
 
   async subscribe(tier: 'pro' | 'business') {
     if (!this.auth.isLoggedIn()) {
@@ -151,7 +153,7 @@ export class PricingComponent {
     if (url) {
       window.location.href = url;
     } else {
-      alert('Subscription checkout is not yet configured. Please set up Stripe API keys.');
+      this.toast.error('Subscription checkout is not yet configured. Please set up Stripe API keys.');
     }
   }
 }

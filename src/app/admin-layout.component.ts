@@ -3,6 +3,7 @@ import { RouterOutlet, RouterLink, RouterLinkActive, Router } from '@angular/rou
 import { DataService } from './data.service';
 import { AuthService } from './auth.service';
 import { SubscriptionService } from './subscription.service';
+import { ToastService } from './toast.service';
 import { MatIconModule } from '@angular/material/icon';
 
 @Component({
@@ -20,7 +21,7 @@ import { MatIconModule } from '@angular/material/icon';
   template: `
     <div class="h-screen bg-[#F5F5F7] flex font-sans text-gray-900 overflow-hidden relative">
       @if (sidebarOpen()) {
-        <div (click)="sidebarOpen.set(false)" class="fixed inset-0 bg-black/50 z-40 md:hidden"></div>
+        <button type="button" aria-label="Close sidebar" (click)="sidebarOpen.set(false)" class="fixed inset-0 bg-black/50 z-40 md:hidden"></button>
       }
       <!-- Sidebar -->
       <aside class="admin-sidebar w-64 bg-white border-r border-gray-200 flex flex-col p-6 fixed inset-y-0 left-0 z-50 transition-transform duration-200" [style.transform]="sidebarOpen() ? 'translateX(0)' : 'translateX(-100%)'">
@@ -36,39 +37,39 @@ import { MatIconModule } from '@angular/material/icon';
             </span>
           }
         </div>
-        <nav class="flex flex-col gap-1 flex-1" (click)="sidebarOpen.set(false)">
-          <a routerLink="/admin/dashboard" routerLinkActive="bg-blue-50 text-blue-600 font-medium" class="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-500 hover:bg-gray-50 font-medium transition-colors">
+        <nav class="flex flex-col gap-1 flex-1">
+          <a routerLink="/admin/dashboard" routerLinkActive="bg-blue-50 text-blue-600 font-medium" (click)="sidebarOpen.set(false)" class="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-500 hover:bg-gray-50 font-medium transition-colors">
             <mat-icon class="w-5 h-5">dashboard</mat-icon> Dashboard
           </a>
-          <a routerLink="/admin/inbox" routerLinkActive="bg-blue-50 text-blue-600 font-medium" class="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-500 hover:bg-gray-50 font-medium transition-colors">
+          <a routerLink="/admin/inbox" routerLinkActive="bg-blue-50 text-blue-600 font-medium" (click)="sidebarOpen.set(false)" class="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-500 hover:bg-gray-50 font-medium transition-colors">
             <mat-icon class="w-5 h-5">inbox</mat-icon> Enquiries
             @if(newEnquiriesCount() > 0) {
               <span class="ml-auto bg-red-100 text-red-600 text-[10px] px-2 py-0.5 rounded-full font-bold">{{ newEnquiriesCount() }}</span>
             }
           </a>
-          <a routerLink="/admin/content" routerLinkActive="bg-blue-50 text-blue-600 font-medium" class="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-500 hover:bg-gray-50 font-medium transition-colors">
+          <a routerLink="/admin/content" routerLinkActive="bg-blue-50 text-blue-600 font-medium" (click)="sidebarOpen.set(false)" class="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-500 hover:bg-gray-50 font-medium transition-colors">
             <mat-icon class="w-5 h-5">inventory_2</mat-icon> Content
           </a>
-          <a routerLink="/admin/ai" routerLinkActive="bg-blue-50 text-blue-600 font-medium" class="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-500 hover:bg-gray-50 font-medium transition-colors">
+          <a routerLink="/admin/ai" routerLinkActive="bg-blue-50 text-blue-600 font-medium" (click)="sidebarOpen.set(false)" class="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-500 hover:bg-gray-50 font-medium transition-colors">
             <mat-icon class="w-5 h-5">auto_awesome</mat-icon> AI Tools
           </a>
-          <a routerLink="/admin/customisation" routerLinkActive="bg-blue-50 text-blue-600 font-medium" class="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-500 hover:bg-gray-50 font-medium transition-colors">
+          <a routerLink="/admin/customisation" routerLinkActive="bg-blue-50 text-blue-600 font-medium" (click)="sidebarOpen.set(false)" class="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-500 hover:bg-gray-50 font-medium transition-colors">
             <mat-icon class="w-5 h-5">settings</mat-icon> Customisation
           </a>
-          <a routerLink="/admin/builder" routerLinkActive="bg-blue-50 text-blue-600 font-medium" class="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-500 hover:bg-gray-50 font-medium transition-colors">
+          <a routerLink="/admin/builder" routerLinkActive="bg-blue-50 text-blue-600 font-medium" (click)="sidebarOpen.set(false)" class="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-500 hover:bg-gray-50 font-medium transition-colors">
             <mat-icon class="w-5 h-5">view_quilt</mat-icon> Page Builder
           </a>
-          <a routerLink="/admin/form-builder" routerLinkActive="bg-blue-50 text-blue-600 font-medium" class="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-500 hover:bg-gray-50 font-medium transition-colors">
+          <a routerLink="/admin/form-builder" routerLinkActive="bg-blue-50 text-blue-600 font-medium" (click)="sidebarOpen.set(false)" class="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-500 hover:bg-gray-50 font-medium transition-colors">
             <mat-icon class="w-5 h-5">dynamic_form</mat-icon> Form Builder
           </a>
-          <a routerLink="/admin/pages" routerLinkActive="bg-blue-50 text-blue-600 font-medium" class="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-500 hover:bg-gray-50 font-medium transition-colors">
+          <a routerLink="/admin/pages" routerLinkActive="bg-blue-50 text-blue-600 font-medium" (click)="sidebarOpen.set(false)" class="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-500 hover:bg-gray-50 font-medium transition-colors">
             <mat-icon class="w-5 h-5">article</mat-icon> Pages
           </a>
-          <a routerLink="/admin/payments" routerLinkActive="bg-blue-50 text-blue-600 font-medium" class="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-500 hover:bg-gray-50 font-medium transition-colors">
+          <a routerLink="/admin/payments" routerLinkActive="bg-blue-50 text-blue-600 font-medium" (click)="sidebarOpen.set(false)" class="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-500 hover:bg-gray-50 font-medium transition-colors">
             <mat-icon class="w-5 h-5">payments</mat-icon> Payments
           </a>
           <div class="mt-4 pt-4 border-t border-gray-100">
-            <a routerLink="/admin/settings" routerLinkActive="bg-blue-50 text-blue-600 font-medium" class="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-500 hover:bg-gray-50 font-medium transition-colors">
+            <a routerLink="/admin/settings" routerLinkActive="bg-blue-50 text-blue-600 font-medium" (click)="sidebarOpen.set(false)" class="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-500 hover:bg-gray-50 font-medium transition-colors">
               <mat-icon class="w-5 h-5">tune</mat-icon> Settings
             </a>
           </div>
@@ -117,6 +118,7 @@ export class AdminLayoutComponent {
   private dataService = inject(DataService);
   authService = inject(AuthService);
   subService = inject(SubscriptionService);
+  private toast = inject(ToastService);
   private router = inject(Router);
   sidebarOpen = signal(false);
   
@@ -152,9 +154,9 @@ export class AdminLayoutComponent {
       reader.onload = (e) => {
         const result = e.target?.result as string;
         if (result && this.dataService.importState(result)) {
-          alert('Profile imported successfully!');
+          this.toast.success('Profile imported successfully!');
         } else {
-          alert('Failed to import profile. Invalid JSON.');
+          this.toast.error('Failed to import profile. Invalid JSON.');
         }
       };
       reader.readAsText(file);
@@ -163,7 +165,7 @@ export class AdminLayoutComponent {
 
   loadDemo() {
     this.dataService.loadDemoData();
-    alert('Demo data loaded!');
+    this.toast.success('Demo data loaded!');
   }
 
   async logout() {
