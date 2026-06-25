@@ -1,7 +1,8 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { HttpClient } from '@angular/common/http';
 import { MatIconModule } from '@angular/material/icon';
-import { RouterLink } from '@angular/router';
+import { RouterLink, Router } from '@angular/router';
 import { DataService } from './data.service';
 import { SubscriptionService } from './subscription.service';
 import { AuthService } from './auth.service';
@@ -28,12 +29,17 @@ import { DatePipe } from '@angular/common';
         <div class="p-6">
           <p class="text-sm text-gray-500 mb-3">Share this link with customers so they can view your site and submit enquiries.</p>
           <div class="flex items-center gap-2">
-            <input type="text" [value]="siteUrl" readonly class="flex-1 px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-mono text-gray-700 select-all">
+            <input type="text" [value]="friendlyUrl || siteUrl" readonly class="flex-1 px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-mono text-gray-700 select-all">
             <button (click)="copySiteUrl()" class="bg-blue-600 text-white px-4 py-2.5 rounded-xl text-sm font-bold hover:bg-blue-700 transition-colors flex items-center gap-1.5 shrink-0">
               <mat-icon class="text-[18px]">content_copy</mat-icon> Copy
             </button>
           </div>
-          <a [href]="siteUrl" target="_blank" class="text-blue-600 text-xs font-bold hover:underline mt-2 inline-flex items-center gap-1">
+          @if (friendlyUrl) {
+            <p class="text-xs text-green-600 font-medium mt-2 flex items-center gap-1">
+              <mat-icon class="text-[14px]">check_circle</mat-icon> Friendly URL active
+            </p>
+          }
+          <a [href]="friendlyUrl || siteUrl" target="_blank" class="text-blue-600 text-xs font-bold hover:underline mt-2 inline-flex items-center gap-1">
             <mat-icon class="text-[14px]">open_in_new</mat-icon> Open in new tab
           </a>
         </div>
@@ -222,9 +228,12 @@ export class AdminSettingsComponent implements OnInit {
   subService = inject(SubscriptionService);
   private authService = inject(AuthService);
   private toast = inject(ToastService);
+  private http = inject(HttpClient);
+  private router = inject(Router);
 
   newTemplateName = '';
   siteUrl = '';
+  friendlyUrl = '';
 
   prefs: NotificationPreferences = {
     emailOnNewEnquiry: false,
@@ -244,15 +253,20 @@ export class AdminSettingsComponent implements OnInit {
     const user = this.authService.currentUser();
     if (user) {
       this.siteUrl = `${window.location.origin}/site/${user.uid}`;
+      const slug = this.dataService.siteSlug();
+      if (slug) {
+        this.friendlyUrl = `${window.location.origin}/site/${slug}`;
+      }
     }
   }
 
   async copySiteUrl() {
+    const url = this.friendlyUrl || this.siteUrl;
     try {
-      await navigator.clipboard.writeText(this.siteUrl);
+      await navigator.clipboard.writeText(url);
       this.toast.success('Site link copied!');
     } catch {
-      this.toast.info(this.siteUrl);
+      this.toast.info(url);
     }
   }
 
@@ -308,9 +322,26 @@ export class AdminSettingsComponent implements OnInit {
     }
   }
 
-  confirmDelete() {
-    if (confirm('Are you sure you want to delete your account? This action cannot be undone. All your data will be permanently removed.')) {
-      this.toast.info('Account deletion will be processed within 30 days. You will receive a confirmation email.');
-    }
+  async confirmDelete() {
+    if (!confirm('Are you sure you want to delete your account? This action cannot be undone. All your data will be permanently removed.')) return;
+    if (!confirm('This is your last chance. Type your mind — are you absolutely sure?')) return;
+
+    const user = this.authService.currentUser();
+    if (!user) return;
+
+    const token = await this.authService.getIdToken();
+    if (!token) return;
+
+    this.http.delete(`/api/account/${user.uid}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    }).subscribe({
+      next: () => {
+        this.toast.success('Account deleted. Goodbye!');
+        this.authService.logout();
+      },
+      error: () => {
+        this.toast.error('Failed to delete account. Please contact support.');
+      },
+    });
   }
 }

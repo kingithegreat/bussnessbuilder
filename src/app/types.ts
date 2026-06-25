@@ -202,5 +202,6 @@ export interface AppState {
   themeSettings: ThemeSettings;
   customization: CustomizationSettings;
   isSetupComplete: boolean;
+  siteSlug?: string;
 }
 

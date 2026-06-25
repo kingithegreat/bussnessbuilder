@@ -3,9 +3,11 @@ import { NgTemplateOutlet } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { DataService } from './data.service';
+import { SubscriptionService } from './subscription.service';
 import { ToastService } from './toast.service';
 import { Service, Testimonial, FAQ } from './types';
 import { ImagePickerComponent } from './image-picker.component';
+import { RouterLink } from '@angular/router';
 
 type Tab = 'services' | 'testimonials' | 'faqs';
 
@@ -18,7 +20,7 @@ type Tab = 'services' | 'testimonials' | 'faqs';
 @Component({
   selector: 'app-admin-content',
   standalone: true,
-  imports: [FormsModule, MatIconModule, NgTemplateOutlet, ImagePickerComponent],
+  imports: [FormsModule, MatIconModule, NgTemplateOutlet, ImagePickerComponent, RouterLink],
   template: `
     <div class="max-w-3xl mx-auto">
       <div class="flex items-start justify-between mb-6">
@@ -43,8 +45,18 @@ type Tab = 'services' | 'testimonials' | 'faqs';
         }
       </div>
 
+      @if (tab === 'services' && !subService.canAddService(services.length)) {
+        <div class="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-xl flex items-center justify-between">
+          <div class="flex items-center gap-2 text-sm text-amber-800">
+            <mat-icon class="text-[18px]">lock</mat-icon>
+            <span class="font-bold">Free plan limit: {{ services.length }}/3 services.</span>
+            <span>Upgrade to add more.</span>
+          </div>
+          <a routerLink="/pricing" class="bg-amber-600 text-white px-4 py-1.5 rounded-lg text-xs font-bold hover:bg-amber-700 transition-colors">Upgrade</a>
+        </div>
+      }
       <div class="flex justify-end mb-4">
-        <button (click)="add()" class="text-blue-600 text-sm font-bold hover:underline flex items-center gap-1">
+        <button (click)="add()" [disabled]="tab === 'services' && !subService.canAddService(services.length)" class="text-blue-600 text-sm font-bold hover:underline flex items-center gap-1 disabled:opacity-40 disabled:cursor-not-allowed">
           <mat-icon class="text-[16px]">add</mat-icon> Add {{ singular() }}
         </button>
       </div>
@@ -224,6 +236,7 @@ type Tab = 'services' | 'testimonials' | 'faqs';
 })
 export class AdminContentComponent implements OnInit {
   private dataService = inject(DataService);
+  subService = inject(SubscriptionService);
   private toast = inject(ToastService);
 
   tab: Tab = 'services';
@@ -272,6 +285,10 @@ export class AdminContentComponent implements OnInit {
   }
 
   add() {
+    if (this.tab === 'services' && !this.subService.canAddService(this.services.length)) {
+      this.toast.error('Free plan limit reached. Upgrade to add more services.');
+      return;
+    }
     const id = this.tab[0] + '_' + Date.now();
     if (this.tab === 'services') {
       this.services.push({ id, name: '', description: '', price: '', duration: '' });

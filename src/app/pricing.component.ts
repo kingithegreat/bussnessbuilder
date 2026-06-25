@@ -11,12 +11,13 @@ import { ToastService } from './toast.service';
   imports: [RouterLink, MatIconModule],
   template: `
     <div class="min-h-screen bg-[#F5F5F7] font-sans text-gray-900">
-      <header class="max-w-7xl mx-auto px-4 sm:px-6 py-4 md:py-6 flex justify-between items-center w-full">
+      <header class="sticky top-0 z-50 bg-[#F5F5F7]/80 backdrop-blur-xl border-b border-gray-200/40">
+       <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3 md:py-4 flex justify-between items-center w-full">
         <a routerLink="/" class="flex items-center gap-2">
-          <div class="h-10 w-10 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-sm">
-            <mat-icon>business</mat-icon>
+          <div class="h-9 w-9 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-sm">
+            <mat-icon class="text-[20px]">business</mat-icon>
           </div>
-          <span class="text-lg md:text-xl font-bold tracking-tight">BusinessFlow Studio</span>
+          <span class="text-[15px] font-semibold tracking-tight">BusinessFlow Studio</span>
         </a>
         <div class="flex items-center gap-3">
           @if (auth.isLoggedIn()) {
@@ -26,6 +27,7 @@ import { ToastService } from './toast.service';
             <a routerLink="/signup" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-full text-sm font-medium shadow-sm">Get Started</a>
           }
         </div>
+       </div>
       </header>
 
       <main class="max-w-6xl mx-auto px-4 sm:px-6 py-12 md:py-20">
@@ -36,7 +38,7 @@ import { ToastService } from './toast.service';
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
           <!-- Free -->
-          <div class="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 md:p-8 flex flex-col">
+          <div class="bg-white/80 backdrop-blur-xl rounded-2xl border border-gray-200/60 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 p-6 md:p-8 flex flex-col">
             <div class="mb-6">
               <h3 class="text-lg font-bold text-gray-900 mb-1">Free</h3>
               <p class="text-gray-500 text-sm">Launch your site for free</p>
@@ -62,7 +64,7 @@ import { ToastService } from './toast.service';
           </div>
 
           <!-- Pro -->
-          <div class="bg-white rounded-2xl border-2 border-blue-600 shadow-lg p-6 md:p-8 flex flex-col relative">
+          <div class="bg-white/90 backdrop-blur-xl rounded-2xl border-2 border-blue-600 shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300 p-6 md:p-8 flex flex-col relative">
             <div class="absolute -top-3 left-1/2 -translate-x-1/2 bg-blue-600 text-white px-4 py-1 rounded-full text-xs font-bold">Most Popular</div>
             <div class="mb-6">
               <h3 class="text-lg font-bold text-gray-900 mb-1">Pro</h3>
@@ -91,7 +93,7 @@ import { ToastService } from './toast.service';
           </div>
 
           <!-- Business -->
-          <div class="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 md:p-8 flex flex-col">
+          <div class="bg-white/80 backdrop-blur-xl rounded-2xl border border-gray-200/60 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 p-6 md:p-8 flex flex-col">
             <div class="mb-6">
               <h3 class="text-lg font-bold text-gray-900 mb-1">Business</h3>
               <p class="text-gray-500 text-sm">For serious professionals</p>

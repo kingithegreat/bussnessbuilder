@@ -12,14 +12,14 @@ import { MatIconModule } from '@angular/material/icon';
   template: `
     <div class="flex flex-col gap-6">
       <div>
-        <h2 class="text-2xl font-bold tracking-tight text-gray-900">Welcome back!</h2>
+        <h2 class="text-2xl font-semibold tracking-tight text-gray-900">Welcome back!</h2>
         <p class="text-gray-500 text-sm">Here's what's happening with your business today.</p>
       </div>
 
       <!-- Stats Row -->
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-5">
         <!-- Card 1 -->
-        <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 flex flex-col justify-between">
+        <div class="bg-white/80 backdrop-blur-xl rounded-2xl p-5 shadow-sm border border-gray-200/60 flex flex-col justify-between hover:shadow-md transition-shadow duration-200">
           <div class="flex items-center gap-3 mb-4">
             <div class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
               <mat-icon class="text-sm">mail</mat-icon>
@@ -33,7 +33,7 @@ import { MatIconModule } from '@angular/material/icon';
         </div>
         
         <!-- Card 2 -->
-        <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 flex flex-col justify-between">
+        <div class="bg-white/80 backdrop-blur-xl rounded-2xl p-5 shadow-sm border border-gray-200/60 flex flex-col justify-between hover:shadow-md transition-shadow duration-200">
           <div class="flex items-center gap-3 mb-4">
             <div class="w-8 h-8 rounded-lg bg-green-50 text-green-600 flex items-center justify-center">
               <mat-icon class="text-sm">new_releases</mat-icon>
@@ -47,7 +47,7 @@ import { MatIconModule } from '@angular/material/icon';
         </div>
         
         <!-- Card 3 -->
-        <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 flex flex-col justify-between">
+        <div class="bg-white/80 backdrop-blur-xl rounded-2xl p-5 shadow-sm border border-gray-200/60 flex flex-col justify-between hover:shadow-md transition-shadow duration-200">
           <div class="flex items-center gap-3 mb-4">
             <div class="w-8 h-8 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center">
               <mat-icon class="text-sm">visibility</mat-icon>
@@ -61,7 +61,7 @@ import { MatIconModule } from '@angular/material/icon';
         </div>
 
         <!-- Card 4 -->
-        <div class="bg-blue-600 rounded-2xl p-5 shadow-lg shadow-blue-100 flex flex-col justify-between">
+        <div class="bg-blue-600 rounded-2xl p-5 shadow-lg shadow-blue-200/50 flex flex-col justify-between hover:shadow-xl transition-shadow duration-200">
           <div class="flex items-center gap-3 mb-4">
             <div class="w-8 h-8 rounded-lg bg-white/20 text-white flex items-center justify-center">
               <mat-icon class="text-sm">trending_up</mat-icon>

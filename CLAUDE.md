@@ -61,6 +61,7 @@ GitHub Actions (`deploy.yml`) exists but needs WIF secrets configured. Manual `g
 - `STRIPE_PRICE_ID_PRO` or `STRIPE_PRO_PRICE_ID` — Pro price ID (server reads both)
 - `STRIPE_PRICE_ID_BUSINESS` or `STRIPE_BUSINESS_PRICE_ID` — Business price ID (server reads both)
 - `STRIPE_WEBHOOK_SECRET` — Stripe webhook signing secret
+- `ADMIN_UIDS` — Comma-separated Firebase UIDs that can access `/app-admin`
 - `NG_ALLOWED_HOSTS` — Angular SSR host check (set to `*` for Cloud Run)
 
 ## Server API endpoints
@@ -68,8 +69,17 @@ GitHub Actions (`deploy.yml`) exists but needs WIF secrets configured. Manual `g
 | Endpoint | Auth | Purpose |
 |----------|------|---------|
 | `GET /healthz` | None | Liveness probe |
-| `GET /api/site/:uid` | None | Public site data |
+| `GET /api/site/:uid` | None | Public site data (accepts UID or slug) |
+| `GET /api/site/:uid/pages/:slug` | None | Public content page by slug |
 | `POST /api/site/:uid/enquiry` | None (rate-limited) | Public enquiry submission |
+| `POST /api/slugs/claim` | Firebase token | Claim a URL slug for a site |
+| `GET /api/admin/verify` | Firebase token + ADMIN_UIDS | Verify admin access |
+| `GET /api/admin/users` | Admin only | List all users with metrics |
+| `GET /api/admin/metrics` | Admin only | Aggregate platform metrics |
+| `GET /api/admin/discounts` | Admin only | List discount codes |
+| `POST /api/admin/discounts` | Admin only | Create a discount code |
+| `DELETE /api/admin/discounts/:code` | Admin only | Delete a discount code |
+| `DELETE /api/account/:uid` | Firebase token (own UID) | Delete account and all data |
 | `POST /api/stripe/create-checkout-session` | Firebase token | Create Stripe checkout |
 | `POST /api/stripe/customer-portal` | Firebase token | Open Stripe billing portal |
 | `POST /api/stripe/webhook` | Stripe signature | Handle Stripe events |
@@ -86,6 +96,7 @@ GitHub Actions (`deploy.yml`) exists but needs WIF secrets configured. Manual `g
 - `src/app/admin-layout.component.ts` — Admin shell with sidebar
 - `src/app/setup.component.ts` — Setup wizard
 - `src/app/types.ts` — All TypeScript interfaces
+- `src/app/app-admin-*.component.ts` — Owner admin panel (dashboard, users, discounts)
 
 ## Known issues / TODO
 
@@ -93,5 +104,4 @@ GitHub Actions (`deploy.yml`) exists but needs WIF secrets configured. Manual `g
 - Email notifications toggle exists but nothing sends emails
 - Custom domains — just a text field placeholder
 - Demo button in admin header could confuse real users
-- Human-readable site URLs (currently `/site/{uid}`)
 - GitHub Actions WIF secrets not configured for auto-deploy

@@ -20,7 +20,11 @@ import { AdminPaymentsComponent } from './admin-payments.component';
 import { ContentPageViewComponent } from './content-page-view.component';
 import { PublicContentPageComponent } from './public-content-page.component';
 import { SiteViewComponent } from './site-view.component';
-import { authGuard, setupGuard, publicGuard } from './auth.guard';
+import { AppAdminLayoutComponent } from './app-admin-layout.component';
+import { AppAdminDashboardComponent } from './app-admin-dashboard.component';
+import { AppAdminUsersComponent } from './app-admin-users.component';
+import { AppAdminDiscountsComponent } from './app-admin-discounts.component';
+import { authGuard, setupGuard, publicGuard, appAdminGuard } from './auth.guard';
 
 export const routes: Routes = [
   { path: '', component: LandingComponent },
@@ -50,6 +54,17 @@ export const routes: Routes = [
       { path: 'pages', component: AdminPagesComponent },
       { path: 'payments', component: AdminPaymentsComponent },
       { path: 'settings', component: AdminSettingsComponent }
+    ]
+  },
+  {
+    path: 'app-admin',
+    component: AppAdminLayoutComponent,
+    canActivate: [appAdminGuard],
+    children: [
+      { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
+      { path: 'dashboard', component: AppAdminDashboardComponent },
+      { path: 'users', component: AppAdminUsersComponent },
+      { path: 'discounts', component: AppAdminDiscountsComponent },
     ]
   },
   { path: '**', redirectTo: '' }

@@ -1,6 +1,8 @@
 import { Component, inject } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { DataService } from './data.service';
 import { AiService } from './ai.service';
+import { SubscriptionService } from './subscription.service';
 import { ToastService } from './toast.service';
 import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
@@ -8,13 +10,25 @@ import { MatIconModule } from '@angular/material/icon';
 @Component({
   selector: 'app-admin-ai-tools',
   standalone: true,
-  imports: [FormsModule, MatIconModule],
+  imports: [FormsModule, MatIconModule, RouterLink],
   template: `
     <div class="max-w-4xl mx-auto space-y-6">
       <div class="mb-8">
         <h2 class="text-2xl font-bold tracking-tight text-gray-900 mb-2">AI Content Tools</h2>
         <p class="text-gray-500 text-sm">Generate high-converting content for your business profile in seconds.</p>
       </div>
+
+      @if (!subService.canUseAi()) {
+        <div class="mb-6 p-6 bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-2xl text-center">
+          <mat-icon class="text-[36px] text-blue-500 mb-2">auto_awesome</mat-icon>
+          <h3 class="font-black text-gray-900 text-lg mb-1">Unlock AI Content Tools</h3>
+          <p class="text-sm text-gray-500 mb-4">Upgrade to Pro to generate real AI-powered descriptions, social posts, and reply drafts.</p>
+          <a routerLink="/pricing" class="inline-flex items-center gap-2 bg-blue-600 text-white px-6 py-2.5 rounded-xl text-sm font-bold hover:bg-blue-700 transition-colors">
+            <mat-icon class="text-[18px]">upgrade</mat-icon> Upgrade to Pro
+          </a>
+          <p class="text-xs text-gray-400 mt-3">Free plan uses built-in templates instead of AI</p>
+        </div>
+      }
 
       <!-- Gemini API Key -->
       <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mb-6">
@@ -143,6 +157,7 @@ import { MatIconModule } from '@angular/material/icon';
 export class AdminAiToolsComponent {
   private dataService = inject(DataService);
   private aiService = inject(AiService);
+  subService = inject(SubscriptionService);
   private toast = inject(ToastService);
 
   localDesc = this.dataService.profile().description;

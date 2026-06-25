@@ -1,6 +1,8 @@
 import { Component, inject, signal } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { DataService } from './data.service';
 import { ToastService } from './toast.service';
+import { SubscriptionService } from './subscription.service';
 import { Enquiry } from './types';
 import { DatePipe } from '@angular/common';
 import { AiService } from './ai.service';
@@ -11,9 +13,21 @@ import { MatIconModule } from '@angular/material/icon';
 @Component({
   selector: 'app-admin-inbox',
   standalone: true,
-  imports: [DatePipe, FormsModule, EncodeUriComponentPipe, MatIconModule],
+  imports: [DatePipe, FormsModule, EncodeUriComponentPipe, MatIconModule, RouterLink],
   template: `
     <div class="h-full flex flex-col -m-8">
+      @if (subService.tier() === 'free' && enquiriesCount() >= 10) {
+        <div class="px-8 py-4 bg-amber-50 border-b border-amber-200 flex items-center justify-between shrink-0">
+          <div class="flex items-center gap-3">
+            <mat-icon class="text-amber-500">warning</mat-icon>
+            <div>
+              <p class="text-sm font-semibold text-amber-800">Inbox full — 10 enquiry limit reached</p>
+              <p class="text-xs text-amber-600">New enquiries will be rejected until you upgrade.</p>
+            </div>
+          </div>
+          <a routerLink="/pricing" class="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-xl text-xs font-semibold transition-colors">Upgrade</a>
+        </div>
+      }
       <div class="px-8 py-5 border-b border-gray-200 bg-white flex justify-between items-center shrink-0">
         <h2 class="text-xl font-bold tracking-tight text-gray-900">Enquiries</h2>
         <div class="relative">
@@ -184,7 +198,9 @@ export class AdminInboxComponent {
   private dataService = inject(DataService);
   private aiService = inject(AiService);
   private toast = inject(ToastService);
-  
+  subService = inject(SubscriptionService);
+
+  enquiriesCount = () => this.dataService.enquiries().length;
   searchQuery = signal('');
   selectedEnquiry = signal<Enquiry | null>(null);
   isGeneratingDraft = false;

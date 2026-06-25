@@ -17,6 +17,12 @@ import { MatIconModule } from '@angular/material/icon';
         position: relative !important;
       }
     }
+    .nav-item {
+      transition: all 0.15s ease;
+    }
+    .nav-item:hover {
+      transform: translateX(2px);
+    }
   `],
   template: `
     <div class="h-screen bg-[#F5F5F7] flex font-sans text-gray-900 overflow-hidden relative">
@@ -24,12 +30,12 @@ import { MatIconModule } from '@angular/material/icon';
         <button type="button" aria-label="Close sidebar" (click)="sidebarOpen.set(false)" class="fixed inset-0 bg-black/50 z-40 md:hidden"></button>
       }
       <!-- Sidebar -->
-      <aside class="admin-sidebar w-64 bg-white border-r border-gray-200 flex flex-col p-6 fixed inset-y-0 left-0 z-50 transition-transform duration-200" [style.transform]="sidebarOpen() ? 'translateX(0)' : 'translateX(-100%)'">
-        <div class="flex items-center gap-3 mb-10">
-          <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+      <aside class="admin-sidebar w-[260px] bg-white/80 backdrop-blur-xl border-r border-gray-200/60 flex flex-col p-5 fixed inset-y-0 left-0 z-50 transition-transform duration-200" [style.transform]="sidebarOpen() ? 'translateX(0)' : 'translateX(-100%)'">
+        <div class="flex items-center gap-3 mb-8">
+          <div class="w-8 h-8 bg-blue-600 rounded-xl flex items-center justify-center shadow-sm">
             <div class="w-4 h-4 border-2 border-white rounded-sm"></div>
           </div>
-          <span class="font-bold tracking-tight text-lg">{{ profile().name || 'BusinessFlow' }}</span>
+          <span class="font-semibold tracking-tight text-[15px]">{{ profile().name || 'BusinessFlow' }}</span>
           @if (subService.tier() !== 'free') {
             <span class="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider"
                   [class]="subService.tier() === 'pro' ? 'bg-blue-100 text-blue-600' : 'bg-purple-100 text-purple-600'">
@@ -38,38 +44,38 @@ import { MatIconModule } from '@angular/material/icon';
           }
         </div>
         <nav class="flex flex-col gap-1 flex-1">
-          <a routerLink="/admin/dashboard" routerLinkActive="bg-blue-50 text-blue-600 font-medium" (click)="sidebarOpen.set(false)" class="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-500 hover:bg-gray-50 font-medium transition-colors">
+          <a routerLink="/admin/dashboard" routerLinkActive="bg-blue-50 text-blue-600 font-medium" (click)="sidebarOpen.set(false)" class="nav-item flex items-center gap-3 px-3 py-2 rounded-xl text-gray-500 hover:bg-gray-50 text-[13px] font-medium transition-colors">
             <mat-icon class="w-5 h-5">dashboard</mat-icon> Dashboard
           </a>
-          <a routerLink="/admin/inbox" routerLinkActive="bg-blue-50 text-blue-600 font-medium" (click)="sidebarOpen.set(false)" class="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-500 hover:bg-gray-50 font-medium transition-colors">
+          <a routerLink="/admin/inbox" routerLinkActive="bg-blue-50 text-blue-600 font-medium" (click)="sidebarOpen.set(false)" class="nav-item flex items-center gap-3 px-3 py-2 rounded-xl text-gray-500 hover:bg-gray-50 text-[13px] font-medium transition-colors">
             <mat-icon class="w-5 h-5">inbox</mat-icon> Enquiries
             @if(newEnquiriesCount() > 0) {
               <span class="ml-auto bg-red-100 text-red-600 text-[10px] px-2 py-0.5 rounded-full font-bold">{{ newEnquiriesCount() }}</span>
             }
           </a>
-          <a routerLink="/admin/content" routerLinkActive="bg-blue-50 text-blue-600 font-medium" (click)="sidebarOpen.set(false)" class="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-500 hover:bg-gray-50 font-medium transition-colors">
+          <a routerLink="/admin/content" routerLinkActive="bg-blue-50 text-blue-600 font-medium" (click)="sidebarOpen.set(false)" class="nav-item flex items-center gap-3 px-3 py-2 rounded-xl text-gray-500 hover:bg-gray-50 text-[13px] font-medium transition-colors">
             <mat-icon class="w-5 h-5">inventory_2</mat-icon> Content
           </a>
-          <a routerLink="/admin/ai" routerLinkActive="bg-blue-50 text-blue-600 font-medium" (click)="sidebarOpen.set(false)" class="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-500 hover:bg-gray-50 font-medium transition-colors">
+          <a routerLink="/admin/ai" routerLinkActive="bg-blue-50 text-blue-600 font-medium" (click)="sidebarOpen.set(false)" class="nav-item flex items-center gap-3 px-3 py-2 rounded-xl text-gray-500 hover:bg-gray-50 text-[13px] font-medium transition-colors">
             <mat-icon class="w-5 h-5">auto_awesome</mat-icon> AI Tools
           </a>
-          <a routerLink="/admin/customisation" routerLinkActive="bg-blue-50 text-blue-600 font-medium" (click)="sidebarOpen.set(false)" class="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-500 hover:bg-gray-50 font-medium transition-colors">
+          <a routerLink="/admin/customisation" routerLinkActive="bg-blue-50 text-blue-600 font-medium" (click)="sidebarOpen.set(false)" class="nav-item flex items-center gap-3 px-3 py-2 rounded-xl text-gray-500 hover:bg-gray-50 text-[13px] font-medium transition-colors">
             <mat-icon class="w-5 h-5">settings</mat-icon> Customisation
           </a>
-          <a routerLink="/admin/builder" routerLinkActive="bg-blue-50 text-blue-600 font-medium" (click)="sidebarOpen.set(false)" class="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-500 hover:bg-gray-50 font-medium transition-colors">
+          <a routerLink="/admin/builder" routerLinkActive="bg-blue-50 text-blue-600 font-medium" (click)="sidebarOpen.set(false)" class="nav-item flex items-center gap-3 px-3 py-2 rounded-xl text-gray-500 hover:bg-gray-50 text-[13px] font-medium transition-colors">
             <mat-icon class="w-5 h-5">view_quilt</mat-icon> Page Builder
           </a>
-          <a routerLink="/admin/form-builder" routerLinkActive="bg-blue-50 text-blue-600 font-medium" (click)="sidebarOpen.set(false)" class="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-500 hover:bg-gray-50 font-medium transition-colors">
+          <a routerLink="/admin/form-builder" routerLinkActive="bg-blue-50 text-blue-600 font-medium" (click)="sidebarOpen.set(false)" class="nav-item flex items-center gap-3 px-3 py-2 rounded-xl text-gray-500 hover:bg-gray-50 text-[13px] font-medium transition-colors">
             <mat-icon class="w-5 h-5">dynamic_form</mat-icon> Form Builder
           </a>
-          <a routerLink="/admin/pages" routerLinkActive="bg-blue-50 text-blue-600 font-medium" (click)="sidebarOpen.set(false)" class="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-500 hover:bg-gray-50 font-medium transition-colors">
+          <a routerLink="/admin/pages" routerLinkActive="bg-blue-50 text-blue-600 font-medium" (click)="sidebarOpen.set(false)" class="nav-item flex items-center gap-3 px-3 py-2 rounded-xl text-gray-500 hover:bg-gray-50 text-[13px] font-medium transition-colors">
             <mat-icon class="w-5 h-5">article</mat-icon> Pages
           </a>
-          <a routerLink="/admin/payments" routerLinkActive="bg-blue-50 text-blue-600 font-medium" (click)="sidebarOpen.set(false)" class="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-500 hover:bg-gray-50 font-medium transition-colors">
+          <a routerLink="/admin/payments" routerLinkActive="bg-blue-50 text-blue-600 font-medium" (click)="sidebarOpen.set(false)" class="nav-item flex items-center gap-3 px-3 py-2 rounded-xl text-gray-500 hover:bg-gray-50 text-[13px] font-medium transition-colors">
             <mat-icon class="w-5 h-5">payments</mat-icon> Payments
           </a>
           <div class="mt-4 pt-4 border-t border-gray-100">
-            <a routerLink="/admin/settings" routerLinkActive="bg-blue-50 text-blue-600 font-medium" (click)="sidebarOpen.set(false)" class="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-500 hover:bg-gray-50 font-medium transition-colors">
+            <a routerLink="/admin/settings" routerLinkActive="bg-blue-50 text-blue-600 font-medium" (click)="sidebarOpen.set(false)" class="nav-item flex items-center gap-3 px-3 py-2 rounded-xl text-gray-500 hover:bg-gray-50 text-[13px] font-medium transition-colors">
               <mat-icon class="w-5 h-5">tune</mat-icon> Settings
             </a>
           </div>
@@ -85,7 +91,7 @@ import { MatIconModule } from '@angular/material/icon';
 
       <!-- Main Content -->
       <main class="flex-1 flex flex-col overflow-hidden">
-        <header class="h-14 md:h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 md:px-8 shrink-0">
+        <header class="h-12 md:h-14 bg-white/80 backdrop-blur-xl border-b border-gray-200/60 flex items-center justify-between px-4 md:px-8 shrink-0">
            <div class="flex items-center gap-2 text-sm text-gray-500">
              <button (click)="sidebarOpen.set(!sidebarOpen())" class="md:hidden p-1.5 rounded-lg text-gray-500 hover:bg-gray-100 transition-colors">
                <mat-icon>menu</mat-icon>
@@ -126,7 +132,9 @@ export class AdminLayoutComponent {
 
   publicSiteUrl = computed(() => {
     const user = this.authService.currentUser();
-    return user ? `/site/${user.uid}` : '/public';
+    if (!user) return '/public';
+    const slug = this.dataService.siteSlug();
+    return slug ? `/site/${slug}` : `/site/${user.uid}`;
   });
   
   // Computed property simulation

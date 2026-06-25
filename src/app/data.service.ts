@@ -106,6 +106,7 @@ export class DataService {
   readonly activities = computed(() => this.state().activities);
   readonly customization = computed(() => this.state().customization);
   readonly isSetupComplete = computed(() => this.state().isSetupComplete);
+  readonly siteSlug = computed(() => this.state().siteSlug || '');
 
   constructor() {
     effect(() => {
@@ -180,6 +181,10 @@ export class DataService {
 
   completeSetup() {
     this.state.update(s => ({ ...s, isSetupComplete: true }));
+  }
+
+  setSiteSlug(slug: string) {
+    this.state.update(s => ({ ...s, siteSlug: slug }));
   }
 
   resetSetup() {

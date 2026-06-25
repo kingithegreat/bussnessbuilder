@@ -17,6 +17,7 @@ import { ToastService } from './toast.service';
   standalone: true,
   imports: [ReactiveFormsModule, MatIconModule, SlicePipe, NgTemplateOutlet, RouterLink, EditableTextDirective],
   styles: [`
+    :host { display: block; }
     .dark-mode {
       color: #e5e7eb;
     }
@@ -47,12 +48,29 @@ import { ToastService } from './toast.service';
     .editable-text:focus {
       outline-color: rgba(59, 130, 246, 0.7);
     }
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(24px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-in {
+      animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+    .glass-card {
+      background: rgba(255, 255, 255, 0.72);
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      border: 1px solid rgba(255, 255, 255, 0.4);
+    }
+    .dark-mode .glass-card {
+      background: rgba(31, 41, 55, 0.72) !important;
+      border-color: rgba(55, 65, 81, 0.4) !important;
+    }
   `],
   template: `
     <div [style]="wrapperStyles" class="min-h-screen font-sans text-gray-900 selection:bg-blue-100 flex flex-col transition-colors duration-300" [class.dark-mode]="customization().branding.themeMode === 'dark'" tabindex="0" (click)="handlePreviewClick($event)" (keydown.enter)="handlePreviewClick($event)">
       <!-- Navbar -->
-      <nav class="border-b shadow-sm sticky top-0 z-50 transition-colors" [style.backgroundColor]="customization().branding.backgroundColor" [style.borderColor]="'color-mix(in srgb, ' + customization().branding.primaryColor + ' 10%, transparent)'">
-        <div class="max-w-5xl mx-auto px-4 md:px-6 h-16 md:h-20 flex items-center justify-between">
+      <nav class="border-b sticky top-0 z-50 transition-colors" style="backdrop-filter: blur(20px) saturate(180%); -webkit-backdrop-filter: blur(20px) saturate(180%);" [style.backgroundColor]="customization().branding.themeMode === 'dark' ? 'rgba(17,24,39,0.8)' : 'rgba(255,255,255,0.72)'" [style.borderColor]="'color-mix(in srgb, ' + customization().branding.primaryColor + ' 8%, transparent)'">
+        <div class="max-w-5xl mx-auto px-4 md:px-6 h-14 md:h-16 flex items-center justify-between">
           <div class="flex items-center gap-2 md:gap-3 min-w-0">
              @if (customization().branding.logoUrl) {
                <img [src]="customization().branding.logoUrl" alt="Logo" class="w-8 h-8 rounded-lg object-cover shrink-0" referrerpolicy="no-referrer">
@@ -61,7 +79,7 @@ import { ToastService } from './toast.service';
                  <div class="w-4 h-4 border-2 border-white rounded-sm"></div>
                </div>
              }
-             <div class="font-bold text-lg md:text-xl tracking-tight truncate" [style.color]="customization().branding.themeMode === 'dark' ? 'white' : 'black'" [appEditableText]="editable()" (textChange)="onTextEdit('profile', 'name', $event)">
+             <div class="font-semibold text-base md:text-lg tracking-tight truncate" [style.color]="customization().branding.themeMode === 'dark' ? 'white' : 'black'" [appEditableText]="editable()" (textChange)="onTextEdit('profile', 'name', $event)">
                {{ profile().name || 'Your Business' }}
              </div>
           </div>
@@ -94,26 +112,26 @@ import { ToastService } from './toast.service';
         @if (section.visible) {
           @switch (section.id) {
             @case ('hero') {
-              <section class="py-16 md:py-24">
+              <section class="py-20 md:py-32">
                 <div class="max-w-5xl mx-auto px-6">
                   <!-- Centered Hero -->
                   @if (!section.layoutVariant || section.layoutVariant === 'centered') {
-                    <div [style.borderRadius]="cardRadius" class="bg-white p-6 sm:p-10 md:p-16 shadow-sm border border-gray-100 text-center relative overflow-hidden flex flex-col items-center">
-                      <div class="absolute inset-0 bg-gradient-to-b from-gray-50 to-white -z-10"></div>
-                      <span class="inline-block py-1.5 px-3 rounded-full bg-blue-50 text-blue-600 text-[10px] font-bold uppercase tracking-widest mb-6 md:mb-8 border border-blue-100">
+                    <div [style.borderRadius]="cardRadius" class="glass-card p-8 sm:p-12 md:p-20 text-center relative overflow-hidden flex flex-col items-center animate-in">
+                      <div class="absolute inset-0 bg-gradient-to-b from-gray-50/50 to-white/30 -z-10"></div>
+                      <span class="inline-block py-1.5 px-4 rounded-full bg-blue-50/80 text-blue-600 text-[10px] font-semibold uppercase tracking-widest mb-6 md:mb-8 border border-blue-100/60">
                         {{ profile().type }} &bull; {{ profile().serviceArea }}
                       </span>
-                      <h1 class="text-3xl sm:text-4xl md:text-6xl font-black tracking-tight text-gray-900 mb-4 md:mb-6 max-w-3xl leading-tight" [appEditableText]="editable()" (textChange)="onTextEdit('profile', 'tagline', $event)">
+                      <h1 class="text-3xl sm:text-4xl md:text-6xl font-bold tracking-tight text-gray-900 mb-4 md:mb-6 max-w-3xl leading-[1.08]" [appEditableText]="editable()" (textChange)="onTextEdit('profile', 'tagline', $event)">
                         {{ profile().tagline || 'Professional services you can trust.' }}
                       </h1>
-                      <p class="text-lg md:text-xl text-gray-500 max-w-2xl mb-10 font-medium">
+                      <p class="text-lg md:text-xl text-gray-500 max-w-2xl mb-10 font-normal leading-relaxed">
                         {{ profile().description | slice:0:120 }}...
                       </p>
-                      <div class="flex gap-4">
-                         <a href="#contact" (click)="scrollTo('contact', $event)" [style.backgroundColor]="customization().branding.primaryColor" [style.borderRadius]="buttonRadius" class="text-white px-8 py-4 text-sm font-bold shadow-lg hover:opacity-90 transition-opacity cursor-pointer">
+                      <div class="flex gap-3">
+                         <a href="#contact" (click)="scrollTo('contact', $event)" [style.backgroundColor]="customization().branding.primaryColor" [style.borderRadius]="buttonRadius" class="text-white px-8 py-3.5 text-sm font-semibold shadow-sm hover:shadow-md hover:scale-[1.02] transition-all duration-200 cursor-pointer">
                            {{ customization().branding.ctaText || profile().ctaText || 'Get a Quote' }}
                          </a>
-                         <a href="#services" (click)="scrollTo('services', $event)" [style.borderRadius]="buttonRadius" class="bg-gray-50 text-gray-900 border border-gray-200 px-8 py-4 text-sm font-bold hover:bg-gray-100 transition-colors cursor-pointer">
+                         <a href="#services" (click)="scrollTo('services', $event)" [style.borderRadius]="buttonRadius" class="bg-gray-100/80 text-gray-900 px-8 py-3.5 text-sm font-semibold hover:bg-gray-200/80 transition-all duration-200 cursor-pointer">
                            View Services
                          </a>
                       </div>
@@ -216,7 +234,7 @@ import { ToastService } from './toast.service';
               <section id="about" class="py-16 md:py-24">
                 <div class="max-w-5xl mx-auto px-6">
                   <div class="mb-8 md:mb-12">
-                    <h2 class="text-2xl md:text-3xl font-black text-gray-900 mb-2" [appEditableText]="editable()" (textChange)="onTextEdit('section', 'heading', $event, section.id)">{{ section.heading }}</h2>
+                    <h2 class="text-2xl md:text-3xl font-bold text-gray-900 mb-2" [appEditableText]="editable()" (textChange)="onTextEdit('section', 'heading', $event, section.id)">{{ section.heading }}</h2>
                     <p class="text-gray-500 font-medium" [appEditableText]="editable()" (textChange)="onTextEdit('section', 'subheading', $event, section.id)">{{ section.subheading }}</p>
                   </div>
 
@@ -334,11 +352,11 @@ import { ToastService } from './toast.service';
 
             @case ('services') {
               <!-- Services -->
-              <section id="services" class="py-16 md:py-24">
+              <section id="services" class="py-20 md:py-28">
                 <div class="max-w-5xl mx-auto px-6">
-                  <div class="mb-8 md:mb-12 flex justify-between items-end">
+                  <div class="mb-10 md:mb-14 flex justify-between items-end">
                     <div>
-                      <h2 class="text-2xl md:text-3xl font-black text-gray-900 mb-2" [appEditableText]="editable()" (textChange)="onTextEdit('section', 'heading', $event, section.id)">{{ section.heading }}</h2>
+                      <h2 class="text-2xl md:text-3xl font-bold text-gray-900 mb-2" [appEditableText]="editable()" (textChange)="onTextEdit('section', 'heading', $event, section.id)">{{ section.heading }}</h2>
                       <p class="text-gray-500 font-medium" [appEditableText]="editable()" (textChange)="onTextEdit('section', 'subheading', $event, section.id)">{{ section.subheading }}</p>
                     </div>
                   </div>
@@ -346,7 +364,7 @@ import { ToastService } from './toast.service';
                   @if (!section.layoutVariant || section.layoutVariant === 'grid') {
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                       @for (service of services(); track service.id) {
-                        <div [style.borderRadius]="cardRadius" class="bg-white border border-gray-100 shadow-sm hover:shadow-md transition-shadow flex flex-col h-full overflow-hidden">
+                        <div [style.borderRadius]="cardRadius" class="bg-white border border-gray-100/80 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 flex flex-col h-full overflow-hidden">
                           @if (service.imageUrl) {
                             <img [src]="service.imageUrl" [alt]="service.name" referrerpolicy="no-referrer" class="w-full h-40 object-cover">
                             <div class="p-8 flex flex-col flex-grow">
@@ -463,7 +481,7 @@ import { ToastService } from './toast.service';
               <section id="testimonials" class="py-12 md:py-24 bg-gray-50 border-y border-gray-200">
                 <div class="max-w-5xl mx-auto px-4 md:px-6">
                   <div class="text-center mb-8 md:mb-12">
-                    <h2 class="text-2xl md:text-3xl font-black text-gray-900 mb-2" [appEditableText]="editable()" (textChange)="onTextEdit('section', 'heading', $event, section.id)">{{ section.heading }}</h2>
+                    <h2 class="text-2xl md:text-3xl font-bold text-gray-900 mb-2" [appEditableText]="editable()" (textChange)="onTextEdit('section', 'heading', $event, section.id)">{{ section.heading }}</h2>
                     <p class="text-gray-500 font-medium" [appEditableText]="editable()" (textChange)="onTextEdit('section', 'subheading', $event, section.id)">{{ section.subheading }}</p>
                   </div>
                   
@@ -542,7 +560,7 @@ import { ToastService } from './toast.service';
               <section id="faqs" class="py-12 md:py-24 bg-white border-y border-gray-200">
                 <div class="max-w-5xl mx-auto px-4 md:px-6">
                   <div class="text-center mb-8 md:mb-12">
-                    <h2 class="text-2xl md:text-3xl font-black text-gray-900 mb-2" [appEditableText]="editable()" (textChange)="onTextEdit('section', 'heading', $event, section.id)">{{ section.heading }}</h2>
+                    <h2 class="text-2xl md:text-3xl font-bold text-gray-900 mb-2" [appEditableText]="editable()" (textChange)="onTextEdit('section', 'heading', $event, section.id)">{{ section.heading }}</h2>
                     <p class="text-gray-500 font-medium" [appEditableText]="editable()" (textChange)="onTextEdit('section', 'subheading', $event, section.id)">{{ section.subheading }}</p>
                   </div>
                   
@@ -787,7 +805,7 @@ import { ToastService } from './toast.service';
               <section [id]="section.id" class="py-16 md:py-24">
                 <div class="max-w-5xl mx-auto px-6">
                   <div class="mb-12">
-                    <h2 class="text-3xl font-black text-gray-900 mb-2" [style.color]="customization().branding.themeMode === 'dark' ? 'white' : 'black'">{{ section.heading }}</h2>
+                    <h2 class="text-3xl font-bold text-gray-900 mb-2" [style.color]="customization().branding.themeMode === 'dark' ? 'white' : 'black'">{{ section.heading }}</h2>
                     <p class="text-gray-500 font-medium">{{ section.subheading }}</p>
                   </div>
                   <div [style.borderRadius]="cardRadius" class="bg-gray-50 border border-gray-100 p-10 flex items-center justify-center text-gray-400 text-sm">
@@ -800,13 +818,15 @@ import { ToastService } from './toast.service';
         }
       }
       
-      <footer class="mt-auto py-10 bg-white border-t border-gray-200 text-center text-gray-400 text-[10px] font-bold uppercase tracking-widest">
-         <div class="flex items-center justify-center gap-3 mb-2">
-           <a routerLink="/privacy" class="hover:text-gray-600 transition-colors normal-case text-[11px] tracking-normal font-medium">Privacy</a>
-           <span class="text-gray-300">·</span>
-           <a routerLink="/terms" class="hover:text-gray-600 transition-colors normal-case text-[11px] tracking-normal font-medium">Terms</a>
+      <footer class="mt-auto py-8 border-t border-gray-200/60 text-center text-gray-400 text-xs">
+         <div class="max-w-5xl mx-auto px-6">
+           <div class="flex items-center justify-center gap-4 mb-3">
+             <a routerLink="/privacy" class="hover:text-gray-600 transition-colors text-[12px] font-medium">Privacy</a>
+             <span class="text-gray-300">|</span>
+             <a routerLink="/terms" class="hover:text-gray-600 transition-colors text-[12px] font-medium">Terms</a>
+           </div>
+           <p class="text-[11px] text-gray-400">&copy; 2026 {{ profile().name }}. Powered by BusinessFlow Studio.</p>
          </div>
-         <p>&copy; 2026 {{ profile().name }}. Powered by BusinessFlow Studio.</p>
       </footer>
     </div>
   `

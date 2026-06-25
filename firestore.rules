@@ -20,6 +20,12 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // Slugs: public read for URL resolution, server-only writes
+    match /slugs/{slug} {
+      allow read: if true;
+      allow write: if false;
+    }
+
     // Deny everything else by default
     match /{document=**} {
       allow read, write: if false;

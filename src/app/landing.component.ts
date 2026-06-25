@@ -9,12 +9,13 @@ import { AuthService } from './auth.service';
   imports: [RouterLink, MatIconModule],
   template: `
     <div class="min-h-screen bg-[#F5F5F7] text-gray-900 flex flex-col font-sans">
-      <header class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-6 flex justify-between items-center w-full">
+      <header class="sticky top-0 z-50 bg-[#F5F5F7]/80 backdrop-blur-xl border-b border-gray-200/40">
+       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 md:py-4 flex justify-between items-center w-full">
         <div class="flex items-center gap-2">
-          <div class="h-10 w-10 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-sm">
-            <mat-icon>business</mat-icon>
+          <div class="h-9 w-9 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-sm">
+            <mat-icon class="text-[20px]">business</mat-icon>
           </div>
-          <span class="text-lg md:text-xl font-bold tracking-tight">BusinessFlow Studio</span>
+          <span class="text-[15px] md:text-base font-semibold tracking-tight">BusinessFlow Studio</span>
         </div>
         <div class="flex items-center gap-2 md:gap-3">
           @if (auth.isLoggedIn()) {
@@ -30,12 +31,13 @@ import { AuthService } from './auth.service';
             </a>
           }
         </div>
+       </div>
       </header>
 
       <main class="flex-grow">
         <!-- Hero -->
         <section class="flex flex-col items-center justify-center text-center px-4 sm:px-6 lg:px-8 py-16 md:py-24">
-          <div class="bg-white rounded-2xl md:rounded-[2rem] p-8 md:p-16 shadow-sm border border-gray-100 max-w-4xl mx-auto flex flex-col items-center">
+          <div class="bg-white/80 backdrop-blur-xl rounded-2xl md:rounded-[2rem] p-8 md:p-16 shadow-sm border border-gray-200/60 max-w-4xl mx-auto flex flex-col items-center">
             <div class="inline-flex items-center justify-center h-14 w-14 md:h-16 md:w-16 rounded-2xl bg-blue-50 text-blue-600 mb-6 md:mb-8">
               <mat-icon class="text-3xl h-8 w-8">bolt</mat-icon>
             </div>
@@ -62,42 +64,42 @@ import { AuthService } from './auth.service';
             <p class="text-gray-500 max-w-2xl mx-auto text-sm md:text-base">Built for small businesses — no design skills or coding required. Get online fast with tools that actually help you run your business.</p>
           </div>
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-            <div class="bg-white rounded-2xl p-6 md:p-8 border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+            <div class="bg-white rounded-2xl p-6 md:p-8 border border-gray-100/80 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
               <div class="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center mb-4">
                 <mat-icon>view_quilt</mat-icon>
               </div>
               <h3 class="text-lg font-bold text-gray-900 mb-2">Page Builder</h3>
               <p class="text-gray-500 text-sm leading-relaxed">Drag, drop, and customise sections. Choose layouts, colours, and fonts — your site, your way.</p>
             </div>
-            <div class="bg-white rounded-2xl p-6 md:p-8 border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+            <div class="bg-white rounded-2xl p-6 md:p-8 border border-gray-100/80 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
               <div class="w-12 h-12 rounded-xl bg-green-50 text-green-600 flex items-center justify-center mb-4">
                 <mat-icon>inbox</mat-icon>
               </div>
               <h3 class="text-lg font-bold text-gray-900 mb-2">Enquiry Inbox</h3>
               <p class="text-gray-500 text-sm leading-relaxed">Every lead goes straight to your dashboard. Track, reply, and manage enquiries from one place.</p>
             </div>
-            <div class="bg-white rounded-2xl p-6 md:p-8 border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+            <div class="bg-white rounded-2xl p-6 md:p-8 border border-gray-100/80 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
               <div class="w-12 h-12 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center mb-4">
                 <mat-icon>auto_awesome</mat-icon>
               </div>
               <h3 class="text-lg font-bold text-gray-900 mb-2">AI Content Tools</h3>
               <p class="text-gray-500 text-sm leading-relaxed">Generate service descriptions, taglines, and FAQ answers using AI tailored to your business type.</p>
             </div>
-            <div class="bg-white rounded-2xl p-6 md:p-8 border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+            <div class="bg-white rounded-2xl p-6 md:p-8 border border-gray-100/80 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
               <div class="w-12 h-12 rounded-xl bg-orange-50 text-orange-600 flex items-center justify-center mb-4">
                 <mat-icon>dynamic_form</mat-icon>
               </div>
               <h3 class="text-lg font-bold text-gray-900 mb-2">Custom Forms</h3>
               <p class="text-gray-500 text-sm leading-relaxed">Build enquiry forms with dropdowns, checkboxes, file uploads, and conditional logic.</p>
             </div>
-            <div class="bg-white rounded-2xl p-6 md:p-8 border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+            <div class="bg-white rounded-2xl p-6 md:p-8 border border-gray-100/80 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
               <div class="w-12 h-12 rounded-xl bg-pink-50 text-pink-600 flex items-center justify-center mb-4">
                 <mat-icon>palette</mat-icon>
               </div>
               <h3 class="text-lg font-bold text-gray-900 mb-2">Full Customisation</h3>
               <p class="text-gray-500 text-sm leading-relaxed">Branding, colours, fonts, dark mode, multiple layout variants — make it look exactly how you want.</p>
             </div>
-            <div class="bg-white rounded-2xl p-6 md:p-8 border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+            <div class="bg-white rounded-2xl p-6 md:p-8 border border-gray-100/80 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
               <div class="w-12 h-12 rounded-xl bg-cyan-50 text-cyan-600 flex items-center justify-center mb-4">
                 <mat-icon>photo_library</mat-icon>
               </div>

@@ -107,6 +107,12 @@ export class AuthService {
     return sendPasswordResetEmail(this.auth, email);
   }
 
+  async getIdToken(): Promise<string | null> {
+    const user = this.auth.currentUser;
+    if (!user) return null;
+    return user.getIdToken();
+  }
+
   async logout() {
     await signOut(this.auth);
     this.router.navigate(['/']);

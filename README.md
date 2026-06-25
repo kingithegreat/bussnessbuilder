@@ -50,6 +50,7 @@ See `.env.example` for all variables. Key ones:
 | `STRIPE_PRICE_ID_PRO` | For payments | Stripe Price ID for Pro tier |
 | `STRIPE_PRICE_ID_BUSINESS` | For payments | Stripe Price ID for Business tier |
 | `STRIPE_WEBHOOK_SECRET` | For payments | Stripe webhook signing secret |
+| `ADMIN_UIDS` | For admin panel | Comma-separated Firebase UIDs for `/app-admin` |
 | `NG_ALLOWED_HOSTS` | Cloud Run | Angular SSR host check (`*` for Cloud Run) |
 
 ## Enabling AI (Google Gemini)
@@ -94,6 +95,14 @@ gcloud run deploy businessflow \
 | `POST /api/stripe/create-checkout-session` | Firebase token | Create Stripe checkout |
 | `POST /api/stripe/customer-portal` | Firebase token | Open billing portal |
 | `POST /api/stripe/webhook` | Stripe signature | Handle Stripe events |
+| `POST /api/slugs/claim` | Firebase token | Claim a friendly URL slug |
+| `GET /api/admin/verify` | Admin only | Verify admin access |
+| `GET /api/admin/users` | Admin only | List all users |
+| `GET /api/admin/metrics` | Admin only | Platform metrics |
+| `GET /api/admin/discounts` | Admin only | List discount codes |
+| `POST /api/admin/discounts` | Admin only | Create discount code |
+| `DELETE /api/admin/discounts/:code` | Admin only | Delete discount code |
+| `DELETE /api/account/:uid` | Firebase token | Delete own account + data |
 
 ## Continuous Deployment
 

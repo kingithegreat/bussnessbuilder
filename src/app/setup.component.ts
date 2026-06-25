@@ -1,8 +1,11 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { HttpClient } from '@angular/common/http';
+import { firstValueFrom } from 'rxjs';
 import { DataService } from './data.service';
 import { AiService } from './ai.service';
+import { AuthService } from './auth.service';
 import { BusinessType } from './types';
 import { MatIconModule } from '@angular/material/icon';
 import { BUSINESS_PRESETS, getPreset } from './presets';
@@ -16,7 +19,7 @@ import { BUSINESS_PRESETS, getPreset } from './presets';
       <div class="max-w-6xl w-full grid grid-cols-1 lg:grid-cols-12 gap-8">
         
         <!-- Left Column: Form -->
-        <div class="lg:col-span-5 bg-white rounded-[2rem] shadow-sm border border-gray-100 overflow-hidden flex flex-col h-fit">
+        <div class="lg:col-span-5 bg-white/80 backdrop-blur-xl rounded-[2rem] shadow-sm border border-gray-200/60 overflow-hidden flex flex-col h-fit">
           <div class="bg-gray-50/50 px-8 py-6 border-b border-gray-100">
              <div class="flex items-center justify-between mb-4">
                <div class="flex items-center gap-2">
@@ -174,6 +177,8 @@ export class SetupWizardComponent implements OnInit {
   private fb = inject(FormBuilder);
   private dataService = inject(DataService);
   private aiService = inject(AiService);
+  private authService = inject(AuthService);
+  private http = inject(HttpClient);
   private router = inject(Router);
 
   isSubmitting = signal(false);
@@ -292,10 +297,24 @@ export class SetupWizardComponent implements OnInit {
 
       console.log('[Setup] Completing setup...');
       this.dataService.completeSetup();
-      console.log('[Setup] isSetupComplete:', this.dataService.isSetupComplete());
-      console.log('[Setup] Navigating to dashboard...');
+
+      const user = this.authService.currentUser();
+      if (user) {
+        const token = await this.authService.getIdToken();
+        if (token) {
+          const result = await firstValueFrom(
+            this.http.post<{ slug: string }>('/api/slugs/claim',
+              { uid: user.uid, name: val.name },
+              { headers: { Authorization: `Bearer ${token}` } }
+            )
+          ).catch(() => null);
+          if (result?.slug) {
+            this.dataService.setSiteSlug(result.slug);
+          }
+        }
+      }
+
       await this.router.navigate(['/admin/dashboard']);
-      console.log('[Setup] Navigation complete.');
     } catch (e) {
       console.error('[Setup] Failed:', e);
       this.formError.set('Something went wrong. Please try again.');
