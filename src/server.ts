@@ -91,6 +91,36 @@ app.get('/api/site/:uid', async (req, res) => {
   }
 });
 
+/**
+ * Public API: load a single published content page by slug.
+ */
+app.get('/api/site/:uid/pages/:slug', async (req, res) => {
+  try {
+    const db = await getDb();
+    const { uid, slug } = req.params;
+    const mainSnap = await db.doc(`users/${uid}/businessData/main`).get();
+    if (!mainSnap.exists || !mainSnap.data()!['isSetupComplete']) {
+      res.status(404).json({ error: 'Site not found' });
+      return;
+    }
+    const pagesSnap = await db.doc(`users/${uid}/businessData/pages`).get();
+    if (!pagesSnap.exists) {
+      res.status(404).json({ error: 'Page not found' });
+      return;
+    }
+    const pages: Array<{ slug: string; published: boolean; title: string; content: string }> = pagesSnap.data()!['pages'] || [];
+    const page = pages.find(p => p.slug === slug && p.published);
+    if (!page) {
+      res.status(404).json({ error: 'Page not found' });
+      return;
+    }
+    res.json({ title: page.title, content: page.content, slug: page.slug });
+  } catch (e) {
+    console.error('Error loading page:', e);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 const enquiryAttempts = new Map<string, { count: number; resetAt: number }>();
 const ENQUIRY_WINDOW_MS = 60_000;
 const ENQUIRY_LIMIT = 5;

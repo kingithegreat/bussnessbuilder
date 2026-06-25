@@ -95,7 +95,6 @@ import { MatIconModule } from '@angular/material/icon';
              <span class="text-gray-900 font-semibold">Workspace</span>
            </div>
            <div class="flex items-center gap-2 md:gap-4">
-             <button (click)="loadDemo()" class="hidden sm:flex bg-gray-100 text-gray-900 px-4 py-2 rounded-lg text-xs font-bold shadow-sm hover:bg-gray-200 transition-colors items-center gap-1"><mat-icon class="text-[14px]">auto_fix_high</mat-icon> Demo</button>
              <button (click)="exportData()" class="hidden md:flex bg-gray-100 text-gray-900 px-4 py-2 rounded-lg text-xs font-bold shadow-sm hover:bg-gray-200 transition-colors items-center gap-1"><mat-icon class="text-[14px]">download</mat-icon> Export</button>
              <button (click)="fileInput.click()" class="hidden md:flex bg-gray-100 text-gray-900 px-4 py-2 rounded-lg text-xs font-bold shadow-sm hover:bg-gray-200 transition-colors items-center gap-1"><mat-icon class="text-[14px]">upload</mat-icon> Import</button>
              <input type="file" #fileInput (change)="importData($event)" style="display:none" accept=".json">
