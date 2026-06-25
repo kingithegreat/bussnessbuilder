@@ -130,6 +130,121 @@ app.post('/api/site/:uid/enquiry', express.json(), async (req, res) => {
   }
 });
 
+// --- Stripe subscription endpoints ---
+
+let _stripe: any = null;
+async function getStripe() {
+  if (_stripe) return _stripe;
+  const { default: Stripe } = await import('stripe');
+  _stripe = new Stripe(process.env['STRIPE_SECRET_KEY'] || '', { apiVersion: '2026-06-24.dahlia' as any });
+  return _stripe;
+}
+
+const PRICE_IDS: Record<string, string> = {
+  pro: process.env['STRIPE_PRO_PRICE_ID'] || '',
+  business: process.env['STRIPE_BUSINESS_PRICE_ID'] || '',
+};
+
+app.post('/api/stripe/create-checkout-session', express.json(), async (req, res) => {
+  try {
+    const stripe = await getStripe();
+    const { uid, tier } = req.body;
+    if (!uid || !PRICE_IDS[tier]) {
+      res.status(400).json({ error: 'Invalid request' });
+      return;
+    }
+
+    const db = await getDb();
+    const userSnap = await db.doc(`users/${uid}`).get();
+    const email = userSnap.exists ? userSnap.data()?.['email'] : undefined;
+
+    const session = await stripe.checkout.sessions.create({
+      mode: 'subscription',
+      payment_method_types: ['card'],
+      line_items: [{ price: PRICE_IDS[tier], quantity: 1 }],
+      success_url: `${req.headers.origin || req.protocol + '://' + req.headers.host}/admin/settings?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${req.headers.origin || req.protocol + '://' + req.headers.host}/pricing`,
+      client_reference_id: uid,
+      customer_email: email,
+      metadata: { uid, tier },
+    });
+
+    res.json({ url: session.url });
+  } catch (e) {
+    console.error('Checkout session error:', e);
+    res.status(500).json({ error: 'Failed to create checkout session' });
+  }
+});
+
+app.post('/api/stripe/customer-portal', express.json(), async (req, res) => {
+  try {
+    const stripe = await getStripe();
+    const { uid } = req.body;
+    const db = await getDb();
+    const subSnap = await db.doc(`subscriptions/${uid}`).get();
+    if (!subSnap.exists || !subSnap.data()?.['stripeCustomerId']) {
+      res.status(400).json({ error: 'No subscription found' });
+      return;
+    }
+    const session = await stripe.billingPortal.sessions.create({
+      customer: subSnap.data()!['stripeCustomerId'],
+      return_url: `${req.headers.origin || req.protocol + '://' + req.headers.host}/admin/settings`,
+    });
+    res.json({ url: session.url });
+  } catch (e) {
+    console.error('Portal error:', e);
+    res.status(500).json({ error: 'Failed to open portal' });
+  }
+});
+
+app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
+  try {
+    const stripe = await getStripe();
+    const db = await getDb();
+    const event = req.body;
+    const parsed = typeof event === 'string' ? JSON.parse(event) : JSON.parse(event.toString());
+
+    if (parsed.type === 'checkout.session.completed') {
+      const session = parsed.data.object;
+      const uid = session.client_reference_id || session.metadata?.uid;
+      const tier = session.metadata?.tier || 'pro';
+      if (uid) {
+        await db.doc(`subscriptions/${uid}`).set({
+          tier,
+          status: 'active',
+          stripeCustomerId: session.customer,
+          stripeSubscriptionId: session.subscription,
+          currentPeriodEnd: null,
+          cancelAtPeriodEnd: false,
+        });
+      }
+    }
+
+    if (parsed.type === 'customer.subscription.updated' || parsed.type === 'customer.subscription.deleted') {
+      const sub = parsed.data.object;
+      const customerId = sub.customer;
+      const subsSnap = await db.collection('subscriptions').where('stripeCustomerId', '==', customerId).get();
+      if (!subsSnap.empty) {
+        const docRef = subsSnap.docs[0].ref;
+        if (parsed.type === 'customer.subscription.deleted') {
+          await docRef.update({ tier: 'free', status: 'canceled', cancelAtPeriodEnd: false });
+        } else {
+          await docRef.update({
+            status: sub.status === 'active' ? 'active' : sub.status === 'past_due' ? 'past_due' : sub.status,
+            cancelAtPeriodEnd: sub.cancel_at_period_end || false,
+            currentPeriodEnd: new Date(sub.current_period_end * 1000).toISOString(),
+          });
+        }
+      }
+    }
+
+    res.json({ received: true });
+  } catch (e) {
+    console.error('Webhook error:', e);
+    res.status(400).json({ error: 'Webhook failed' });
+  }
+});
+
 /**
  * Serve static files from /browser
  */
