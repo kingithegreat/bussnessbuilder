@@ -825,7 +825,7 @@ import { ToastService } from './toast.service';
              <span class="text-gray-300">|</span>
              <a routerLink="/terms" class="hover:text-gray-600 transition-colors text-[12px] font-medium">Terms</a>
            </div>
-           <p class="text-[11px] text-gray-400">&copy; 2026 {{ profile().name }}. Powered by BusinessFlow Studio.</p>
+           <p class="text-[11px] text-gray-400">&copy; 2026 {{ profile().name }}. @if (!hideBranding()) {Powered by BusinessFlow Studio.}</p>
          </div>
       </footer>
     </div>
@@ -848,6 +848,7 @@ export class PublicPageComponent {
   mobileMenuOpen = signal(false);
 
   profile = this.dataService.profile;
+  hideBranding = this.dataService.hideBranding;
   services = this.dataService.services;
   faqs = this.dataService.faqs;
   testimonials = this.dataService.testimonials;

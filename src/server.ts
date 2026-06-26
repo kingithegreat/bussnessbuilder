@@ -94,6 +94,8 @@ app.get('/api/site/:uid', async (req, res) => {
     }
 
     const paySnap = await db.doc(`users/${uid}/businessData/payments`).get();
+    const subSnap = await db.doc(`subscriptions/${uid}`).get();
+    const hideBranding = subSnap.exists && subSnap.data()?.['tier'] === 'business';
 
     res.json({
       profile: data['profile'],
@@ -102,6 +104,7 @@ app.get('/api/site/:uid', async (req, res) => {
       faqs: data['faqs'] || [],
       customization: data['customization'],
       paymentSettings: paySnap.exists ? paySnap.data() : null,
+      hideBranding,
     });
   } catch (e) {
     console.error('Error loading site:', e);
@@ -231,6 +234,43 @@ app.post('/api/site/:uid/enquiry', express.json(), async (req, res) => {
       });
     });
     res.json({ success: true });
+
+    // Fire-and-forget email notification
+    (async () => {
+      const notifSnap = await db.doc(`users/${uid}/businessData/notifications`).get();
+      if (!notifSnap.exists) return;
+      const prefs = notifSnap.data()!;
+      if (!prefs['emailOnNewEnquiry'] || !prefs['notificationEmail']) return;
+
+      const smtpHost = process.env['SMTP_HOST'];
+      const smtpPort = process.env['SMTP_PORT'];
+      const smtpUser = process.env['SMTP_USER'];
+      const smtpPass = process.env['SMTP_PASS'];
+      const smtpFrom = process.env['SMTP_FROM'];
+      if (!smtpHost || !smtpPort || !smtpUser || !smtpPass || !smtpFrom) return;
+
+      const nodemailer = await import('nodemailer');
+      const transporter = nodemailer.default.createTransport({
+        host: smtpHost,
+        port: Number(smtpPort),
+        secure: Number(smtpPort) === 465,
+        auth: { user: smtpUser, pass: smtpPass },
+      });
+
+      await transporter.sendMail({
+        from: smtpFrom,
+        to: prefs['notificationEmail'],
+        subject: `New Enquiry from ${enquiry.name}`,
+        text: [
+          `Name: ${enquiry.name}`,
+          `Email: ${enquiry.email}`,
+          `Phone: ${enquiry.phone || 'N/A'}`,
+          `Service: ${enquiry.serviceInterest}`,
+          `Message: ${enquiry.message}`,
+        ].join('\n'),
+      });
+    })().catch(err => console.warn('Notification email failed:', err));
+
   } catch (e) {
     if (e instanceof Error && e.message === 'SITE_NOT_FOUND') {
       res.status(404).json({ error: 'Site not found' });
@@ -479,6 +519,66 @@ app.delete('/api/account/:uid', async (req, res) => {
     res.json({ success: true });
   } catch (e) {
     console.error('Account deletion error:', e);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// --- AI generation endpoint ---
+
+const aiRateLimits = new Map<string, { count: number; resetAt: number }>();
+const AI_WINDOW_MS = 60_000;
+const AI_LIMIT = 20;
+
+function isAiRateLimited(uid: string): boolean {
+  const now = Date.now();
+  const current = aiRateLimits.get(uid);
+  if (!current || current.resetAt <= now) {
+    aiRateLimits.set(uid, { count: 1, resetAt: now + AI_WINDOW_MS });
+    return false;
+  }
+  current.count += 1;
+  return current.count > AI_LIMIT;
+}
+
+app.post('/api/ai/generate', express.json(), async (req, res) => {
+  try {
+    const { uid, prompt, systemPrompt } = req.body;
+    if (typeof uid !== 'string' || typeof prompt !== 'string') {
+      res.status(400).json({ error: 'Invalid request' });
+      return;
+    }
+    if (!await verifyFirebaseUser(req, uid)) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const apiKey = process.env['GEMINI_API_KEY'];
+    if (!apiKey) {
+      res.json({ text: null, fallback: true });
+      return;
+    }
+
+    if (isAiRateLimited(uid)) {
+      res.status(429).json({ error: 'Too many AI requests. Please try again shortly.' });
+      return;
+    }
+
+    try {
+      const { GoogleGenAI } = await import('@google/genai');
+      const ai = new GoogleGenAI({ apiKey });
+      const response = await ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: prompt,
+        config: systemPrompt ? { systemInstruction: systemPrompt } : undefined,
+      });
+      const generatedText = response.text ?? null;
+      res.json({ text: generatedText });
+    } catch (aiErr) {
+      console.warn('AI generation failed:', aiErr);
+      res.json({ text: null, fallback: true });
+    }
+  } catch (e) {
+    console.error('AI endpoint error:', e);
     res.status(500).json({ error: 'Server error' });
   }
 });

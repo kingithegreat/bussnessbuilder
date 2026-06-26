@@ -182,6 +182,7 @@ export interface PublicSiteData {
   faqs?: FAQ[];
   customization?: CustomizationSettings;
   paymentSettings?: PaymentSettings | null;
+  hideBranding?: boolean;
 }
 
 export interface SiteTemplate {

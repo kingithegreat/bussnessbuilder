@@ -1,7 +1,10 @@
 import { Injectable, inject } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { firstValueFrom } from 'rxjs';
 import { BusinessProfile, Enquiry, Service, BusinessType } from './types';
 import { getPreset } from './presets';
 import { DataService } from './data.service';
+import { AuthService } from './auth.service';
 
 const MODEL = 'gemini-2.5-flash';
 
@@ -16,6 +19,8 @@ const MODEL = 'gemini-2.5-flash';
 @Injectable({ providedIn: 'root' })
 export class AiService {
   private dataService = inject(DataService);
+  private http = inject(HttpClient);
+  private authService = inject(AuthService);
 
   /** True when a Gemini API key is configured and live calls will be attempted. */
   isLive(): boolean {
@@ -35,20 +40,43 @@ export class AiService {
 
   private async generate(prompt: string, system?: string): Promise<string | null> {
     const apiKey = this.resolveApiKey();
-    if (!apiKey) return null;
+
+    // 1. If client-side API key exists, use Gemini SDK directly
+    if (apiKey) {
+      try {
+        // Lazy-loaded so the SDK only ships in a separate chunk fetched on first use.
+        const { GoogleGenAI } = await import('@google/genai');
+        const ai = new GoogleGenAI({ apiKey });
+        const res = await ai.models.generateContent({
+          model: MODEL,
+          contents: prompt,
+          ...(system ? { config: { systemInstruction: system } } : {}),
+        });
+        const text = res.text?.trim();
+        return text || null;
+      } catch (err) {
+        console.error('Gemini request failed, falling back to template:', err);
+        return null;
+      }
+    }
+
+    // 2. No client key — try the server-side AI endpoint
     try {
-      // Lazy-loaded so the SDK only ships in a separate chunk fetched on first use.
-      const { GoogleGenAI } = await import('@google/genai');
-      const ai = new GoogleGenAI({ apiKey });
-      const res = await ai.models.generateContent({
-        model: MODEL,
-        contents: prompt,
-        ...(system ? { config: { systemInstruction: system } } : {}),
-      });
-      const text = res.text?.trim();
-      return text || null;
+      const token = await this.authService.getIdToken();
+      if (!token) return null;
+      const uid = this.authService.currentUser()?.uid;
+      const res = await firstValueFrom(
+        this.http.post<{ text: string }>('/api/ai/generate', {
+          uid,
+          prompt,
+          systemPrompt: system,
+        }, {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+      );
+      return res?.text?.trim() || null;
     } catch (err) {
-      console.error('Gemini request failed, falling back to template:', err);
+      console.error('Server AI request failed, falling back to template:', err);
       return null;
     }
   }

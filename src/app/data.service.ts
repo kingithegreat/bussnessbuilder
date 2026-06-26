@@ -97,6 +97,8 @@ export class DataService {
   readonly activeTemplateId = this._activeTemplateId.asReadonly();
   private _publicSiteUid = signal('');
   readonly publicSiteUid = this._publicSiteUid.asReadonly();
+  private _hideBranding = signal(false);
+  readonly hideBranding = this._hideBranding.asReadonly();
 
   readonly profile = computed(() => this.state().profile);
   readonly services = computed(() => this.state().services);
@@ -464,5 +466,6 @@ export class DataService {
     if (data.paymentSettings) {
       this.paymentSettings.set(data.paymentSettings);
     }
+    this._hideBranding.set(data.hideBranding || false);
   }
 }

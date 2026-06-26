@@ -43,6 +43,8 @@ GitHub Actions (`deploy.yml`) exists but needs WIF secrets configured. Manual `g
 
 - **firebase-admin MUST be lazy-loaded** in `server.ts` via `await import(...)` because it uses CommonJS/`__dirname` which breaks Angular's ESM build
 - **Stripe SDK also lazy-loaded** for the same reason
+- **nodemailer also lazy-loaded** for the same reason
+- **@google/genai lazy-loaded** on server for AI endpoint
 - **Firestore DocumentData** requires bracket notation (`data['field']`) not dot notation
 - **COOP header** must be `same-origin-allow-popups` for Firebase Auth popup sign-in
 - **`AngularNodeAppEngine`** requires `trustProxyHeaders: true` for Cloud Run reverse proxy
@@ -61,7 +63,9 @@ GitHub Actions (`deploy.yml`) exists but needs WIF secrets configured. Manual `g
 - `STRIPE_PRICE_ID_PRO` or `STRIPE_PRO_PRICE_ID` — Pro price ID (server reads both)
 - `STRIPE_PRICE_ID_BUSINESS` or `STRIPE_BUSINESS_PRICE_ID` — Business price ID (server reads both)
 - `STRIPE_WEBHOOK_SECRET` — Stripe webhook signing secret
+- `GEMINI_API_KEY` — Server-side Gemini API key for AI endpoint
 - `ADMIN_UIDS` — Comma-separated Firebase UIDs that can access `/app-admin`
+- `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM` — Email notifications
 - `NG_ALLOWED_HOSTS` — Angular SSR host check (set to `*` for Cloud Run)
 
 ## Server API endpoints
@@ -79,6 +83,7 @@ GitHub Actions (`deploy.yml`) exists but needs WIF secrets configured. Manual `g
 | `GET /api/admin/discounts` | Admin only | List discount codes |
 | `POST /api/admin/discounts` | Admin only | Create a discount code |
 | `DELETE /api/admin/discounts/:code` | Admin only | Delete a discount code |
+| `POST /api/ai/generate` | Firebase token | Server-side AI text generation |
 | `DELETE /api/account/:uid` | Firebase token (own UID) | Delete account and all data |
 | `POST /api/stripe/create-checkout-session` | Firebase token | Create Stripe checkout |
 | `POST /api/stripe/customer-portal` | Firebase token | Open Stripe billing portal |
@@ -101,7 +106,6 @@ GitHub Actions (`deploy.yml`) exists but needs WIF secrets configured. Manual `g
 ## Known issues / TODO
 
 - `publicGuard` on `/pages/:slug` requires login — should be truly public via API
-- Email notifications toggle exists but nothing sends emails
-- Custom domains — just a text field placeholder
+- Custom domains — text field + DNS instructions; no automated mapping yet
 - Demo button in admin header could confuse real users
 - GitHub Actions WIF secrets not configured for auto-deploy

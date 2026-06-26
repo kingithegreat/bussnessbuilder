@@ -42,6 +42,25 @@ import { ImagePickerComponent } from './image-picker.component';
         }
       </div>
 
+      <!-- Layout Presets -->
+      <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden p-6">
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <h3 class="font-bold text-gray-900">Quick Presets</h3>
+            <p class="text-xs text-gray-500 mt-0.5">Apply a complete look instantly. You can customise further after.</p>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+          @for (preset of layoutPresets; track preset.id) {
+            <button (click)="applyLayoutPreset(preset)" class="group border border-gray-200 rounded-xl p-4 text-left hover:border-blue-500 hover:shadow-md transition-all duration-200">
+              <div class="w-full h-16 rounded-lg mb-3 overflow-hidden" [style.background]="preset.preview"></div>
+              <p class="text-sm font-semibold text-gray-900">{{ preset.name }}</p>
+              <p class="text-[11px] text-gray-500">{{ preset.description }}</p>
+            </button>
+          }
+        </div>
+      </div>
+
       <!-- Tab Content -->
       <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
         
@@ -425,6 +444,54 @@ export class AdminCustomisationComponent implements OnInit {
 
   localCust!: CustomizationSettings;
   profile = this.dataService.profile;
+
+  layoutPresets = [
+    {
+      id: 'modern',
+      name: 'Modern',
+      description: 'Clean lines, blue accent',
+      preview: 'linear-gradient(135deg, #2563eb 0%, #1e40af 100%)',
+      branding: { primaryColor: '#2563eb', secondaryColor: '#1e40af', backgroundColor: '#F5F5F7', fontStyle: 'modern' as const, buttonStyle: 'rounded' as const, cardStyle: 'soft' as const, themeMode: 'light' as const },
+      heroVariant: 'centered',
+      servicesVariant: 'grid',
+    },
+    {
+      id: 'classic',
+      name: 'Classic',
+      description: 'Warm serif typography',
+      preview: 'linear-gradient(135deg, #78350f 0%, #92400e 100%)',
+      branding: { primaryColor: '#92400e', secondaryColor: '#78350f', backgroundColor: '#FFFBEB', fontStyle: 'classic' as const, buttonStyle: 'rounded' as const, cardStyle: 'bordered' as const, themeMode: 'light' as const },
+      heroVariant: 'split',
+      servicesVariant: 'list',
+    },
+    {
+      id: 'bold',
+      name: 'Bold',
+      description: 'Dark theme, vibrant pink',
+      preview: 'linear-gradient(135deg, #111827 0%, #1f2937 100%)',
+      branding: { primaryColor: '#ec4899', secondaryColor: '#db2777', backgroundColor: '#111827', fontStyle: 'bold' as const, buttonStyle: 'pill' as const, cardStyle: 'glass' as const, themeMode: 'dark' as const },
+      heroVariant: 'premium',
+      servicesVariant: 'featured',
+    },
+    {
+      id: 'minimal',
+      name: 'Minimal',
+      description: 'Stripped back, content first',
+      preview: 'linear-gradient(135deg, #fafafa 0%, #f5f5f5 100%)',
+      branding: { primaryColor: '#18181b', secondaryColor: '#3f3f46', backgroundColor: '#ffffff', fontStyle: 'minimal' as const, buttonStyle: 'square' as const, cardStyle: 'flat' as const, themeMode: 'light' as const },
+      heroVariant: 'minimal',
+      servicesVariant: 'compact',
+    },
+  ];
+
+  applyLayoutPreset(preset: typeof this.layoutPresets[0]) {
+    this.localCust.branding = { ...this.localCust.branding, ...preset.branding };
+    const heroSection = this.localCust.sections.find(s => s.id === 'hero');
+    if (heroSection) heroSection.layoutVariant = preset.heroVariant;
+    const servicesSection = this.localCust.sections.find(s => s.id === 'services');
+    if (servicesSection) servicesSection.layoutVariant = preset.servicesVariant;
+    this.toast.success(`"${preset.name}" preset applied! Save to keep changes.`);
+  }
 
   ngOnInit() {
     // Create a deep copy of the customization settings
