@@ -139,6 +139,13 @@ export class AdminLayoutComponent implements OnInit {
   enquiries = this.dataService.enquiries;
 
   async ngOnInit() {
+    if (this.authService.isLoading()) {
+      await new Promise<void>(resolve => {
+        const check = setInterval(() => {
+          if (!this.authService.isLoading()) { clearInterval(check); resolve(); }
+        }, 50);
+      });
+    }
     const token = await this.authService.getIdToken();
     if (token) {
       this.http.get('/api/admin/verify', {
