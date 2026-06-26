@@ -1,16 +1,21 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, OnInit, signal, computed, PLATFORM_ID } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { DataService } from './data.service';
 import { AnalyticsService } from './analytics.service';
 import { AuthService } from './auth.service';
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
+import { OnboardingGuideComponent } from './onboarding-guide.component';
 
 @Component({
   selector: 'app-admin-dashboard',
   standalone: true,
-  imports: [DatePipe, DecimalPipe, MatIconModule],
+  imports: [DatePipe, DecimalPipe, MatIconModule, OnboardingGuideComponent],
   template: `
     <div class="flex flex-col gap-6">
+      @if (showOnboarding()) {
+        <app-onboarding-guide (guideDismissed)="dismissOnboarding()"></app-onboarding-guide>
+      }
       <div>
         <h2 class="text-2xl font-semibold tracking-tight text-gray-900">Welcome back!</h2>
         <p class="text-gray-500 text-sm">Here's what's happening with your business today.</p>
@@ -206,13 +211,30 @@ export class AdminDashboardComponent implements OnInit {
   private dataService = inject(DataService);
   analyticsService = inject(AnalyticsService);
   private authService = inject(AuthService);
+  private platformId = inject(PLATFORM_ID);
   enquiries = this.dataService.enquiries;
   activities = this.dataService.activities;
+
+  private onboardingDismissed = signal(false);
+  showOnboarding = computed(() => {
+    if (this.onboardingDismissed()) return false;
+    if (isPlatformBrowser(this.platformId)) {
+      if (localStorage.getItem('bf_onboarding_dismissed')) return false;
+    }
+    return this.enquiries().length === 0;
+  });
 
   ngOnInit() {
     const user = this.authService.currentUser();
     if (user) {
       this.analyticsService.loadAnalytics(user.uid);
+    }
+  }
+
+  dismissOnboarding() {
+    this.onboardingDismissed.set(true);
+    if (isPlatformBrowser(this.platformId)) {
+      localStorage.setItem('bf_onboarding_dismissed', '1');
     }
   }
 

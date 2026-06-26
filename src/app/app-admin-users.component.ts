@@ -66,7 +66,9 @@ interface AdminUser {
                       @if (user.businessName) {
                         <p class="font-medium text-gray-900">{{ user.businessName }}</p>
                         @if (user.siteSlug) {
-                          <p class="text-xs text-blue-500 font-mono">/site/{{ user.siteSlug }}</p>
+                          <a [href]="'/site/' + user.siteSlug" target="_blank" class="text-xs text-blue-500 font-mono hover:underline">/site/{{ user.siteSlug }}</a>
+                        } @else {
+                          <a [href]="'/site/' + user.uid" target="_blank" class="text-xs text-blue-500 font-mono hover:underline">View site</a>
                         }
                       } @else {
                         <span class="text-gray-400 text-xs">Not set up</span>

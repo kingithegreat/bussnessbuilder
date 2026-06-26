@@ -1,5 +1,6 @@
-import { Component, inject, signal, computed } from '@angular/core';
+import { Component, inject, signal, computed, OnInit } from '@angular/core';
 import { RouterOutlet, RouterLink, RouterLinkActive, Router } from '@angular/router';
+import { HttpClient } from '@angular/common/http';
 import { DataService } from './data.service';
 import { AuthService } from './auth.service';
 import { SubscriptionService } from './subscription.service';
@@ -78,6 +79,11 @@ import { MatIconModule } from '@angular/material/icon';
             <a routerLink="/admin/settings" routerLinkActive="bg-blue-50 text-blue-600 font-medium" (click)="sidebarOpen.set(false)" class="nav-item flex items-center gap-3 px-3 py-2 rounded-xl text-gray-500 hover:bg-gray-50 text-[13px] font-medium transition-colors">
               <mat-icon class="w-5 h-5">tune</mat-icon> Settings
             </a>
+            @if (isOwnerAdmin()) {
+              <a routerLink="/app-admin" (click)="sidebarOpen.set(false)" class="nav-item flex items-center gap-3 px-3 py-2 rounded-xl text-red-500 hover:bg-red-50 text-[13px] font-medium transition-colors mt-1">
+                <mat-icon class="w-5 h-5">admin_panel_settings</mat-icon> Owner Admin
+              </a>
+            }
           </div>
         </nav>
         <div class="mt-auto pt-4 border-t border-gray-100">
@@ -119,16 +125,30 @@ import { MatIconModule } from '@angular/material/icon';
     </div>
   `
 })
-export class AdminLayoutComponent {
+export class AdminLayoutComponent implements OnInit {
   private dataService = inject(DataService);
   authService = inject(AuthService);
   subService = inject(SubscriptionService);
   private toast = inject(ToastService);
   private router = inject(Router);
+  private http = inject(HttpClient);
   sidebarOpen = signal(false);
+  isOwnerAdmin = signal(false);
   
   profile = this.dataService.profile;
   enquiries = this.dataService.enquiries;
+
+  async ngOnInit() {
+    const token = await this.authService.getIdToken();
+    if (token) {
+      this.http.get('/api/admin/verify', {
+        headers: { Authorization: `Bearer ${token}` },
+      }).subscribe({
+        next: () => this.isOwnerAdmin.set(true),
+        error: () => {},
+      });
+    }
+  }
 
   publicSiteUrl = computed(() => {
     const user = this.authService.currentUser();

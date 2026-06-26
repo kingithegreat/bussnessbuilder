@@ -406,22 +406,72 @@ app.get('/api/admin/metrics', async (req, res) => {
     let totalServices = 0;
     let proUsers = 0;
     let businessUsers = 0;
+    const signupsByDate: Record<string, number> = {};
+    const enquiriesByDate: Record<string, number> = {};
+    const recentUsers: Array<{ uid: string; email: string; displayName: string; businessName: string; tier: string; createdAt: string; siteSlug: string }> = [];
+    const tierBreakdown = { free: 0, pro: 0, business: 0 };
+    let totalTestimonials = 0;
+    let totalFaqs = 0;
+    let totalPageViews = 0;
+
     for (const userDoc of usersSnap.docs) {
+      const userData = userDoc.data();
+      const createdAt = userData['createdAt'] || '';
+      if (createdAt) {
+        const dateKey = createdAt.slice(0, 10);
+        signupsByDate[dateKey] = (signupsByDate[dateKey] || 0) + 1;
+      }
+
       const mainSnap = await db.doc(`users/${userDoc.id}/businessData/main`).get();
+      let businessName = '';
+      let siteSlug = '';
       if (mainSnap.exists) {
         const d = mainSnap.data()!;
         if (d['isSetupComplete']) setupComplete++;
-        totalEnquiries += Array.isArray(d['enquiries']) ? d['enquiries'].length : 0;
+        businessName = d['profile']?.['name'] || '';
+        siteSlug = d['siteSlug'] || '';
+        const enquiries = Array.isArray(d['enquiries']) ? d['enquiries'] : [];
+        totalEnquiries += enquiries.length;
         totalServices += Array.isArray(d['services']) ? d['services'].length : 0;
+        totalTestimonials += Array.isArray(d['testimonials']) ? d['testimonials'].length : 0;
+        totalFaqs += Array.isArray(d['faqs']) ? d['faqs'].length : 0;
+        for (const enq of enquiries) {
+          if (enq['date']) {
+            const eDateKey = enq['date'].slice(0, 10);
+            enquiriesByDate[eDateKey] = (enquiriesByDate[eDateKey] || 0) + 1;
+          }
+        }
       }
+
+      let tier = 'free';
       const subSnap = await db.doc(`subscriptions/${userDoc.id}`).get();
       if (subSnap.exists) {
-        const tier = subSnap.data()?.['tier'];
+        tier = subSnap.data()?.['tier'] || 'free';
         if (tier === 'pro') proUsers++;
         if (tier === 'business') businessUsers++;
       }
+      tierBreakdown[tier as keyof typeof tierBreakdown] = (tierBreakdown[tier as keyof typeof tierBreakdown] || 0) + 1;
+
+      recentUsers.push({
+        uid: userDoc.id,
+        email: userData['email'] || '',
+        displayName: userData['displayName'] || '',
+        businessName,
+        tier,
+        createdAt,
+        siteSlug,
+      });
     }
-    res.json({ totalUsers, setupComplete, totalEnquiries, totalServices, proUsers, businessUsers });
+
+    tierBreakdown.free = totalUsers - proUsers - businessUsers;
+    recentUsers.sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
+    const recent5 = recentUsers.slice(0, 5);
+
+    res.json({
+      totalUsers, setupComplete, totalEnquiries, totalServices, proUsers, businessUsers,
+      totalTestimonials, totalFaqs, totalPageViews,
+      signupsByDate, enquiriesByDate, tierBreakdown, recentUsers: recent5,
+    });
   } catch (e) {
     console.error('Admin metrics error:', e);
     res.status(500).json({ error: 'Server error' });
