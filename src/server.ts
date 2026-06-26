@@ -130,7 +130,7 @@ app.get('/api/site/:uid/pages/:slug', async (req, res) => {
       res.status(404).json({ error: 'Page not found' });
       return;
     }
-    const pages: Array<{ slug: string; published: boolean; title: string; content: string }> = pagesSnap.data()!['pages'] || [];
+    const pages: { slug: string; published: boolean; title: string; content: string }[] = pagesSnap.data()!['pages'] || [];
     const page = pages.find(p => p.slug === slug && p.published);
     if (!page) {
       res.status(404).json({ error: 'Page not found' });
@@ -143,20 +143,37 @@ app.get('/api/site/:uid/pages/:slug', async (req, res) => {
   }
 });
 
-const enquiryAttempts = new Map<string, { count: number; resetAt: number }>();
-const ENQUIRY_WINDOW_MS = 60_000;
-const ENQUIRY_LIMIT = 5;
+class RateLimitStore {
+  private store = new Map<string, { count: number; resetAt: number }>();
+  private readonly maxEntries: number;
 
-function isRateLimited(key: string): boolean {
-  const now = Date.now();
-  const current = enquiryAttempts.get(key);
-  if (!current || current.resetAt <= now) {
-    enquiryAttempts.set(key, { count: 1, resetAt: now + ENQUIRY_WINDOW_MS });
-    return false;
+  constructor(maxEntries = 10_000) {
+    this.maxEntries = maxEntries;
+    setInterval(() => this.sweep(), 60_000).unref();
   }
-  current.count += 1;
-  return current.count > ENQUIRY_LIMIT;
+
+  isLimited(key: string, limit: number, windowMs: number): boolean {
+    const now = Date.now();
+    const current = this.store.get(key);
+    if (!current || current.resetAt <= now) {
+      if (this.store.size >= this.maxEntries) this.sweep();
+      if (this.store.size >= this.maxEntries) return true;
+      this.store.set(key, { count: 1, resetAt: now + windowMs });
+      return false;
+    }
+    current.count += 1;
+    return current.count > limit;
+  }
+
+  private sweep() {
+    const now = Date.now();
+    for (const [key, entry] of this.store) {
+      if (entry.resetAt <= now) this.store.delete(key);
+    }
+  }
 }
+
+const rateLimiter = new RateLimitStore();
 
 function asTrimmedString(value: unknown, maxLength: number): string {
   return typeof value === 'string' ? value.trim().slice(0, maxLength) : '';
@@ -183,7 +200,7 @@ app.post('/api/site/:uid/enquiry', express.json(), async (req, res) => {
     const db = await getDb();
     const uid = await resolveUid(db, req.params.uid);
     const ip = req.ip || req.socket.remoteAddress || 'unknown';
-    if (isRateLimited(`${uid}:${ip}`)) {
+    if (rateLimiter.isLimited(`enq:${uid}:${ip}`, 5, 60_000)) {
       res.status(429).json({ error: 'Too many enquiries. Please try again shortly.' });
       return;
     }
@@ -297,7 +314,7 @@ app.post('/api/slugs/claim', express.json(), async (req, res) => {
     }
 
     const db = await getDb();
-    let slug = generateSlug(name);
+    const slug = generateSlug(name);
     if (!slug) {
       res.status(400).json({ error: 'Could not generate a URL from that name' });
       return;
@@ -395,12 +412,18 @@ app.get('/api/admin/users', async (req, res) => {
   }
 });
 
+let metricsCache: { data: unknown; expiresAt: number } | null = null;
+
 app.get('/api/admin/metrics', async (req, res) => {
   if (!await verifyAdmin(req)) { res.status(403).json({ error: 'Not authorized' }); return; }
   try {
+    if (metricsCache && metricsCache.expiresAt > Date.now()) {
+      res.json(metricsCache.data);
+      return;
+    }
     const db = await getDb();
     const usersSnap = await db.collection('users').get();
-    let totalUsers = usersSnap.size;
+    const totalUsers = usersSnap.size;
     let setupComplete = 0;
     let totalEnquiries = 0;
     let totalServices = 0;
@@ -408,11 +431,11 @@ app.get('/api/admin/metrics', async (req, res) => {
     let businessUsers = 0;
     const signupsByDate: Record<string, number> = {};
     const enquiriesByDate: Record<string, number> = {};
-    const recentUsers: Array<{ uid: string; email: string; displayName: string; businessName: string; tier: string; createdAt: string; siteSlug: string }> = [];
+    const recentUsers: { uid: string; email: string; displayName: string; businessName: string; tier: string; createdAt: string; siteSlug: string }[] = [];
     const tierBreakdown = { free: 0, pro: 0, business: 0 };
     let totalTestimonials = 0;
     let totalFaqs = 0;
-    let totalPageViews = 0;
+    const totalPageViews = 0;
 
     for (const userDoc of usersSnap.docs) {
       const userData = userDoc.data();
@@ -467,11 +490,13 @@ app.get('/api/admin/metrics', async (req, res) => {
     recentUsers.sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
     const recent5 = recentUsers.slice(0, 5);
 
-    res.json({
+    const result = {
       totalUsers, setupComplete, totalEnquiries, totalServices, proUsers, businessUsers,
       totalTestimonials, totalFaqs, totalPageViews,
       signupsByDate, enquiriesByDate, tierBreakdown, recentUsers: recent5,
-    });
+    };
+    metricsCache = { data: result, expiresAt: Date.now() + 30_000 };
+    res.json(result);
   } catch (e) {
     console.error('Admin metrics error:', e);
     res.status(500).json({ error: 'Server error' });
@@ -575,20 +600,7 @@ app.delete('/api/account/:uid', async (req, res) => {
 
 // --- AI generation endpoint ---
 
-const aiRateLimits = new Map<string, { count: number; resetAt: number }>();
-const AI_WINDOW_MS = 60_000;
-const AI_LIMIT = 20;
-
-function isAiRateLimited(uid: string): boolean {
-  const now = Date.now();
-  const current = aiRateLimits.get(uid);
-  if (!current || current.resetAt <= now) {
-    aiRateLimits.set(uid, { count: 1, resetAt: now + AI_WINDOW_MS });
-    return false;
-  }
-  current.count += 1;
-  return current.count > AI_LIMIT;
-}
+// AI rate limiting uses the shared RateLimitStore above
 
 app.post('/api/ai/generate', express.json(), async (req, res) => {
   try {
@@ -608,7 +620,7 @@ app.post('/api/ai/generate', express.json(), async (req, res) => {
       return;
     }
 
-    if (isAiRateLimited(uid)) {
+    if (rateLimiter.isLimited(`ai:${uid}`, 20, 60_000)) {
       res.status(429).json({ error: 'Too many AI requests. Please try again shortly.' });
       return;
     }
@@ -647,16 +659,18 @@ async function getStripe(): Promise<Stripe> {
   return _stripe;
 }
 
-const PRICE_IDS: Record<string, string> = {
-  pro: process.env['STRIPE_PRICE_ID_PRO'] || process.env['STRIPE_PRO_PRICE_ID'] || '',
-  business: process.env['STRIPE_PRICE_ID_BUSINESS'] || process.env['STRIPE_BUSINESS_PRICE_ID'] || '',
-};
+function getPriceId(tier: string): string {
+  if (tier === 'pro') return process.env['STRIPE_PRICE_ID_PRO'] || process.env['STRIPE_PRO_PRICE_ID'] || '';
+  if (tier === 'business') return process.env['STRIPE_PRICE_ID_BUSINESS'] || process.env['STRIPE_BUSINESS_PRICE_ID'] || '';
+  return '';
+}
 
 app.post('/api/stripe/create-checkout-session', express.json(), async (req, res) => {
   try {
     const stripe = await getStripe();
     const { uid, tier } = req.body;
-    if (typeof uid !== 'string' || typeof tier !== 'string' || !PRICE_IDS[tier]) {
+    const priceId = getPriceId(tier);
+    if (typeof uid !== 'string' || typeof tier !== 'string' || !priceId) {
       res.status(400).json({ error: 'Invalid request' });
       return;
     }
@@ -672,7 +686,7 @@ app.post('/api/stripe/create-checkout-session', express.json(), async (req, res)
     const session = await stripe.checkout.sessions.create({
       mode: 'subscription',
       payment_method_types: ['card'],
-      line_items: [{ price: PRICE_IDS[tier], quantity: 1 }],
+      line_items: [{ price: priceId, quantity: 1 }],
       success_url: `${req.headers.origin || req.protocol + '://' + req.headers.host}/admin/settings?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${req.headers.origin || req.protocol + '://' + req.headers.host}/pricing`,
       client_reference_id: uid,

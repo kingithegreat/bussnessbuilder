@@ -145,7 +145,7 @@ import { RouterLink } from '@angular/router';
             <section>
               <h2 class="text-lg font-bold text-gray-900 mb-3">12. Contact Us</h2>
               <p>If you have questions about this Privacy Policy or your data, contact us at:</p>
-              <p class="mt-2 font-medium text-gray-900">BusinessFlow Studio<br>Email: privacy&#64;businessflow.studio</p>
+              <p class="mt-2 font-medium text-gray-900">BusinessFlow Studio<br>Email: adenkingi9&#64;gmail.com</p>
             </section>
           </div>
         </div>

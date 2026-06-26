@@ -35,7 +35,7 @@ export const routes: Routes = [
   { path: 'pricing', component: PricingComponent },
   { path: 'site/:uid', component: SiteViewComponent },
   { path: 'site/:uid/pages/:slug', component: PublicContentPageComponent },
-  { path: 'pages/:slug', component: ContentPageViewComponent, canActivate: [publicGuard] },
+  { path: 'pages/:slug', component: ContentPageViewComponent },
   { path: 'setup', component: SetupWizardComponent, canActivate: [setupGuard] },
   { path: 'public', component: PublicPageComponent, canActivate: [publicGuard] },
   {

@@ -152,7 +152,7 @@ export class AdminLayoutComponent implements OnInit {
         headers: { Authorization: `Bearer ${token}` },
       }).subscribe({
         next: () => this.isOwnerAdmin.set(true),
-        error: () => {},
+        error: () => { /* non-admin user — leave isOwnerAdmin false */ },
       });
     }
   }

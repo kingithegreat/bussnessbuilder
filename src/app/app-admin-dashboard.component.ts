@@ -187,7 +187,7 @@ interface Metrics {
               </div>
               <div>
                 <div class="flex justify-between text-xs font-bold mb-1.5">
-                  <span class="text-blue-600">Pro — \$14/mo</span>
+                  <span class="text-blue-600">Pro — $14/mo</span>
                   <span class="text-gray-400">{{ metrics()?.proUsers || 0 }}</span>
                 </div>
                 <div class="w-full bg-gray-100 rounded-full h-3">
@@ -196,7 +196,7 @@ interface Metrics {
               </div>
               <div>
                 <div class="flex justify-between text-xs font-bold mb-1.5">
-                  <span class="text-purple-600">Business — \$22/mo</span>
+                  <span class="text-purple-600">Business — $22/mo</span>
                   <span class="text-gray-400">{{ metrics()?.businessUsers || 0 }}</span>
                 </div>
                 <div class="w-full bg-gray-100 rounded-full h-3">
@@ -310,8 +310,8 @@ export class AppAdminDashboardComponent implements OnInit {
     return (count / m.totalUsers) * 100;
   }
 
-  private buildChart(data: Record<string, number>): Array<{ date: string; count: number }> {
-    const days: Array<{ date: string; count: number }> = [];
+  private buildChart(data: Record<string, number>): { date: string; count: number }[] {
+    const days: { date: string; count: number }[] = [];
     const now = new Date();
     for (let i = 29; i >= 0; i--) {
       const d = new Date(now);

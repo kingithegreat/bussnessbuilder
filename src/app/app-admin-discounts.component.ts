@@ -39,23 +39,23 @@ interface Discount {
         <div class="p-6 space-y-4">
           <div class="grid grid-cols-2 gap-4">
             <div>
-              <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Code</label>
-              <input type="text" [(ngModel)]="newCode" placeholder="e.g. LAUNCH20" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm uppercase font-mono focus:ring-2 focus:ring-red-500 outline-none">
+              <label for="discount-code" class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Code</label>
+              <input id="discount-code" type="text" [(ngModel)]="newCode" placeholder="e.g. LAUNCH20" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm uppercase font-mono focus:ring-2 focus:ring-red-500 outline-none">
             </div>
             <div>
-              <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Type</label>
-              <select [(ngModel)]="newType" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-red-500 outline-none">
+              <label for="discount-type" class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Type</label>
+              <select id="discount-type" [(ngModel)]="newType" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-red-500 outline-none">
                 <option value="percent">Percentage Off</option>
                 <option value="fixed">Fixed Amount Off</option>
               </select>
             </div>
             <div>
-              <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Value</label>
-              <input type="number" [(ngModel)]="newValue" [placeholder]="newType === 'percent' ? 'e.g. 20' : 'e.g. 5'" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-red-500 outline-none">
+              <label for="discount-value" class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Value</label>
+              <input id="discount-value" type="number" [(ngModel)]="newValue" [placeholder]="newType === 'percent' ? 'e.g. 20' : 'e.g. 5'" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-red-500 outline-none">
             </div>
             <div>
-              <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Max Uses (optional)</label>
-              <input type="number" [(ngModel)]="newMaxUses" placeholder="Unlimited" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-red-500 outline-none">
+              <label for="discount-max-uses" class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Max Uses (optional)</label>
+              <input id="discount-max-uses" type="number" [(ngModel)]="newMaxUses" placeholder="Unlimited" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-red-500 outline-none">
             </div>
           </div>
           <button (click)="createDiscount()" [disabled]="!newCode.trim() || !newValue" class="bg-red-600 text-white px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-red-700 transition-colors disabled:opacity-50 flex items-center gap-2">

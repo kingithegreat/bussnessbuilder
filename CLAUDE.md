@@ -105,7 +105,8 @@ GitHub Actions (`deploy.yml`) exists but needs WIF secrets configured. Manual `g
 
 ## Known issues / TODO
 
-- `publicGuard` on `/pages/:slug` requires login — should be truly public via API
 - Custom domains — text field + DNS instructions; no automated mapping yet
 - Demo button in admin header could confuse real users
 - GitHub Actions WIF secrets not configured for auto-deploy
+- Stripe is in test mode — switch keys when ready for real payments
+- Admin metrics endpoint does O(N) Firestore reads (mitigated by 30s cache)

@@ -35,7 +35,31 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  build-and-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: bussnessbuilder/package-lock.json
+
+      - name: Install dependencies
+        working-directory: bussnessbuilder
+        run: npm ci
+
+      - name: Lint
+        working-directory: bussnessbuilder
+        run: npm run lint
+
+      - name: Build (SSR)
+        working-directory: bussnessbuilder
+        run: npm run build
+
   deploy:
+    needs: build-and-check
     # Skip (don't fail) until GCP_PROJECT_ID is set, so the repo stays green
     # before deployment is configured.
     if: vars.GCP_PROJECT_ID != ''
@@ -59,9 +83,6 @@ jobs:
           service: ${{ vars.CLOUD_RUN_SERVICE || 'businessflow' }}
           region: ${{ vars.GCP_REGION || 'us-central1' }}
           source: .
-          # Cloud Run terminates TLS and proxies traffic, so the SSR host check
-          # is delegated to that layer. Lock this to your exact domain(s) to
-          # also enforce it in-app.
           env_vars: |-
             NG_ALLOWED_HOSTS=*
 
