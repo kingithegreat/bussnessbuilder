@@ -40,6 +40,12 @@ So context/tasks never need re-explaining and every AI stays current:
 - **Human / cross-tool mirror = Notion** (Projects → 💼 BusinessFlow). Mirrors
   the key facts for quick reading + the decisions log. Notion keeps its own page
   version history as a **second backup**.
+- **Durable backup of Notion = [`docs/brain-snapshot.md`](docs/brain-snapshot.md)**,
+  regenerated from the Notion brief daily (and on demand) by the **Snapshot Notion
+  brain** GitHub Action. It needs one repo secret, `NOTION_TOKEN` (a Notion
+  internal-integration secret; the brain page must be shared with that
+  integration) — see `.github/workflows/snapshot-notion-brain.yml` for setup. The
+  file is generated; don't hand-edit it.
 - **End every session by syncing the brain:** update this file *and* the Notion
   brief with what changed, what's deployed, and what's next. Stale brain =
   repeated work.

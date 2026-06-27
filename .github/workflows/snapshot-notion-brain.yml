@@ -1,0 +1,59 @@
+name: Snapshot Notion brain
+
+# Mirrors the Notion "BusinessFlow" brain into docs/brain-snapshot.md as a
+# durable, git-versioned backup. Runs daily and can be triggered manually.
+#
+# ── Required secret ─────────────────────────────────────────────────────────
+#   NOTION_TOKEN  — a Notion *internal integration* secret.
+#     1. Create one at https://www.notion.so/my-integrations (New integration →
+#        copy the "Internal Integration Secret", starts with `ntn_`).
+#     2. Share the brain page with it: open the Notion "💼 BusinessFlow" page →
+#        ••• menu → Connections → add your integration (this also covers reading
+#        its blocks).
+#     3. Add it at: repo → Settings → Secrets and variables → Actions → Secrets
+#        → New repository secret → name `NOTION_TOKEN`.
+#   (The token is read from the secret at runtime and is never written to the repo.)
+#
+# ── Optional variable ───────────────────────────────────────────────────────
+#   NOTION_BRAIN_PAGE_ID  — overrides the default brain page id. Add under
+#     Settings → Secrets and variables → Actions → Variables. Not sensitive.
+
+on:
+  schedule:
+    - cron: '17 6 * * *' # daily at 06:17 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: notion-brain-snapshot
+  cancel-in-progress: false
+
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Generate snapshot from Notion
+        env:
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+          NOTION_BRAIN_PAGE_ID: ${{ vars.NOTION_BRAIN_PAGE_ID }}
+        run: node scripts/snapshot-notion-brain.mjs
+
+      - name: Commit snapshot if it changed
+        run: |
+          if [[ -n "$(git status --porcelain docs/brain-snapshot.md)" ]]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add docs/brain-snapshot.md
+            git commit -m "chore: snapshot Notion brain ($(date -u +%Y-%m-%d))"
+            git push
+          else
+            echo "Brain snapshot unchanged — nothing to commit."
+          fi
