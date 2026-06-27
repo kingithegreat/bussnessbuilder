@@ -44,18 +44,15 @@ jobs:
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: bussnessbuilder/package-lock.json
+          cache-dependency-path: package-lock.json
 
       - name: Install dependencies
-        working-directory: bussnessbuilder
         run: npm ci
 
       - name: Lint
-        working-directory: bussnessbuilder
         run: npm run lint
 
       - name: Build (SSR)
-        working-directory: bussnessbuilder
         run: npm run build
 
   deploy:
