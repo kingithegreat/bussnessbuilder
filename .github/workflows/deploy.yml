@@ -57,6 +57,9 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      - name: Test
+        run: npm test -- --watch=false
+
       - name: Build (SSR)
         run: npm run build
 
