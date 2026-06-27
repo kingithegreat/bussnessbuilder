@@ -6,6 +6,27 @@ A SaaS website builder for small businesses. Users sign up, answer a setup wizar
 
 **Live URL:** https://businessflow-722923667291.us-central1.run.app
 
+## Before you start (read this FIRST)
+
+Multiple agents work this repo in parallel, and the app is **already built and
+deployed** (Live URL above). Most wasted/conflicting work comes from acting on a
+stale snapshot. Before making any change:
+
+1. **Sync to reality.** `git fetch origin && git log --oneline origin/main -5`.
+   Branch from **current `origin/main`** — do not trust whatever commit was
+   cloned/checked out.
+2. **Read the source of truth.** This `CLAUDE.md`, then the Notion brief
+   (Projects → 💼 BusinessFlow). Confirm your task isn't **already done** before
+   redoing it — check the Live URL and `git log origin/main`.
+3. **Use the branch convention.** Name AI-session branches `claude/whats-next-*`,
+   one task per branch. Open a PR; never push straight to `main`.
+4. **Before merging ANY branch, check it isn't stale:**
+   `git log --oneline <branch>..origin/main`. If `main` has commits the branch
+   lacks, merging it may **revert recent work** (e.g. a branch that predates a
+   feature will delete it). Reconcile/rebase first.
+5. **Leave the trail current.** Update this file and the Notion brief so the next
+   session inherits accurate state.
+
 ## Critical design rule
 
 ALL site customization features (branding, page builder, form builder, sections, layouts, colors, fonts) are available on ALL tiers. Only AI tools, enquiry/service limits, and admin extras are tier-gated.
