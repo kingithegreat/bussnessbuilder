@@ -6,6 +6,52 @@ A SaaS website builder for small businesses. Users sign up, answer a setup wizar
 
 **Live URL:** https://businessflow-722923667291.us-central1.run.app
 
+## Before you start (read this FIRST)
+
+Multiple agents work this repo in parallel, and the app is **already built and
+deployed** (Live URL above). Most wasted/conflicting work comes from acting on a
+stale snapshot. Before making any change:
+
+1. **Sync to reality.** `git fetch origin && git log --oneline origin/main -5`.
+   Branch from **current `origin/main`** — do not trust whatever commit was
+   cloned/checked out.
+2. **Read the source of truth.** This `CLAUDE.md`, then the Notion brief
+   (Projects → 💼 BusinessFlow). Confirm your task isn't **already done** before
+   redoing it — check the Live URL and `git log origin/main`.
+3. **Use the branch convention.** Name AI-session branches `claude/whats-next-*`,
+   one task per branch. Open a PR; never push straight to `main`.
+4. **Before merging ANY branch, check it isn't stale:**
+   `git log --oneline <branch>..origin/main`. If `main` has commits the branch
+   lacks, merging it may **revert recent work** (e.g. a branch that predates a
+   feature will delete it). Reconcile/rebase first.
+5. **Leave the trail current.** Update this file and the Notion brief so the next
+   session inherits accurate state.
+
+## The brain: one source of truth + backups
+
+So context/tasks never need re-explaining and every AI stays current:
+
+- **Canonical brain = this repo.** `CLAUDE.md` is the durable source of truth.
+  Every change is a git commit, so the full history is an automatic, revertable
+  **backup** — if the brain is ever wrong, `git log -p CLAUDE.md` and revert.
+- **All AIs read the same brain.** `AGENTS.md` (Codex & other agents) and
+  `.github/copilot-instructions.md` (Copilot) just point here — one source, not
+  three drifting copies. Update *this* file; the others never need editing.
+- **Human / cross-tool mirror = Notion** (Projects → 💼 BusinessFlow). Mirrors
+  the key facts for quick reading + the decisions log. Notion keeps its own page
+  version history as a **second backup**.
+- **Durable backup of Notion = [`docs/brain-snapshot.md`](docs/brain-snapshot.md)**,
+  regenerated from the Notion brief daily (and on demand) by the **Snapshot Notion
+  brain** GitHub Action. It needs one repo secret, `NOTION_TOKEN` (a Notion
+  internal-integration secret; the brain page must be shared with that
+  integration) — see `.github/workflows/snapshot-notion-brain.yml` for setup. The
+  file is generated; don't hand-edit it.
+- **End every session by syncing the brain:** update this file *and* the Notion
+  brief with what changed, what's deployed, and what's next. Stale brain =
+  repeated work.
+- **Recovery:** the same critical facts live in both git and Notion, so a bad
+  edit in one is restorable from the other (git history / Notion page history).
+
 ## Critical design rule
 
 ALL site customization features (branding, page builder, form builder, sections, layouts, colors, fonts) are available on ALL tiers. Only AI tools, enquiry/service limits, and admin extras are tier-gated.
