@@ -625,6 +625,15 @@ app.post('/api/ai/generate', express.json(), async (req, res) => {
       return;
     }
 
+    // Server-side tier enforcement: free users get template fallback only
+    const db = await getDb();
+    const subSnap = await db.doc(`subscriptions/${uid}`).get();
+    const userTier = subSnap.exists ? (subSnap.data()?.['tier'] || 'free') : 'free';
+    if (userTier === 'free') {
+      res.json({ text: null, fallback: true });
+      return;
+    }
+
     try {
       const { GoogleGenAI } = await import('@google/genai');
       const ai = new GoogleGenAI({ apiKey });
@@ -641,6 +650,310 @@ app.post('/api/ai/generate', express.json(), async (req, res) => {
     }
   } catch (e) {
     console.error('AI endpoint error:', e);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+/**
+ * Authenticated API: generate an AI growth report from the user's complete business data.
+ */
+app.post('/api/ai/growth-report', express.json(), async (req, res) => {
+  try {
+    const { uid } = req.body;
+    if (typeof uid !== 'string') {
+      res.status(400).json({ error: 'Invalid request' });
+      return;
+    }
+    if (!await verifyFirebaseUser(req, uid)) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+    if (rateLimiter.isLimited(`ai:${uid}`, 20, 60_000)) {
+      res.status(429).json({ error: 'Too many AI requests. Please try again shortly.' });
+      return;
+    }
+
+    const db = await getDb();
+    const mainSnap = await db.doc(`users/${uid}/businessData/main`).get();
+    const analyticsSnap = await db.doc(`analytics/${uid}`).get();
+    const subSnap = await db.doc(`subscriptions/${uid}`).get();
+
+    const mainData = mainSnap.exists ? mainSnap.data()! : {};
+    const analyticsData = analyticsSnap.exists ? analyticsSnap.data()! : {};
+    const tier = subSnap.exists ? (subSnap.data()?.['tier'] || 'free') : 'free';
+
+    const profile = mainData['profile'] || {};
+    const services: { name: string; description: string; price?: string }[] = Array.isArray(mainData['services']) ? mainData['services'] : [];
+    const enquiries: { status: string; leadScore?: string; serviceInterest: string; date: string; followUpDate?: string; lastContactedDate?: string; name: string; message: string }[] = Array.isArray(mainData['enquiries']) ? mainData['enquiries'] : [];
+    const testimonials = Array.isArray(mainData['testimonials']) ? mainData['testimonials'] : [];
+    const faqs = Array.isArray(mainData['faqs']) ? mainData['faqs'] : [];
+    const viewsByDate: Record<string, number> = analyticsData['viewsByDate'] || {};
+
+    const now = new Date();
+    const sevenDaysAgo = new Date(now);
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    const rangeStart = sevenDaysAgo.toISOString().slice(0, 10);
+    const rangeEnd = now.toISOString().slice(0, 10);
+
+    let recentViews = 0;
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(now);
+      d.setDate(d.getDate() - i);
+      recentViews += viewsByDate[d.toISOString().slice(0, 10)] || 0;
+    }
+
+    const recentEnquiries = enquiries.filter(e => e.date && e.date >= rangeStart);
+    const totalEnquiries = recentEnquiries.length;
+    const wonCount = enquiries.filter(e => e.status === 'Won' || e.status === 'Booked').length;
+    const conversionRate = enquiries.length > 0 ? Math.round((wonCount / enquiries.length) * 1000) / 10 : 0;
+
+    const serviceCounts: Record<string, number> = {};
+    for (const e of enquiries) {
+      if (e.serviceInterest) serviceCounts[e.serviceInterest] = (serviceCounts[e.serviceInterest] || 0) + 1;
+    }
+    const topServices = Object.entries(serviceCounts)
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5);
+
+    const today = now.toISOString().slice(0, 10);
+    const leadSummary = {
+      total: enquiries.length,
+      new: enquiries.filter(e => e.status === 'New').length,
+      hot: enquiries.filter(e => e.leadScore === 'Hot').length,
+      warm: enquiries.filter(e => e.leadScore === 'Warm').length,
+      cold: enquiries.filter(e => e.leadScore === 'Cold').length,
+      needsFollowUp: enquiries.filter(e => {
+        if (!e.followUpDate) return e.status === 'New' || e.status === 'Contacted';
+        return e.followUpDate <= today && e.status !== 'Won' && e.status !== 'Lost';
+      }).length,
+    };
+
+    const report: Record<string, unknown> = {
+      id: `gr_${Date.now()}`,
+      createdAt: now.toISOString(),
+      dateRangeStart: rangeStart,
+      dateRangeEnd: rangeEnd,
+      pageViews: recentViews,
+      enquiries: totalEnquiries,
+      conversionRate,
+      topServices,
+      leadSummary,
+      recommendations: [],
+      generatedSummary: '',
+      suggestedActions: [],
+    };
+
+    const apiKey = process.env['GEMINI_API_KEY'];
+    if (!apiKey || tier === 'free') {
+      const recs: { title: string; reason: string; suggestion: string; priority: string; type: string }[] = [];
+      if (services.length === 0) recs.push({ title: 'Add your services', reason: 'Your site has no services listed', suggestion: 'Add at least 3 services with descriptions and prices to help visitors understand what you offer.', priority: 'high', type: 'service' });
+      if (services.some(s => !s.price)) recs.push({ title: 'Add pricing to services', reason: 'Some services are missing prices', suggestion: 'Adding starting prices reduces friction and increases enquiries.', priority: 'high', type: 'pricing' });
+      if (testimonials.length === 0) recs.push({ title: 'Add customer testimonials', reason: 'Social proof increases trust', suggestion: 'Ask your best customers for a short review and add it to your site.', priority: 'medium', type: 'trust' });
+      if (faqs.length < 3) recs.push({ title: 'Add more FAQs', reason: 'FAQs reduce repetitive questions and improve SEO', suggestion: 'Add common questions visitors ask — availability, pricing, service area.', priority: 'medium', type: 'faq' });
+      if (leadSummary.needsFollowUp > 0) recs.push({ title: `Follow up on ${leadSummary.needsFollowUp} leads`, reason: 'Leads go cold quickly', suggestion: 'Reply to new enquiries within 4 hours for the best conversion rate.', priority: 'high', type: 'lead-follow-up' });
+      if (conversionRate < 20 && enquiries.length >= 3) recs.push({ title: 'Improve your conversion rate', reason: `Only ${conversionRate}% of enquiries convert`, suggestion: 'Strengthen your call-to-action and make the enquiry form shorter and easier.', priority: 'medium', type: 'cta' });
+      report['recommendations'] = recs;
+      report['generatedSummary'] = `Your site received ${recentViews} views and ${totalEnquiries} enquiries this week. ${leadSummary.needsFollowUp > 0 ? `You have ${leadSummary.needsFollowUp} leads that need follow-up.` : 'All leads are up to date.'}`;
+      report['suggestedActions'] = recs.filter(r => r.priority === 'high').map(r => r.title);
+      res.json(report);
+      return;
+    }
+
+    try {
+      const { GoogleGenAI } = await import('@google/genai');
+      const ai = new GoogleGenAI({ apiKey });
+
+      const prompt = `Analyse this small service business and give practical growth recommendations.
+
+Business: ${profile['name'] || 'Unknown'} (${profile['type'] || 'service business'})
+Location: ${profile['serviceArea'] || 'Not specified'}
+Services: ${services.map(s => `${s.name}${s.price ? ` (${s.price})` : ''}`).join(', ') || 'None listed'}
+Total enquiries: ${enquiries.length}
+Recent enquiries (7 days): ${totalEnquiries}
+Page views (7 days): ${recentViews}
+Conversion rate: ${conversionRate}%
+Most requested: ${topServices.map(s => `${s.name} (${s.count})`).join(', ') || 'N/A'}
+New leads: ${leadSummary.new}
+Hot leads: ${leadSummary.hot}
+Leads needing follow-up: ${leadSummary.needsFollowUp}
+Testimonials: ${testimonials.length}
+FAQs: ${faqs.length}
+Services without prices: ${services.filter(s => !s.price).length}
+
+Return a JSON object with:
+{
+  "summary": "2-3 sentence natural overview of how the business is doing and what to focus on",
+  "recommendations": [{"title":"short title","reason":"why this matters","suggestion":"what to do","priority":"high|medium|low","type":"hero|service|faq|pricing|trust|cta|lead-follow-up|marketing|seo|general"}],
+  "suggestedActions": ["action 1","action 2","action 3"]
+}
+
+Give 3-6 specific, actionable recommendations. Reference actual data. Be encouraging but honest. Do not suggest things the business already does well. The type field must match one of the listed values.`;
+
+      const response = await ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: prompt,
+        config: {
+          systemInstruction: 'You are a business growth coach for small service businesses. Return ONLY valid JSON, no markdown fences.',
+          responseMimeType: 'application/json',
+        },
+      });
+
+      const text = response.text?.trim() || '';
+      try {
+        const parsed = JSON.parse(text);
+        report['generatedSummary'] = parsed.summary || '';
+        report['recommendations'] = Array.isArray(parsed.recommendations) ? parsed.recommendations : [];
+        report['suggestedActions'] = Array.isArray(parsed.suggestedActions) ? parsed.suggestedActions : [];
+      } catch {
+        report['generatedSummary'] = text;
+      }
+    } catch (aiErr) {
+      console.warn('Growth report AI failed:', aiErr);
+      report['generatedSummary'] = `Your site received ${recentViews} views and ${totalEnquiries} enquiries this week.`;
+    }
+
+    res.json(report);
+  } catch (e) {
+    console.error('Growth report error:', e);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+/**
+ * Authenticated API: draft an improvement for a growth recommendation.
+ */
+const VALID_REC_TYPES = ['hero', 'service', 'faq', 'pricing', 'trust', 'cta', 'lead-follow-up', 'marketing', 'seo', 'general'];
+
+function getTemplateDraft(type: string, title: string, suggestion: string, profile: Record<string, unknown>, services: { name: string }[]): string {
+  const name = (profile['name'] as string) || 'Your Business';
+  const area = (profile['serviceArea'] as string) || 'your area';
+  const bizType = (profile['type'] as string) || 'service business';
+  switch (type) {
+    case 'hero': return `Welcome to ${name} — trusted ${bizType} serving ${area}. We're here to help.`;
+    case 'service': return `[Service Name]\n\nA compelling description of what this service includes and why customers choose it.\n\nStarting from $[price]`;
+    case 'faq': return `Q: [Common question about your ${bizType}?]\n\nA: [Clear, helpful answer that builds confidence.]`;
+    case 'pricing': return `Our pricing is transparent and competitive. ${services.length > 0 ? `We offer ${services.length} services` : 'Contact us for a free quote'}.`;
+    case 'trust': return `"${name} provided excellent service. Highly recommended!"\n\n— Satisfied customer, ${area}`;
+    case 'cta': return `Ready to get started? Contact ${name} today for a free consultation. We serve ${area} and surrounding areas.`;
+    case 'lead-follow-up': return `Hi [Customer Name],\n\nThank you for your interest in ${name}. I wanted to follow up on your enquiry.\n\nWould you like to schedule a time to discuss your needs?\n\nBest regards,\nThe team at ${name}`;
+    case 'marketing': return `Looking for a trusted ${bizType} in ${area}? ${name} is here to help!\n\nContact us today for a free quote.\n\n#${bizType.replace(/\s+/g, '')} #${area.replace(/\s+/g, '')} #LocalBusiness`;
+    case 'seo': return `${name} — Professional ${bizType} in ${area}. Quality service, competitive pricing, and satisfied customers.`;
+    default: return suggestion || `Improve your ${bizType} website to attract more customers.`;
+  }
+}
+
+function buildDraftPrompt(type: string, suggestion: string, profile: Record<string, unknown>, services: { name: string; price?: string }[], faqCount: number, testimonialCount: number): string {
+  const name = (profile['name'] as string) || 'Unknown Business';
+  const bizType = (profile['type'] as string) || 'service business';
+  const area = (profile['serviceArea'] as string) || 'Not specified';
+  const tone = (profile['toneOfVoice'] as string) || 'Professional yet friendly';
+  const ctx = `Business: ${name} (${bizType})\nLocation: ${area}\nTone: ${tone}\nServices: ${services.map(s => s.name).join(', ') || 'Not listed'}`;
+  const typePrompts: Record<string, string> = {
+    'hero': `Write a compelling hero section headline and subtitle for this business website.\n${ctx}\nRecommendation: ${suggestion}\nReturn JSON: {"draftContent":"headline\\n\\nsubtitle","explanation":"why this works"}`,
+    'service': `Write a service description that convinces visitors to enquire.\n${ctx}\nRecommendation: ${suggestion}\nReturn JSON: {"draftContent":"service name\\n\\ndescription\\n\\nStarting from $[price]","explanation":"why this works"}`,
+    'faq': `Write a helpful FAQ entry addressing a common customer concern.\n${ctx}\nExisting FAQs: ${faqCount}\nRecommendation: ${suggestion}\nReturn JSON: {"draftContent":"Q: question\\n\\nA: answer","explanation":"why this FAQ helps"}`,
+    'pricing': `Write pricing guidance text for this business website.\n${ctx}\nRecommendation: ${suggestion}\nReturn JSON: {"draftContent":"pricing section text","explanation":"why this helps conversion"}`,
+    'trust': `Write a testimonial request message to send to a satisfied customer.\n${ctx}\nExisting testimonials: ${testimonialCount}\nRecommendation: ${suggestion}\nReturn JSON: {"draftContent":"message text","explanation":"why social proof matters"}`,
+    'cta': `Write a compelling call-to-action section.\n${ctx}\nRecommendation: ${suggestion}\nReturn JSON: {"draftContent":"CTA heading and text","explanation":"why this CTA works"}`,
+    'lead-follow-up': `Draft a professional follow-up message for a lead who hasn't responded.\n${ctx}\nRecommendation: ${suggestion}\nReturn JSON: {"draftContent":"email body","explanation":"follow-up best practices used"}`,
+    'marketing': `Write a marketing social media post.\n${ctx}\nRecommendation: ${suggestion}\nReturn JSON: {"draftContent":"social post with hashtags","explanation":"why this post engages"}`,
+    'seo': `Write an SEO-optimized meta title and description.\n${ctx}\nRecommendation: ${suggestion}\nReturn JSON: {"draftContent":"Title: ...\\nDescription: ...","explanation":"SEO best practices used"}`,
+  };
+  return typePrompts[type] || `Draft an improvement for: ${suggestion}\n${ctx}\nReturn JSON: {"draftContent":"improvement text","explanation":"why this helps"}`;
+}
+
+app.post('/api/ai/draft-recommendation', express.json(), async (req, res) => {
+  try {
+    const { uid, recommendation } = req.body;
+    if (typeof uid !== 'string' || !recommendation || typeof recommendation['title'] !== 'string' || typeof recommendation['type'] !== 'string') {
+      res.status(400).json({ error: 'Invalid request' });
+      return;
+    }
+    if (!await verifyFirebaseUser(req, uid)) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+    if (rateLimiter.isLimited(`ai:${uid}`, 20, 60_000)) {
+      res.status(429).json({ error: 'Too many AI requests. Please try again shortly.' });
+      return;
+    }
+
+    const recType = VALID_REC_TYPES.includes(recommendation['type']) ? recommendation['type'] as string : 'general';
+    const recTitle = String(recommendation['title']).slice(0, 200);
+    const recSuggestion = String(recommendation['suggestion'] || '').slice(0, 500);
+
+    const db = await getDb();
+    const subSnap = await db.doc(`subscriptions/${uid}`).get();
+    const userTier = subSnap.exists ? (subSnap.data()?.['tier'] || 'free') : 'free';
+
+    const mainSnap = await db.doc(`users/${uid}/businessData/main`).get();
+    const mainData = mainSnap.exists ? mainSnap.data()! : {};
+    const profile = mainData['profile'] || {};
+    const services: { name: string; price?: string }[] = Array.isArray(mainData['services']) ? mainData['services'] : [];
+    const faqCount = Array.isArray(mainData['faqs']) ? mainData['faqs'].length : 0;
+    const testimonialCount = Array.isArray(mainData['testimonials']) ? mainData['testimonials'].length : 0;
+
+    if (userTier === 'free') {
+      res.json({
+        title: recTitle,
+        draftType: recType,
+        draftContent: getTemplateDraft(recType, recTitle, recSuggestion, profile, services),
+        explanation: 'Template-based draft. Upgrade to Pro for AI-powered improvements.',
+        fallback: true,
+      });
+      return;
+    }
+
+    const apiKey = process.env['GEMINI_API_KEY'];
+    if (!apiKey) {
+      res.json({
+        title: recTitle,
+        draftType: recType,
+        draftContent: getTemplateDraft(recType, recTitle, recSuggestion, profile, services),
+        explanation: 'AI not available. Template draft provided.',
+        fallback: true,
+      });
+      return;
+    }
+
+    try {
+      const { GoogleGenAI } = await import('@google/genai');
+      const ai = new GoogleGenAI({ apiKey });
+      const prompt = buildDraftPrompt(recType, recSuggestion, profile, services, faqCount, testimonialCount);
+      const response = await ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: prompt,
+        config: {
+          systemInstruction: 'You are a website improvement expert for small service businesses. Draft clear, ready-to-use content. Return ONLY valid JSON.',
+          responseMimeType: 'application/json',
+        },
+      });
+      const text = response.text?.trim() || '';
+      try {
+        const parsed = JSON.parse(text);
+        res.json({
+          title: recTitle,
+          draftType: recType,
+          draftContent: parsed.draftContent || parsed.content || text,
+          explanation: parsed.explanation || 'AI-generated draft.',
+          fallback: false,
+        });
+      } catch {
+        res.json({ title: recTitle, draftType: recType, draftContent: text, explanation: 'AI-generated draft.', fallback: false });
+      }
+    } catch (aiErr) {
+      console.warn('Draft recommendation AI failed:', aiErr);
+      res.json({
+        title: recTitle,
+        draftType: recType,
+        draftContent: getTemplateDraft(recType, recTitle, recSuggestion, profile, services),
+        explanation: 'AI failed. Template draft provided.',
+        fallback: true,
+      });
+    }
+  } catch (e) {
+    console.error('Draft recommendation error:', e);
     res.status(500).json({ error: 'Server error' });
   }
 });

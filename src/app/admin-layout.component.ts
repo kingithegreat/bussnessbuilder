@@ -48,6 +48,9 @@ import { MatIconModule } from '@angular/material/icon';
           <a routerLink="/admin/dashboard" routerLinkActive="bg-blue-50 text-blue-600 font-medium" (click)="sidebarOpen.set(false)" class="nav-item flex items-center gap-3 px-3 py-2 rounded-xl text-gray-500 hover:bg-gray-50 text-[13px] font-medium transition-colors">
             <mat-icon class="w-5 h-5">dashboard</mat-icon> Dashboard
           </a>
+          <a routerLink="/admin/growth" routerLinkActive="bg-emerald-50 text-emerald-600 font-medium" (click)="sidebarOpen.set(false)" class="nav-item flex items-center gap-3 px-3 py-2 rounded-xl text-gray-500 hover:bg-gray-50 text-[13px] font-medium transition-colors">
+            <mat-icon class="w-5 h-5">trending_up</mat-icon> Growth Coach
+          </a>
           <a routerLink="/admin/inbox" routerLinkActive="bg-blue-50 text-blue-600 font-medium" (click)="sidebarOpen.set(false)" class="nav-item flex items-center gap-3 px-3 py-2 rounded-xl text-gray-500 hover:bg-gray-50 text-[13px] font-medium transition-colors">
             <mat-icon class="w-5 h-5">inbox</mat-icon> Enquiries
             @if(newEnquiriesCount() > 0) {

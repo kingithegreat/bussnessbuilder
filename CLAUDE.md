@@ -84,6 +84,8 @@ GitHub Actions (`deploy.yml`) exists but needs WIF secrets configured. Manual `g
 | `POST /api/admin/discounts` | Admin only | Create a discount code |
 | `DELETE /api/admin/discounts/:code` | Admin only | Delete a discount code |
 | `POST /api/ai/generate` | Firebase token | Server-side AI text generation |
+| `POST /api/ai/growth-report` | Firebase token | AI growth report with metrics + recommendations |
+| `POST /api/ai/draft-recommendation` | Firebase token | Draft improvement for a growth recommendation |
 | `DELETE /api/account/:uid` | Firebase token (own UID) | Delete account and all data |
 | `POST /api/stripe/create-checkout-session` | Firebase token | Create Stripe checkout |
 | `POST /api/stripe/customer-portal` | Firebase token | Open Stripe billing portal |
@@ -101,6 +103,8 @@ GitHub Actions (`deploy.yml`) exists but needs WIF secrets configured. Manual `g
 - `src/app/admin-layout.component.ts` — Admin shell with sidebar
 - `src/app/setup.component.ts` — Setup wizard
 - `src/app/types.ts` — All TypeScript interfaces
+- `src/app/admin-growth.component.ts` — AI Growth Coach page with recommendation actions
+- `src/app/firestore.service.ts` — Firestore persistence (pages, recommendations, notifications, payments, templates)
 - `src/app/app-admin-*.component.ts` — Owner admin panel (dashboard, users, discounts)
 
 ## Known issues / TODO
@@ -110,3 +114,7 @@ GitHub Actions (`deploy.yml`) exists but needs WIF secrets configured. Manual `g
 - GitHub Actions WIF secrets not configured for auto-deploy
 - Stripe is in test mode — switch keys when ready for real payments
 - Admin metrics endpoint does O(N) Firestore reads (mitigated by 30s cache)
+- Growth reports are on-demand only — weekly auto-generation is planned
+- Recommendation "Add as FAQ" is the only auto-insertion; other types require copy-paste
+- Page builder section insertion deferred to v1.3
+- Deploy `firestore.rules` to enable analytics tracking: `firebase deploy --only firestore:rules`

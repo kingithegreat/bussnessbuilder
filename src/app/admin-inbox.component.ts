@@ -3,7 +3,7 @@ import { RouterLink } from '@angular/router';
 import { DataService } from './data.service';
 import { ToastService } from './toast.service';
 import { SubscriptionService } from './subscription.service';
-import { Enquiry } from './types';
+import { Enquiry, ReplyIntent } from './types';
 import { DatePipe } from '@angular/common';
 import { AiService } from './ai.service';
 import { FormsModule } from '@angular/forms';
@@ -36,6 +36,21 @@ import { MatIconModule } from '@angular/material/icon';
         </div>
       </div>
       
+      <div class="px-5 py-2.5 border-b border-gray-100 bg-white flex gap-1.5 flex-wrap shrink-0">
+        @for (f of filters; track f.key) {
+          <button (click)="activeFilter.set(f.key)"
+            class="px-3 py-1 rounded-full text-[11px] font-bold transition-colors"
+            [class.bg-blue-600]="activeFilter() === f.key" [class.text-white]="activeFilter() === f.key"
+            [class.bg-gray-100]="activeFilter() !== f.key" [class.text-gray-600]="activeFilter() !== f.key"
+            [class.hover:bg-gray-200]="activeFilter() !== f.key">
+            {{ f.label }}
+            @if (f.key !== 'all' && filterCount(f.key) > 0) {
+              <span class="ml-1 opacity-70">({{ filterCount(f.key) }})</span>
+            }
+          </button>
+        }
+      </div>
+
       <div class="flex-1 flex flex-col md:flex-row overflow-hidden bg-[#F5F5F7]">
         <!-- List -->
         <div class="w-full md:w-80 shrink-0 border-b md:border-b-0 md:border-r border-gray-200 bg-white overflow-y-auto h-1/2 md:h-full">
@@ -117,6 +132,21 @@ import { MatIconModule } from '@angular/material/icon';
                 </div>
               </div>
 
+              <div class="grid grid-cols-2 gap-6 mb-8">
+                <div class="bg-gray-50 p-4 rounded-xl border border-gray-100">
+                  <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Last Contacted</p>
+                  <input type="date" [ngModel]="enquiry.lastContactedDate" (ngModelChange)="updateField(enquiry.id, 'lastContactedDate', $event)" class="w-full bg-transparent outline-none font-bold text-gray-900 text-sm py-1 cursor-pointer">
+                </div>
+                <div class="bg-gray-50 p-4 rounded-xl border border-gray-100">
+                  <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Lead Temperature</p>
+                  <select [ngModel]="enquiry.leadScore" (ngModelChange)="updateField(enquiry.id, 'leadScore', $event)" class="w-full bg-transparent border-b border-gray-200 focus:border-blue-500 outline-none font-bold text-sm py-1">
+                    @for (q of customization().rules.leadQualities; track q) {
+                      <option [value]="q">{{ q }}</option>
+                    }
+                  </select>
+                </div>
+              </div>
+
               @if (enquiry.formData) {
                 <div class="mb-8">
                   <div class="flex items-center justify-between mb-2">
@@ -156,13 +186,22 @@ import { MatIconModule } from '@angular/material/icon';
                     </div>
                     AI Draft Reply
                   </h4>
-                  <button (click)="generateDraft(enquiry)" [disabled]="isGeneratingDraft" class="text-xs text-blue-600 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg font-bold disabled:opacity-50 flex items-center gap-1 transition-colors">
-                    @if(isGeneratingDraft) {
-                       <span class="animate-spin h-3 w-3 border-2 border-blue-600 border-t-transparent rounded-full"></span>
-                    } @else {
-                       <mat-icon class="text-[14px]">refresh</mat-icon> Generate
-                    }
-                  </button>
+                  <div class="flex items-center gap-2">
+                    <select [ngModel]="replyIntent()" (ngModelChange)="replyIntent.set($event)" class="bg-gray-50 border border-gray-200 text-gray-700 text-[11px] font-bold rounded-lg px-2 py-1.5 outline-none">
+                      <option value="reply">Reply</option>
+                      <option value="followup">Follow-up</option>
+                      <option value="quote">Quote</option>
+                      <option value="close-lost">Close (Lost)</option>
+                      <option value="booking-confirmation">Booking Confirm</option>
+                    </select>
+                    <button (click)="generateDraft(enquiry)" [disabled]="isGeneratingDraft" class="text-xs text-blue-600 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg font-bold disabled:opacity-50 flex items-center gap-1 transition-colors">
+                      @if(isGeneratingDraft) {
+                         <span class="animate-spin h-3 w-3 border-2 border-blue-600 border-t-transparent rounded-full"></span>
+                      } @else {
+                         <mat-icon class="text-[14px]">auto_awesome</mat-icon> Generate
+                      }
+                    </button>
+                  </div>
                 </div>
                 @if (enquiry.draftReply) {
                   <textarea rows="6" [ngModel]="enquiry.draftReply" (ngModelChange)="updateDraft(enquiry.id, $event)" class="w-full p-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-gray-700 font-sans text-sm bg-gray-50 shadow-inner"></textarea>
@@ -202,20 +241,66 @@ export class AdminInboxComponent {
 
   enquiriesCount = () => this.dataService.enquiries().length;
   searchQuery = signal('');
+  activeFilter = signal<string>('all');
+  replyIntent = signal<ReplyIntent>('reply');
   selectedEnquiry = signal<Enquiry | null>(null);
   isGeneratingDraft = false;
   copySuccess = false;
   customization = this.dataService.customization;
 
+  filters = [
+    { key: 'all', label: 'All' },
+    { key: 'new', label: 'New' },
+    { key: 'hot', label: 'Hot' },
+    { key: 'followup', label: 'Follow-up' },
+    { key: 'won', label: 'Won' },
+    { key: 'lost', label: 'Lost' },
+  ];
+
+  filterCount(key: string): number {
+    const list = this.dataService.enquiries();
+    const today = new Date().toISOString().slice(0, 10);
+    if (key === 'new') return list.filter(e => e.status === 'New').length;
+    if (key === 'hot') return list.filter(e => e.leadScore === 'Hot').length;
+    if (key === 'followup') return list.filter(e => {
+      if (e.status === 'Won' || e.status === 'Lost') return false;
+      if (!e.followUpDate) return e.status === 'New' || e.status === 'Contacted';
+      return e.followUpDate <= today;
+    }).length;
+    if (key === 'won') return list.filter(e => e.status === 'Won' || e.status === 'Booked').length;
+    if (key === 'lost') return list.filter(e => e.status === 'Lost').length;
+    return 0;
+  }
+
   get filteredEnquiries() {
     const q = this.searchQuery().toLowerCase();
-    const list = this.dataService.enquiries();
-    if (!q) return list;
-    return list.filter(e => 
-      e.name.toLowerCase().includes(q) || 
-      e.email.toLowerCase().includes(q) || 
-      e.serviceInterest.toLowerCase().includes(q)
-    );
+    const filter = this.activeFilter();
+    let list = this.dataService.enquiries();
+
+    if (filter !== 'all') {
+      const today = new Date().toISOString().slice(0, 10);
+      list = list.filter(e => {
+        if (filter === 'new') return e.status === 'New';
+        if (filter === 'hot') return e.leadScore === 'Hot';
+        if (filter === 'followup') {
+          if (e.status === 'Won' || e.status === 'Lost') return false;
+          if (!e.followUpDate) return e.status === 'New' || e.status === 'Contacted';
+          return e.followUpDate <= today;
+        }
+        if (filter === 'won') return e.status === 'Won' || e.status === 'Booked';
+        if (filter === 'lost') return e.status === 'Lost';
+        return true;
+      });
+    }
+
+    if (q) {
+      list = list.filter(e =>
+        e.name.toLowerCase().includes(q) ||
+        e.email.toLowerCase().includes(q) ||
+        e.serviceInterest.toLowerCase().includes(q)
+      );
+    }
+    return list;
   }
 
   selectEnquiry(enquiry: Enquiry) {
@@ -280,7 +365,8 @@ export class AdminInboxComponent {
   async generateDraft(enquiry: Enquiry) {
     this.isGeneratingDraft = true;
     try {
-      const draft = await this.aiService.generateDraftReply(enquiry, this.dataService.profile());
+      const intent = this.replyIntent();
+      const draft = await this.aiService.generateLeadReply(enquiry, this.dataService.profile(), intent);
       this.dataService.updateEnquiry(enquiry.id, { draftReply: draft });
       if (this.selectedEnquiry()?.id === enquiry.id) {
          this.selectedEnquiry.update(e => e ? {...e, draftReply: draft} : null);

@@ -1,6 +1,6 @@
 import { Injectable, computed, signal, effect, PLATFORM_ID, inject } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
-import { AppState, BusinessProfile, Enquiry, FAQ, Service, Activity, Testimonial, ContentPage, NotificationPreferences, PaymentSettings, SiteTemplate, PublicSiteData } from './types';
+import { AppState, BusinessProfile, Enquiry, FAQ, Service, Activity, Testimonial, ContentPage, NotificationPreferences, PaymentSettings, SavedRecommendation, SiteTemplate, PublicSiteData } from './types';
 import { FirestoreService } from './firestore.service';
 
 const defaultState: AppState = {
@@ -70,7 +70,7 @@ const defaultState: AppState = {
       { id: 'message', label: 'Message', type: 'textarea', required: true, options: '', order: 5 }
     ],
     rules: {
-      statuses: ['New', 'In Progress', 'Replied', 'Booked', 'Won', 'Lost', 'Archived'],
+      statuses: ['New', 'Contacted', 'Quoted', 'Booked', 'Won', 'Lost'],
       leadQualities: ['Hot', 'Warm', 'Cold']
     }
   },
@@ -91,6 +91,8 @@ export class DataService {
   private pages = signal<ContentPage[]>([]);
   private notifPrefs = signal<NotificationPreferences>({ emailOnNewEnquiry: false, notificationEmail: '' });
   private paymentSettings = signal<PaymentSettings>({ enabled: false, paymentLinks: [] });
+  private _recommendations = signal<SavedRecommendation[]>([]);
+  readonly savedRecommendations = this._recommendations.asReadonly();
   private _templates = signal<SiteTemplate[]>([]);
   private _activeTemplateId = signal<string>('');
   readonly templates = this._templates.asReadonly();
@@ -134,6 +136,7 @@ export class DataService {
     this.loadTemplates(uid);
     this.loadPages(uid);
     this.loadNotificationPrefs(uid);
+    this.loadRecommendations(uid);
 
     const firestoreData = await this.firestoreService.loadBusinessData(uid);
     if (firestoreData) {
@@ -372,6 +375,27 @@ export class DataService {
   async loadPaymentSettings(uid: string) {
     const settings = await this.firestoreService.loadPaymentSettings(uid);
     if (settings) this.paymentSettings.set(settings);
+  }
+
+  async loadRecommendations(uid: string) {
+    const recs = await this.firestoreService.loadRecommendations(uid);
+    if (recs) this._recommendations.set(recs);
+  }
+
+  setRecommendations(recs: SavedRecommendation[]) {
+    this._recommendations.set(recs);
+    if (isPlatformBrowser(this.platformId) && this.uid()) {
+      this.firestoreService.saveRecommendations(this.uid()!, recs);
+    }
+  }
+
+  updateRecommendation(id: string, updates: Partial<SavedRecommendation>) {
+    this._recommendations.update(list =>
+      list.map(r => r.id === id ? { ...r, ...updates, updatedAt: new Date().toISOString() } : r)
+    );
+    if (isPlatformBrowser(this.platformId) && this.uid()) {
+      this.firestoreService.saveRecommendations(this.uid()!, this._recommendations());
+    }
   }
 
   async loadTemplates(uid: string) {

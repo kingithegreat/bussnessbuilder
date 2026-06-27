@@ -5,9 +5,9 @@ import { Firestore, doc, getDoc } from '@angular/fire/firestore';
 import { SubscriptionTier, SubscriptionData } from './types';
 
 const TIER_LIMITS = {
-  free:     { services: 3,  enquiries: 10, ai: false, exportImport: false },
-  pro:      { services: -1, enquiries: -1, ai: true,  exportImport: true  },
-  business: { services: -1, enquiries: -1, ai: true,  exportImport: true  },
+  free:     { services: 3,  enquiries: 10, ai: false, exportImport: false, growthAi: false, marketing: false },
+  pro:      { services: -1, enquiries: -1, ai: true,  exportImport: true,  growthAi: true,  marketing: true  },
+  business: { services: -1, enquiries: -1, ai: true,  exportImport: true,  growthAi: true,  marketing: true  },
 } as const;
 
 @Injectable({ providedIn: 'root' })
@@ -47,6 +47,14 @@ export class SubscriptionService {
 
   canExport(): boolean {
     return TIER_LIMITS[this.tier()].exportImport;
+  }
+
+  canUseGrowthAi(): boolean {
+    return TIER_LIMITS[this.tier()].growthAi;
+  }
+
+  canUseMarketing(): boolean {
+    return TIER_LIMITS[this.tier()].marketing;
   }
 
   tierLabel(): string {

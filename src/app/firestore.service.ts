@@ -6,7 +6,7 @@ import {
   getDoc,
   setDoc,
 } from '@angular/fire/firestore';
-import { AppState, ContentPage, NotificationPreferences, PaymentSettings, SiteTemplate } from './types';
+import { AppState, ContentPage, NotificationPreferences, PaymentSettings, SavedRecommendation, SiteTemplate } from './types';
 
 @Injectable({ providedIn: 'root' })
 export class FirestoreService {
@@ -98,6 +98,28 @@ export class FirestoreService {
       await setDoc(ref, JSON.parse(JSON.stringify(settings)));
     } catch (e) {
       console.error('Failed to save payment settings', e);
+    }
+  }
+
+  async loadRecommendations(uid: string): Promise<SavedRecommendation[] | null> {
+    if (!isPlatformBrowser(this.platformId)) return null;
+    try {
+      const ref = doc(this.firestore, 'users', uid, 'businessData', 'recommendations');
+      const snap = await getDoc(ref);
+      return snap.exists() ? (snap.data()['items'] as SavedRecommendation[]) : null;
+    } catch (e) {
+      console.error('Failed to load recommendations', e);
+      return null;
+    }
+  }
+
+  async saveRecommendations(uid: string, recommendations: SavedRecommendation[]): Promise<void> {
+    if (!isPlatformBrowser(this.platformId)) return;
+    try {
+      const ref = doc(this.firestore, 'users', uid, 'businessData', 'recommendations');
+      await setDoc(ref, { items: JSON.parse(JSON.stringify(recommendations)) });
+    } catch (e) {
+      console.error('Failed to save recommendations', e);
     }
   }
 

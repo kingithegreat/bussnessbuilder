@@ -17,6 +17,7 @@ import { PricingComponent } from './pricing.component';
 import { AdminSettingsComponent } from './admin-settings.component';
 import { AdminPagesComponent } from './admin-pages.component';
 import { AdminPaymentsComponent } from './admin-payments.component';
+import { AdminGrowthComponent } from './admin-growth.component';
 import { ContentPageViewComponent } from './content-page-view.component';
 import { PublicContentPageComponent } from './public-content-page.component';
 import { SiteViewComponent } from './site-view.component';
@@ -53,6 +54,7 @@ export const routes: Routes = [
       { path: 'form-builder', component: AdminFormBuilderComponent },
       { path: 'pages', component: AdminPagesComponent },
       { path: 'payments', component: AdminPaymentsComponent },
+      { path: 'growth', component: AdminGrowthComponent },
       { path: 'settings', component: AdminSettingsComponent }
     ]
   },

@@ -42,6 +42,7 @@ export interface Enquiry {
   leadScore?: string;
   nextAction?: string;
   followUpDate?: string;
+  lastContactedDate?: string;
   customerNotes?: string;
   formData?: Record<string, { label: string; value: string; type: string }>;
 }
@@ -152,6 +153,69 @@ export interface SiteAnalytics {
   totalViews: number;
   viewsByDate: Record<string, number>;
 }
+
+export type RecommendationType = 'hero' | 'service' | 'faq' | 'pricing' | 'trust' | 'cta' | 'lead-follow-up' | 'marketing' | 'seo' | 'general';
+export type RecommendationStatus = 'new' | 'drafted' | 'applied' | 'dismissed';
+export type RecommendationSource = 'ai' | 'template' | 'analytics' | 'enquiry-pattern';
+
+export interface GrowthRecommendation {
+  title: string;
+  reason: string;
+  suggestion: string;
+  priority: 'high' | 'medium' | 'low';
+  type?: RecommendationType;
+  draftContent?: string;
+}
+
+export interface SavedRecommendation {
+  id: string;
+  title: string;
+  reason: string;
+  suggestion: string;
+  priority: 'high' | 'medium' | 'low';
+  type: RecommendationType;
+  status: RecommendationStatus;
+  source: RecommendationSource;
+  draftContent?: string;
+  createdAt: string;
+  updatedAt: string;
+  dismissedAt?: string;
+  appliedAt?: string;
+}
+
+export interface DraftRecommendationResponse {
+  title: string;
+  draftType: RecommendationType;
+  draftContent: string;
+  explanation: string;
+  fallback: boolean;
+}
+
+export interface GrowthReport {
+  id: string;
+  createdAt: string;
+  dateRangeStart: string;
+  dateRangeEnd: string;
+  pageViews: number;
+  enquiries: number;
+  conversionRate: number;
+  topServices: { name: string; count: number }[];
+  leadSummary: {
+    total: number;
+    new: number;
+    hot: number;
+    warm: number;
+    cold: number;
+    needsFollowUp: number;
+  };
+  recommendations: GrowthRecommendation[];
+  generatedSummary: string;
+  suggestedActions: string[];
+}
+
+export type ReplyIntent = 'reply' | 'followup' | 'quote' | 'close-lost' | 'booking-confirmation';
+
+export type MarketingContentType = 'facebook' | 'instagram' | 'google-business' | 'review-request' | 'service-promo' | 'seasonal-offer';
 
 export interface NotificationPreferences {
   emailOnNewEnquiry: boolean;
