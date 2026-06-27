@@ -40,20 +40,35 @@ jobs:
         with:
           node-version: 22
 
+      - name: Verify NOTION_TOKEN is configured
+        env:
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+        run: |
+          if [[ -z "$NOTION_TOKEN" ]]; then
+            echo "::error::NOTION_TOKEN secret is missing. Add it under Settings → Secrets and variables → Actions → Secrets, then re-run."
+            exit 1
+          fi
+
       - name: Generate snapshot from Notion
         env:
           NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
           NOTION_BRAIN_PAGE_ID: ${{ vars.NOTION_BRAIN_PAGE_ID }}
+        # A missing token or any Notion 401/403/404 makes this step exit non-zero,
+        # which fails the whole job — no silent success.
         run: node scripts/snapshot-notion-brain.mjs
 
-      - name: Commit snapshot if it changed
+      - name: Commit snapshot if content changed
         run: |
-          if [[ -n "$(git status --porcelain docs/brain-snapshot.md)" ]]; then
+          set -euo pipefail
+          # Ignore timestamp-only diffs (the "Last generated" line) so we commit
+          # only on real content changes. Any Notion error already failed the job
+          # in the step above, so reaching here means the snapshot is valid.
+          if git diff --quiet -I 'Last generated' -- docs/brain-snapshot.md; then
+            echo "Brain snapshot content unchanged — nothing to commit."
+          else
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
             git add docs/brain-snapshot.md
             git commit -m "chore: snapshot Notion brain ($(date -u +%Y-%m-%d))"
             git push
-          else
-            echo "Brain snapshot unchanged — nothing to commit."
           fi

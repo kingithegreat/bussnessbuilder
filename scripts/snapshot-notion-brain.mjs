@@ -22,10 +22,13 @@ const OUT = 'docs/brain-snapshot.md';
 const NOTION_VERSION = '2022-06-28';
 
 if (!TOKEN) {
-  // Don't hard-fail: a manual run before the secret is configured should be a
-  // friendly no-op rather than a red X.
-  console.log('NOTION_TOKEN not set — skipping snapshot (configure the secret).');
-  process.exit(0);
+  // Fail loudly: a backup job must never "succeed" without a token. A green run
+  // with no backup is exactly the silent failure we want to avoid.
+  console.error(
+    '::error::NOTION_TOKEN is not set. Add it under repo Settings → Secrets and ' +
+      'variables → Actions → Secrets, then re-run.',
+  );
+  process.exit(1);
 }
 
 const headers = {
@@ -37,7 +40,16 @@ const headers = {
 async function api(path) {
   const res = await fetch(`https://api.notion.com/v1${path}`, { headers });
   if (!res.ok) {
-    throw new Error(`Notion API ${res.status} on ${path}: ${await res.text()}`);
+    const body = await res.text();
+    const hint =
+      res.status === 401
+        ? ' — invalid NOTION_TOKEN'
+        : res.status === 403
+          ? ' — integration lacks access (add it to the page via ••• → Connections)'
+          : res.status === 404
+            ? ' — page not found or not shared with the integration'
+            : '';
+    throw new Error(`Notion API ${res.status}${hint} on ${path}: ${body}`);
   }
   return res.json();
 }
@@ -156,6 +168,17 @@ async function main() {
   const page = await api(`/pages/${PAGE_ID.replace(/-/g, '')}`);
   const title = pageTitle(page);
   const body = (await renderBlocks(await fetchChildren(PAGE_ID))).trimEnd();
+
+  // Guard against writing an empty/partial backup (e.g. the integration can read
+  // the page object but not its blocks). Better to fail loudly than overwrite a
+  // good backup with nothing.
+  if (body.replace(/\s/g, '').length < 100) {
+    throw new Error(
+      `Refusing to write snapshot: Notion returned little/no content ` +
+        `(${body.length} chars). Confirm the integration has access to the page body.`,
+    );
+  }
+
   const url = `https://www.notion.so/${PAGE_ID.replace(/-/g, '')}`;
   const stamp = new Date().toISOString();
 
@@ -180,6 +203,6 @@ ${body}
 }
 
 main().catch((err) => {
-  console.error(err);
+  console.error(`::error::Brain snapshot failed: ${err.message}`);
   process.exit(1);
 });
