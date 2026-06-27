@@ -27,6 +27,25 @@ stale snapshot. Before making any change:
 5. **Leave the trail current.** Update this file and the Notion brief so the next
    session inherits accurate state.
 
+## The brain: one source of truth + backups
+
+So context/tasks never need re-explaining and every AI stays current:
+
+- **Canonical brain = this repo.** `CLAUDE.md` is the durable source of truth.
+  Every change is a git commit, so the full history is an automatic, revertable
+  **backup** — if the brain is ever wrong, `git log -p CLAUDE.md` and revert.
+- **All AIs read the same brain.** `AGENTS.md` (Codex & other agents) and
+  `.github/copilot-instructions.md` (Copilot) just point here — one source, not
+  three drifting copies. Update *this* file; the others never need editing.
+- **Human / cross-tool mirror = Notion** (Projects → 💼 BusinessFlow). Mirrors
+  the key facts for quick reading + the decisions log. Notion keeps its own page
+  version history as a **second backup**.
+- **End every session by syncing the brain:** update this file *and* the Notion
+  brief with what changed, what's deployed, and what's next. Stale brain =
+  repeated work.
+- **Recovery:** the same critical facts live in both git and Notion, so a bad
+  edit in one is restorable from the other (git history / Notion page history).
+
 ## Critical design rule
 
 ALL site customization features (branding, page builder, form builder, sections, layouts, colors, fonts) are available on ALL tiers. Only AI tools, enquiry/service limits, and admin extras are tier-gated.
