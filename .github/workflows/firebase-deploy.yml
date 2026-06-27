@@ -1,0 +1,42 @@
+name: Deploy to Firebase Hosting
+
+# Auto-deploy the app to Firebase Hosting on every push to `main`.
+#
+# Required one-time setup (see README "Continuous deployment"):
+#   1. Set the real Firebase project id below (and in .firebaserc).
+#   2. Add a repository secret named FIREBASE_SERVICE_ACCOUNT containing the
+#      JSON key of a service account with the "Firebase Hosting Admin" role.
+#      Generate it with:  firebase init hosting:github
+#      or from Google Cloud Console > IAM & Admin > Service Accounts.
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  build_and_deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Deploy to Firebase Hosting (live channel)
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          channelId: live
+          projectId: bussnessbuilder # TODO: replace with your real Firebase project id

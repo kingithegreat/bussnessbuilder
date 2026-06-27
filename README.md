@@ -62,6 +62,21 @@ finishes, the CLI prints your live **Hosting URL**.
 > CI / non-interactive deploys: generate a token with `firebase login:ci` and
 > run `firebase deploy --only hosting --token "$FIREBASE_TOKEN"`.
 
+## Continuous deployment (GitHub Actions)
+
+[`.github/workflows/firebase-deploy.yml`](.github/workflows/firebase-deploy.yml)
+auto-builds and deploys to Firebase Hosting on every push to `main`. To enable it:
+
+1. Replace the placeholder `projectId: bussnessbuilder` in the workflow (and the
+   `default` in [`.firebaserc`](.firebaserc)) with your real Firebase project id.
+2. Create a service account key with the **Firebase Hosting Admin** role — the
+   easiest way is to run `firebase init hosting:github` locally, which sets the
+   secret up for you. Otherwise add a repository secret named
+   `FIREBASE_SERVICE_ACCOUNT` containing the service account JSON.
+
+Once configured, merging to `main` deploys automatically — no manual
+`firebase deploy` needed.
+
 ## Project Configuration
 
 - [`firebase.json`](firebase.json) — Hosting config. Serves `dist/app/browser`
