@@ -1,0 +1,71 @@
+name: Snapshot Notion brain
+
+# Mirrors a Notion "brain" page into docs/brain-snapshot.md as a durable,
+# git-versioned backup. Runs daily and on demand. Project-agnostic: the page id
+# comes from the NOTION_BRAIN_PAGE_ID repo variable.
+#
+# ── Required secret ─────────────────────────────────────────────────────────
+#   NOTION_TOKEN  — a Notion *internal integration* secret (one integration can
+#     be reused across all your repos). Create at
+#     https://www.notion.so/my-integrations, share your brain page with it
+#     (page → ••• → Connections), then add it at repo → Settings → Secrets and
+#     variables → Actions → Secrets.
+#
+# ── Required variable ───────────────────────────────────────────────────────
+#   NOTION_BRAIN_PAGE_ID  — the Notion page id for THIS project's brain. Add at
+#     repo → Settings → Secrets and variables → Actions → Variables. Not secret.
+
+on:
+  schedule:
+    - cron: '17 6 * * *' # daily at 06:17 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: notion-brain-snapshot
+  cancel-in-progress: false
+
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Verify NOTION_TOKEN and page id are configured
+        env:
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+          NOTION_BRAIN_PAGE_ID: ${{ vars.NOTION_BRAIN_PAGE_ID }}
+        run: |
+          if [[ -z "$NOTION_TOKEN" ]]; then
+            echo "::error::NOTION_TOKEN secret is missing. Add it under Settings → Secrets and variables → Actions → Secrets."
+            exit 1
+          fi
+          if [[ -z "$NOTION_BRAIN_PAGE_ID" ]]; then
+            echo "::error::NOTION_BRAIN_PAGE_ID variable is missing. Add it under Settings → Secrets and variables → Actions → Variables."
+            exit 1
+          fi
+
+      - name: Generate snapshot from Notion
+        env:
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+          NOTION_BRAIN_PAGE_ID: ${{ vars.NOTION_BRAIN_PAGE_ID }}
+        run: node scripts/snapshot-notion-brain.mjs
+
+      - name: Commit snapshot if content changed
+        run: |
+          set -euo pipefail
+          if git diff --quiet -I 'Last generated' -- docs/brain-snapshot.md; then
+            echo "Brain snapshot content unchanged — nothing to commit."
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add docs/brain-snapshot.md
+            git commit -m "chore: snapshot Notion brain ($(date -u +%Y-%m-%d))"
+            git push
+          fi
