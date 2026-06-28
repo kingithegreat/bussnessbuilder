@@ -44,7 +44,7 @@ import { MatIconModule } from '@angular/material/icon';
             </span>
           }
         </div>
-        <nav class="flex flex-col gap-1 flex-1">
+        <nav class="flex flex-col gap-1 flex-1 overflow-y-auto min-h-0">
           <a routerLink="/admin/dashboard" routerLinkActive="bg-blue-50 text-blue-600 font-medium" (click)="sidebarOpen.set(false)" class="nav-item flex items-center gap-3 px-3 py-2 rounded-xl text-gray-500 hover:bg-gray-50 text-[13px] font-medium transition-colors">
             <mat-icon class="w-5 h-5">dashboard</mat-icon> Dashboard
           </a>
@@ -110,6 +110,7 @@ import { MatIconModule } from '@angular/material/icon';
              <span class="text-gray-900 font-semibold">Workspace</span>
            </div>
            <div class="flex items-center gap-2 md:gap-4">
+             <a [href]="publicSiteUrl()" target="_blank" rel="noopener" class="flex bg-blue-600 text-white px-3 py-1.5 md:px-4 md:py-2 rounded-lg text-xs font-bold shadow-sm hover:bg-blue-700 transition-colors items-center gap-1"><mat-icon class="text-[14px]">open_in_new</mat-icon> <span class="hidden sm:inline">View live site</span></a>
              <button (click)="exportData()" class="hidden md:flex bg-gray-100 text-gray-900 px-4 py-2 rounded-lg text-xs font-bold shadow-sm hover:bg-gray-200 transition-colors items-center gap-1"><mat-icon class="text-[14px]">download</mat-icon> Export</button>
              <button (click)="fileInput.click()" class="hidden md:flex bg-gray-100 text-gray-900 px-4 py-2 rounded-lg text-xs font-bold shadow-sm hover:bg-gray-200 transition-colors items-center gap-1"><mat-icon class="text-[14px]">upload</mat-icon> Import</button>
              <input type="file" #fileInput (change)="importData($event)" style="display:none" accept=".json">

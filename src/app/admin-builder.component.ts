@@ -1,4 +1,4 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, OnInit, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
@@ -126,7 +126,15 @@ import { ImagePickerComponent } from './image-picker.component';
               <mat-icon class="text-[20px]">smartphone</mat-icon>
             </button>
           </div>
-          <div></div>
+          @if (canPreview()) {
+            <a [href]="previewUrl()" target="_blank" rel="noopener" class="flex items-center gap-1.5 bg-blue-600 text-white px-4 py-1.5 rounded-lg text-xs font-bold shadow-sm hover:bg-blue-700 transition-colors">
+              <mat-icon class="text-[16px]">open_in_new</mat-icon> Preview Site
+            </a>
+          } @else {
+            <button type="button" disabled title="Complete setup to preview your site" class="flex items-center gap-1.5 bg-gray-100 text-gray-400 px-4 py-1.5 rounded-lg text-xs font-bold cursor-not-allowed">
+              <mat-icon class="text-[16px]">open_in_new</mat-icon> Preview Site
+            </button>
+          }
         </div>
         
         <div class="flex-grow overflow-auto p-4 md:p-8 flex items-start justify-center">
@@ -146,6 +154,14 @@ import { ImagePickerComponent } from './image-picker.component';
 export class AdminBuilderComponent implements OnInit {
   dataService = inject(DataService);
   private toast = inject(ToastService);
+
+  // Public URL for the live site, served by the public /site/:uid route. Gated
+  // on a claimed slug — null until setup is complete (no UID fallback).
+  previewUrl = computed(() => {
+    const slug = this.dataService.siteSlug();
+    return slug ? `/site/${slug}` : null;
+  });
+  canPreview = computed(() => this.dataService.isSetupComplete() && !!this.previewUrl());
 
   localCust!: CustomizationSettings;
   expandedSection: string | null = null;
