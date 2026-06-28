@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { DataService } from './data.service';
 import { ToastService } from './toast.service';
+import { AuthService } from './auth.service';
 import { CustomizationSettings, SectionConfig } from './types';
 import { PublicPageComponent } from './public-page.component';
 import { ImagePickerComponent } from './image-picker.component';
@@ -154,12 +155,19 @@ import { ImagePickerComponent } from './image-picker.component';
 export class AdminBuilderComponent implements OnInit {
   dataService = inject(DataService);
   private toast = inject(ToastService);
+  private authService = inject(AuthService);
 
-  // Public URL for the live site, served by the public /site/:uid route. Gated
-  // on a claimed slug — null until setup is complete (no UID fallback).
+  // Public URL for the live site, served by the public /site/:uid route.
+  // Prefer the friendly slug, but fall back to the user's UID — the public
+  // /api/site/:uid endpoint resolves either (see server resolveUid), so a
+  // claimed slug is NOT required to open the live page. This keeps "Preview
+  // Site" working after setup even when the best-effort slug claim hasn't
+  // completed, matching the header "View live site" button.
   previewUrl = computed(() => {
     const slug = this.dataService.siteSlug();
-    return slug ? `/site/${slug}` : null;
+    if (slug) return `/site/${slug}`;
+    const uid = this.authService.currentUser()?.uid;
+    return uid ? `/site/${uid}` : null;
   });
   canPreview = computed(() => this.dataService.isSetupComplete() && !!this.previewUrl());
 

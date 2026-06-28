@@ -2,6 +2,8 @@ import { Component, inject, signal, OnInit, PLATFORM_ID } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { isPlatformBrowser } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
+import { switchMap, catchError } from 'rxjs/operators';
+import { of } from 'rxjs';
 import { MatIconModule } from '@angular/material/icon';
 import { DataService } from './data.service';
 import { PublicPageComponent } from './public-page.component';
@@ -43,24 +45,41 @@ export class SiteViewComponent implements OnInit {
   error = signal(false);
 
   ngOnInit() {
-    const uid = this.route.snapshot.paramMap.get('uid');
-    if (!uid) {
-      this.error.set(true);
-      this.loading.set(false);
-      return;
-    }
+    // Only the browser fetches site data; on the server we render the loading
+    // shell, which the client then replaces after hydration/bootstrap.
+    if (!isPlatformBrowser(this.platformId)) return;
 
-    if (isPlatformBrowser(this.platformId)) {
-      this.http.get<PublicSiteData>(`/api/site/${uid}`).subscribe({
-        next: (data) => {
-          this.dataService.loadPublicSite(uid, data);
-          this.loading.set(false);
-        },
-        error: () => {
+    // React to the route param (not just a one-time snapshot) so navigating
+    // between /site/:uid routes re-loads the correct site instead of getting
+    // stuck on a stale view.
+    this.route.paramMap
+      .pipe(
+        switchMap((params) => {
+          const uid = params.get('uid');
+          this.loading.set(true);
+          this.error.set(false);
+          if (!uid) {
+            this.error.set(true);
+            this.loading.set(false);
+            return of(null);
+          }
+          return this.http.get<PublicSiteData>(`/api/site/${uid}`).pipe(
+            switchMap((data) => of({ uid, data, failed: false })),
+            // Catch here (not on the outer stream) so a failed load doesn't kill
+            // the subscription — later navigations can still load a site.
+            catchError(() => of({ uid, data: null as PublicSiteData | null, failed: true }))
+          );
+        })
+      )
+      .subscribe((result) => {
+        if (!result) return;
+        if (result.failed || !result.data) {
           this.error.set(true);
           this.loading.set(false);
+          return;
         }
+        this.dataService.loadPublicSite(result.uid, result.data);
+        this.loading.set(false);
       });
-    }
   }
 }
