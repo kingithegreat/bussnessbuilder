@@ -132,7 +132,7 @@ import { ImagePickerComponent } from './image-picker.component';
             </a>
           } @else {
             <button type="button" disabled title="Complete setup to preview your site" class="flex items-center gap-1.5 bg-gray-100 text-gray-400 px-4 py-1.5 rounded-lg text-xs font-bold cursor-not-allowed">
-              <mat-icon class="text-[16px]">open_in_new</mat-icon> Preview Site
+              <mat-icon class="text-[16px]">open_in_new</mat-icon> Complete setup to preview
             </button>
           }
         </div>
