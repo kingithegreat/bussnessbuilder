@@ -7,7 +7,8 @@ import { DataService } from './data.service';
 import { SubscriptionService } from './subscription.service';
 import { AuthService } from './auth.service';
 import { ToastService } from './toast.service';
-import { NotificationPreferences } from './types';
+import { NotificationPreferences, BusinessProfile, BusinessType } from './types';
+import { BUSINESS_PRESETS } from './presets';
 import { DatePipe } from '@angular/common';
 
 @Component({
@@ -19,6 +20,63 @@ import { DatePipe } from '@angular/common';
       <div>
         <h1 class="text-2xl font-black text-gray-900 tracking-tight">Settings</h1>
         <p class="text-sm text-gray-500 font-medium">Manage your account, domain, and notification preferences.</p>
+      </div>
+
+      <!-- Business Profile -->
+      <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+        <div class="p-6 border-b border-gray-100 bg-gray-50/50">
+          <h2 class="font-bold text-gray-900 flex items-center gap-2"><mat-icon class="text-[18px] text-gray-400">store</mat-icon> Business Profile</h2>
+          <p class="text-xs text-gray-500 mt-1">These details were set during setup — you can change them any time.</p>
+        </div>
+        <div class="p-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div class="sm:col-span-2">
+            <span class="block text-sm font-bold text-gray-700 mb-1">Business Name</span>
+            <input type="text" [(ngModel)]="profileForm.name" placeholder="e.g. Apex Cleaners" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+          </div>
+          <div>
+            <span class="block text-sm font-bold text-gray-700 mb-1">Business Type</span>
+            <select [(ngModel)]="profileForm.type" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm text-gray-900">
+              <option value="" disabled>Select a type...</option>
+              @for (preset of presets; track preset.id) {
+                <option [value]="preset.id">{{ preset.label }}</option>
+              }
+              <option value="other">Other</option>
+            </select>
+          </div>
+          <div>
+            <span class="block text-sm font-bold text-gray-700 mb-1">Tagline</span>
+            <input type="text" [(ngModel)]="profileForm.tagline" placeholder="A short, catchy phrase" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+          </div>
+          <div>
+            <span class="block text-sm font-bold text-gray-700 mb-1">Contact Email</span>
+            <input type="email" [(ngModel)]="profileForm.email" placeholder="hello@example.com" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+          </div>
+          <div>
+            <span class="block text-sm font-bold text-gray-700 mb-1">Phone</span>
+            <input type="tel" [(ngModel)]="profileForm.phone" placeholder="(555) 123-4567" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+          </div>
+          <div>
+            <span class="block text-sm font-bold text-gray-700 mb-1">Service Area</span>
+            <input type="text" [(ngModel)]="profileForm.serviceArea" placeholder="e.g. Greater Seattle Area" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+          </div>
+          <div>
+            <span class="block text-sm font-bold text-gray-700 mb-1">Opening Hours</span>
+            <input type="text" [(ngModel)]="profileForm.openingHours" placeholder="Mon-Fri: 9am - 5pm" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+          </div>
+          <div class="sm:col-span-2">
+            <span class="block text-sm font-bold text-gray-700 mb-1">Address</span>
+            <input type="text" [(ngModel)]="profileForm.address" placeholder="Street address (optional)" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+          </div>
+          <div class="sm:col-span-2">
+            <span class="block text-sm font-bold text-gray-700 mb-1">Business Description</span>
+            <textarea [(ngModel)]="profileForm.description" rows="3" placeholder="A short description of your business" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm"></textarea>
+          </div>
+          <div class="sm:col-span-2 flex justify-end">
+            <button (click)="saveProfile()" class="bg-blue-600 text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow-sm hover:bg-blue-700 transition-colors flex items-center gap-2">
+              <mat-icon class="text-[18px]">save</mat-icon> Save Business Profile
+            </button>
+          </div>
+        </div>
       </div>
 
       <!-- Public Site Link -->
@@ -235,6 +293,13 @@ export class AdminSettingsComponent implements OnInit {
   siteUrl = '';
   friendlyUrl = '';
 
+  presets = BUSINESS_PRESETS;
+  profileForm: BusinessProfile = {
+    name: '', type: '', tagline: '', description: '', email: '', phone: '',
+    address: '', serviceArea: '', openingHours: '', toneOfVoice: '',
+    brandColor: '#2563eb', heroCopy: '', ctaText: '', trustBadges: [], enquiryFields: [],
+  };
+
   prefs: NotificationPreferences = {
     emailOnNewEnquiry: false,
     notificationEmail: '',
@@ -242,6 +307,7 @@ export class AdminSettingsComponent implements OnInit {
   };
 
   ngOnInit() {
+    this.profileForm = { ...this.profileForm, ...this.dataService.profile() };
     const saved = this.dataService.getNotificationPrefs();
     if (saved) {
       this.prefs = { ...this.prefs, ...saved };
@@ -268,6 +334,26 @@ export class AdminSettingsComponent implements OnInit {
     } catch {
       this.toast.info(url);
     }
+  }
+
+  saveProfile() {
+    const name = (this.profileForm.name || '').trim();
+    if (!name) {
+      this.toast.error('Business name cannot be empty.');
+      return;
+    }
+    this.dataService.updateProfile({
+      name,
+      type: this.profileForm.type as BusinessType,
+      tagline: (this.profileForm.tagline || '').trim(),
+      description: (this.profileForm.description || '').trim(),
+      email: (this.profileForm.email || '').trim(),
+      phone: (this.profileForm.phone || '').trim(),
+      address: (this.profileForm.address || '').trim(),
+      serviceArea: (this.profileForm.serviceArea || '').trim(),
+      openingHours: (this.profileForm.openingHours || '').trim(),
+    });
+    this.toast.success('Business profile updated!');
   }
 
   saveSettings() {
