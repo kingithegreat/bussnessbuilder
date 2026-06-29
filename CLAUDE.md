@@ -166,3 +166,15 @@ GitHub Actions (`deploy.yml`) exists but needs WIF secrets configured. Manual `g
 - Recommendation "Add as FAQ" is the only auto-insertion; other types require copy-paste
 - Page builder section insertion deferred to v1.3
 - Deploy `firestore.rules` to enable analytics tracking: `firebase deploy --only firestore:rules`
+
+## Workforce auto-merge pipeline
+
+Scheduled AI sessions push `claude/**` branches; GitHub Actions lands them on
+`main` autonomously so work doesn't pile up behind manual PR clicks. Flow:
+`auto-merge.yml` opens a PR → `ci.yml` runs lint/test/build → `auto-merge-on-green.yml`
+merges on green (direct merge, so it needs no admin settings; updates stale
+branches first, deletes merged ones). Merging to `main` does NOT deploy (deploy
+is gated on GCP/WIF config), so it's safe. **One required admin toggle the
+pipeline can't self-enable:** Settings → Actions → General → "Allow GitHub
+Actions to create and approve pull requests" (without it `gh pr create` 403s).
+Full steps + optional hardening in [`docs/workforce-runbook.md`](docs/workforce-runbook.md).

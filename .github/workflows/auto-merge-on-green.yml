@@ -1,0 +1,85 @@
+name: Auto-merge green claude PRs
+
+# Second half of the workforce pipeline (the first half is auto-merge.yml, which
+# opens the PR). When CI passes for a `claude/**` pull request, merge it to main
+# — WITHOUT relying on the repo "Allow auto-merge" setting or branch protection.
+#
+# Why a separate workflow: GitHub native auto-merge (`gh pr merge --auto`)
+# requires Settings → General → "Allow auto-merge" to be ON. When it's off, the
+# whole workforce stalls (PRs open but never land). This job does a *direct*
+# merge once it has independently confirmed CI succeeded, so the pipeline runs
+# end-to-end with only the GITHUB_TOKEN permissions granted below.
+#
+# Safety:
+#   - Only acts on PRs whose head branch is `claude/**` and whose base is `main`.
+#   - Only runs when the triggering CI run concluded `success`.
+#   - If the PR is BEHIND main, it updates the branch (CI re-runs, and this
+#     workflow merges on the next green) instead of merging stale work that
+#     could revert features. If it has conflicts (DIRTY), it warns and stops.
+#   - Pushing to main does NOT deploy to Cloud Run until the GCP_PROJECT_ID
+#     variable + WIF_* secrets are set (see deploy.yml), so merges are safe.
+
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types:
+      - completed
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: auto-merge-on-green-${{ github.event.workflow_run.head_branch }}
+  cancel-in-progress: false
+
+jobs:
+  merge:
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      startsWith(github.event.workflow_run.head_branch, 'claude/')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Merge the PR if it is green and current
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          BRANCH: ${{ github.event.workflow_run.head_branch }}
+        run: |
+          set -euo pipefail
+
+          PR=$(gh pr list --repo "$REPO" --head "$BRANCH" --base main \
+                 --state open --json number --jq '.[0].number // empty')
+          if [ -z "$PR" ]; then
+            echo "No open PR from $BRANCH into main — nothing to merge."
+            exit 0
+          fi
+
+          # mergeStateStatus is computed asynchronously by GitHub; give it a
+          # moment to settle out of UNKNOWN before deciding.
+          STATUS=""
+          for i in 1 2 3 4 5; do
+            STATUS=$(gh pr view "$PR" --repo "$REPO" --json mergeStateStatus \
+                       --jq '.mergeStateStatus')
+            [ "$STATUS" != "UNKNOWN" ] && break
+            echo "Merge state UNKNOWN (attempt $i) — waiting for GitHub to compute it…"
+            sleep 5
+          done
+          echo "PR #$PR merge state: $STATUS"
+
+          case "$STATUS" in
+            BEHIND)
+              echo "PR #$PR is behind main — updating the branch so it can't"
+              echo "revert newer work. CI re-runs and this workflow merges on green."
+              gh pr update-branch "$PR" --repo "$REPO" \
+                || echo "::warning::Could not update PR #$PR branch; needs a manual rebase."
+              exit 0
+              ;;
+            DIRTY)
+              echo "::warning::PR #$PR conflicts with main — needs a manual rebase before it can merge."
+              exit 0
+              ;;
+          esac
+
+          echo "Merging PR #$PR ($BRANCH → main) — CI is green."
+          gh pr merge "$PR" --repo "$REPO" --squash --delete-branch
