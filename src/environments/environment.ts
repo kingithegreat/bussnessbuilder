@@ -1,5 +1,7 @@
 export const environment = {
   production: false,
+  // Public Sentry DSN for browser error monitoring. Empty = disabled.
+  sentryDsn: '',
   firebase: {
     apiKey: 'AIzaSyD0UfmKwPX81FQ75C1v9kgF7HO9xBa80Hw',
     authDomain: 'sitebuilder-b2ee6.firebaseapp.com',
