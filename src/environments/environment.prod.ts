@@ -1,5 +1,8 @@
 export const environment = {
   production: true,
+  // Public Sentry DSN for browser error monitoring. Empty = disabled.
+  // Set this at build/deploy time to enable client-side error reporting.
+  sentryDsn: '',
   firebase: {
     apiKey: 'AIzaSyD0UfmKwPX81FQ75C1v9kgF7HO9xBa80Hw',
     authDomain: 'sitebuilder-b2ee6.firebaseapp.com',
