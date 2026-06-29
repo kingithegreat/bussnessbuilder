@@ -43,7 +43,7 @@ import { BUSINESS_PRESETS, getPreset } from './presets';
              </div>
           </div>
           
-          <form [formGroup]="form" (ngSubmit)="onSubmit()" class="p-8 space-y-8">
+          <form [formGroup]="form" (ngSubmit)="onReview()" class="p-8 space-y-8">
             <div class="space-y-6">
               
               <div>
@@ -102,14 +102,9 @@ import { BUSINESS_PRESETS, getPreset } from './presets';
               <div class="text-[13px] text-gray-500 flex items-center gap-1">
                  <mat-icon class="text-[16px]">auto_awesome</mat-icon> AI will generate the rest
               </div>
-              <button type="button" (click)="onSubmit()" [disabled]="isSubmitting()" class="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white px-8 py-3.5 rounded-full font-medium transition-colors disabled:opacity-50 flex items-center justify-center gap-2 shadow-sm cursor-pointer">
-                @if (isSubmitting()) {
-                  <span class="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full"></span>
-                  Generating your site...
-                } @else {
-                  <span>Complete Setup</span>
-                  <mat-icon class="text-sm">arrow_forward</mat-icon>
-                }
+              <button type="button" (click)="onReview()" class="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white px-8 py-3.5 rounded-full font-medium transition-colors disabled:opacity-50 flex items-center justify-center gap-2 shadow-sm cursor-pointer">
+                <span>Review &amp; continue</span>
+                <mat-icon class="text-sm">arrow_forward</mat-icon>
               </button>
               @if (formError()) {
                 <p class="text-red-500 text-sm font-medium w-full text-center mt-2">{{ formError() }}</p>
@@ -169,6 +164,44 @@ import { BUSINESS_PRESETS, getPreset } from './presets';
           </div>
         </div>
 
+        <!-- Review & Publish confirmation (preview-before-publish gate) -->
+        @if (reviewing()) {
+          <div class="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/40 backdrop-blur-sm px-4">
+            <div class="bg-white rounded-3xl shadow-xl border border-gray-100 max-w-md w-full p-8">
+              <div class="flex items-center gap-2 mb-1">
+                <mat-icon class="text-[20px] text-blue-600">rocket_launch</mat-icon>
+                <h2 class="font-bold text-lg text-gray-900">Ready to go live?</h2>
+              </div>
+              <p class="text-sm text-gray-500 mb-5">Review the details below and check the live preview. Publishing makes your site <strong>publicly visible</strong> — you can change anything later from your dashboard.</p>
+              <dl class="space-y-2 text-sm bg-gray-50 rounded-2xl p-4 mb-6">
+                <div class="flex justify-between gap-4"><dt class="text-gray-500">Business</dt><dd class="font-medium text-gray-900 text-right">{{ form.value.name }}</dd></div>
+                <div class="flex justify-between gap-4"><dt class="text-gray-500">Type</dt><dd class="font-medium text-gray-900 text-right">{{ selectedTypeLabel() }}</dd></div>
+                @if (form.value.tagline) {
+                  <div class="flex justify-between gap-4"><dt class="text-gray-500">Tagline</dt><dd class="font-medium text-gray-900 text-right">{{ form.value.tagline }}</dd></div>
+                }
+                <div class="flex justify-between gap-4"><dt class="text-gray-500">Enquiries to</dt><dd class="font-medium text-gray-900 text-right">{{ form.value.email }}</dd></div>
+                @if (form.value.serviceArea) {
+                  <div class="flex justify-between gap-4"><dt class="text-gray-500">Service area</dt><dd class="font-medium text-gray-900 text-right">{{ form.value.serviceArea }}</dd></div>
+                }
+              </dl>
+              @if (formError()) {
+                <p class="text-red-500 text-sm font-medium mb-4 text-center">{{ formError() }}</p>
+              }
+              <div class="flex flex-col-reverse sm:flex-row gap-3">
+                <button type="button" (click)="onBackToEdit()" [disabled]="isSubmitting()" class="flex-1 px-5 py-3 rounded-full font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 transition-colors disabled:opacity-50">Back to editing</button>
+                <button type="button" (click)="onConfirmPublish()" [disabled]="isSubmitting()" class="flex-1 px-5 py-3 rounded-full font-medium text-white bg-blue-600 hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
+                  @if (isSubmitting()) {
+                    <span class="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full"></span>
+                    Publishing...
+                  } @else {
+                    <mat-icon class="text-[18px]">rocket_launch</mat-icon> Publish &amp; go live
+                  }
+                </button>
+              </div>
+            </div>
+          </div>
+        }
+
       </div>
     </div>
   `
@@ -182,6 +215,7 @@ export class SetupWizardComponent implements OnInit {
   private router = inject(Router);
 
   isSubmitting = signal(false);
+  reviewing = signal(false);
   formError = signal('');
   presets = BUSINESS_PRESETS;
 
@@ -234,8 +268,18 @@ export class SetupWizardComponent implements OnInit {
     return [];
   }
 
-  async onSubmit() {
-    console.log('[Setup] Button clicked. Form valid:', this.form.valid, 'Form value:', this.form.value);
+  /** Readable label for the selected business type (for the review summary). */
+  selectedTypeLabel(): string {
+    const type = this.form.get('type')?.value;
+    if (!type) return '';
+    return getPreset(type as BusinessType)?.label || 'Other';
+  }
+
+  /**
+   * Step 1: validate, then open the review/confirm gate instead of publishing
+   * immediately. The site only goes live after the user confirms.
+   */
+  onReview() {
     this.formError.set('');
 
     if (this.form.invalid) {
@@ -244,14 +288,27 @@ export class SetupWizardComponent implements OnInit {
       if (this.form.get('name')?.invalid) missing.push('Business Name');
       if (this.form.get('type')?.invalid) missing.push('Business Type');
       if (this.form.get('email')?.invalid) missing.push('a valid Email');
-      const msg = `Please fill in: ${missing.join(', ')}`;
-      console.log('[Setup] Form invalid:', msg);
-      this.formError.set(msg);
+      this.formError.set(`Please fill in: ${missing.join(', ')}`);
       return;
     }
 
+    this.reviewing.set(true);
+  }
+
+  /** Return to editing from the review gate. */
+  onBackToEdit() {
+    if (this.isSubmitting()) return;
+    this.formError.set('');
+    this.reviewing.set(false);
+  }
+
+  /**
+   * Step 2: the user confirmed in the review gate — generate the rest of the
+   * site, mark setup complete (publishes), claim a slug, and go to the dashboard.
+   */
+  async onConfirmPublish() {
+    this.formError.set('');
     this.isSubmitting.set(true);
-    console.log('[Setup] Starting site generation...');
 
     try {
       const val = this.form.value;
