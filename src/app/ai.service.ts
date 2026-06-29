@@ -295,14 +295,13 @@ Return ONLY the JSON array — no markdown, no explanation, no code fences.`,
 
     if (ai) {
       try {
-        const parsed = JSON.parse(ai.trim().replace(/^```json?
-?|```$/g, ''));
+        const parsed = JSON.parse(ai.trim().replace(/^```(?:json)?\s*|```$/g, ''));
         if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed.map((s: any, i: number) => ({
+          return parsed.map((s: Record<string, unknown>, i: number) => ({
             id: `ai-svc-${Date.now()}-${i}`,
-            name: String(s.name || 'Unnamed Service'),
-            description: String(s.description || ''),
-            price: s.price ? String(s.price) : undefined,
+            name: String(s['name'] || 'Unnamed Service'),
+            description: String(s['description'] || ''),
+            price: s['price'] ? String(s['price']) : undefined,
           })) as Service[];
         }
       } catch {
@@ -338,13 +337,12 @@ Return ONLY the JSON array — no markdown, no explanation, no code fences.`,
 
     if (ai) {
       try {
-        const parsed = JSON.parse(ai.trim().replace(/^```json?
-?|```$/g, ''));
+        const parsed = JSON.parse(ai.trim().replace(/^```(?:json)?\s*|```$/g, ''));
         if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed.map((f: any, i: number) => ({
+          return parsed.map((f: Record<string, unknown>, i: number) => ({
             id: `ai-faq-${Date.now()}-${i}`,
-            question: String(f.question || ''),
-            answer: String(f.answer || ''),
+            question: String(f['question'] || ''),
+            answer: String(f['answer'] || ''),
           })) as FAQ[];
         }
       } catch {

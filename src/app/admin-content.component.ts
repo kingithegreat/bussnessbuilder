@@ -407,7 +407,7 @@ export class AdminContentComponent implements OnInit {
         const src = this.aiService.isLive() ? 'AI' : 'smart presets';
         this.toast.success(`Added ${toAdd.length} FAQ${toAdd.length !== 1 ? 's' : ''} from ${src}. Review and click Save.`);
       }
-    } catch (err) {
+    } catch {
       this.toast.error('Generation failed — try again or add items manually.');
     } finally {
       this.generating.set(false);
