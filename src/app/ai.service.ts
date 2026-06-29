@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
-import { BusinessProfile, Enquiry, Service, BusinessType, ReplyIntent, MarketingContentType, GrowthReport, DraftRecommendationResponse } from './types';
+import { BusinessProfile, Enquiry, Service, FAQ, BusinessType, ReplyIntent, MarketingContentType, GrowthReport, DraftRecommendationResponse } from './types';
 import { getPreset } from './presets';
 import { DataService } from './data.service';
 import { AuthService } from './auth.service';
@@ -265,4 +265,95 @@ Sign off as "The team at ${profile.name}". Return only the email body.`,
       return null;
     }
   }
+
+  // ── AI Content Generation — Services & FAQs ──────────────────────────────
+
+  getPresetFaqs(type: string): FAQ[] {
+    const preset = getPreset(type as BusinessType);
+    return preset?.suggestedFaqs || [
+      { id: 'f1', question: 'Do you offer free consultations?', answer: 'Yes, we offer a free 15-minute consultation to discuss your needs.' },
+      { id: 'f2', question: 'What areas do you service?', answer: 'We serve the local area and surrounds. Contact us to confirm your location.' },
+    ];
+  }
+
+  /**
+   * Generate a list of 3–5 suggested services for the business.
+   * Tries Gemini first; falls back to business-type presets.
+   */
+  async generateServices(profile: BusinessProfile): Promise<Service[]> {
+    const ai = await this.generate(
+      `You are helping a small business owner set up their website. Generate exactly 3 service offerings for this business.
+
+Business name: ${profile.name}
+Business type: ${profile.type}
+Description: ${profile.description}
+Tone of voice: ${profile.toneOfVoice || 'professional'}
+
+Return a JSON array of exactly 3 objects with keys: name (string), description (1-2 sentences, string), price (realistic estimate with currency symbol, string).
+Return ONLY the JSON array — no markdown, no explanation, no code fences.`,
+    );
+
+    if (ai) {
+      try {
+        const parsed = JSON.parse(ai.trim().replace(/^```(?:json)?\s*|```$/g, ''));
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed.map((s: Record<string, unknown>, i: number) => ({
+            id: `ai-svc-${Date.now()}-${i}`,
+            name: String(s['name'] || 'Unnamed Service'),
+            description: String(s['description'] || ''),
+            price: s['price'] ? String(s['price']) : undefined,
+          })) as Service[];
+        }
+      } catch {
+        // fall through to preset
+      }
+    }
+
+    return this.getPresetServices(profile.type).map(s => ({
+      ...s,
+      id: `preset-svc-${Date.now()}-${s.id}`,
+    }));
+  }
+
+  /**
+   * Generate 3–5 FAQs tailored to the business and its services.
+   * Tries Gemini first; falls back to business-type presets.
+   */
+  async generateFAQs(profile: BusinessProfile, services: Service[]): Promise<FAQ[]> {
+    const serviceList = services.map(s => s.name).join(', ') || 'general services';
+    const ai = await this.generate(
+      `Generate 4 realistic FAQs (Frequently Asked Questions) for a small business website.
+
+Business name: ${profile.name}
+Business type: ${profile.type}
+Services offered: ${serviceList}
+Service area: ${profile.serviceArea || 'local area'}
+Tone of voice: ${profile.toneOfVoice || 'professional'}
+
+Think about what customers actually want to know before booking — pricing, process, qualifications, availability.
+Return a JSON array of exactly 4 objects with keys: question (string), answer (1-2 sentences, string).
+Return ONLY the JSON array — no markdown, no explanation, no code fences.`,
+    );
+
+    if (ai) {
+      try {
+        const parsed = JSON.parse(ai.trim().replace(/^```(?:json)?\s*|```$/g, ''));
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed.map((f: Record<string, unknown>, i: number) => ({
+            id: `ai-faq-${Date.now()}-${i}`,
+            question: String(f['question'] || ''),
+            answer: String(f['answer'] || ''),
+          })) as FAQ[];
+        }
+      } catch {
+        // fall through to preset
+      }
+    }
+
+    return this.getPresetFaqs(profile.type).map(f => ({
+      ...f,
+      id: `preset-faq-${Date.now()}-${f.id}`,
+    }));
+  }
+
 }

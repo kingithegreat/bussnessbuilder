@@ -1,8 +1,9 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, OnInit, signal } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { DataService } from './data.service';
+import { AiService } from './ai.service';
 import { SubscriptionService } from './subscription.service';
 import { ToastService } from './toast.service';
 import { Service, Testimonial, FAQ } from './types';
@@ -28,9 +29,21 @@ type Tab = 'services' | 'testimonials' | 'faqs';
           <h1 class="text-2xl font-black text-gray-900 tracking-tight">Content</h1>
           <p class="text-sm text-gray-500 font-medium">Manage the services, testimonials and FAQs shown on your public page.</p>
         </div>
-        <button (click)="save()" class="bg-blue-600 text-white px-5 py-2.5 rounded-lg text-sm font-bold shadow-md hover:bg-blue-700 transition-colors flex items-center gap-1.5">
-          <mat-icon class="text-[18px]">save</mat-icon> Save {{ tabLabel() }}
-        </button>
+        <div class="flex items-center gap-2">
+          @if (tab === 'services' || tab === 'faqs') {
+            <button (click)="generateWithAi()" [disabled]="generating()"
+              class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2.5 rounded-lg text-sm font-bold transition-colors flex items-center gap-1.5 disabled:opacity-50 shadow-sm">
+              @if (generating()) {
+                <span class="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full inline-block"></span> Generating...
+              } @else {
+                <mat-icon class="text-[18px]">auto_awesome</mat-icon> Generate with AI
+              }
+            </button>
+          }
+          <button (click)="save()" class="bg-blue-600 text-white px-5 py-2.5 rounded-lg text-sm font-bold shadow-md hover:bg-blue-700 transition-colors flex items-center gap-1.5">
+            <mat-icon class="text-[18px]">save</mat-icon> Save {{ tabLabel() }}
+          </button>
+        </div>
       </div>
 
       <!-- Tabs -->
@@ -236,6 +249,7 @@ type Tab = 'services' | 'testimonials' | 'faqs';
 })
 export class AdminContentComponent implements OnInit {
   private dataService = inject(DataService);
+  private aiService  = inject(AiService);
   subService = inject(SubscriptionService);
   private toast = inject(ToastService);
 
@@ -317,6 +331,7 @@ export class AdminContentComponent implements OnInit {
   }
 
   showImportReviews = false;
+  generating = signal(false);
   importReviewsText = '';
 
   parseAndImportReviews() {
@@ -367,4 +382,36 @@ export class AdminContentComponent implements OnInit {
     }
     this.toast.success(this.tabLabel() + ' saved successfully!');
   }
+
+  async generateWithAi() {
+    const profile = this.dataService.profile();
+    if (!profile) {
+      this.toast.error('Complete your business profile first so the AI has context.');
+      return;
+    }
+    this.generating.set(true);
+    try {
+      if (this.tab === 'services') {
+        const generated = await this.aiService.generateServices(profile);
+        // Append (don't overwrite) so existing work is preserved
+        const existingNames = new Set(this.services.map(s => s.name.toLowerCase()));
+        const toAdd = generated.filter(s => !existingNames.has(s.name.toLowerCase()));
+        this.services = [...this.services, ...toAdd];
+        const src = this.aiService.isLive() ? 'AI' : 'smart presets';
+        this.toast.success(`Added ${toAdd.length} service${toAdd.length !== 1 ? 's' : ''} from ${src}. Review and click Save.`);
+      } else if (this.tab === 'faqs') {
+        const generated = await this.aiService.generateFAQs(profile, this.services);
+        const existingQs = new Set(this.faqs.map(f => f.question.toLowerCase()));
+        const toAdd = generated.filter(f => !existingQs.has(f.question.toLowerCase()));
+        this.faqs = [...this.faqs, ...toAdd];
+        const src = this.aiService.isLive() ? 'AI' : 'smart presets';
+        this.toast.success(`Added ${toAdd.length} FAQ${toAdd.length !== 1 ? 's' : ''} from ${src}. Review and click Save.`);
+      }
+    } catch {
+      this.toast.error('Generation failed — try again or add items manually.');
+    } finally {
+      this.generating.set(false);
+    }
+  }
+
 }
