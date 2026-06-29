@@ -8,6 +8,7 @@ import express from 'express';
 import {join} from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { dispatchEnquiryWebhook } from './server-webhook';
+import { initServerMonitoring, captureServerError } from './server-monitoring';
 import type Stripe from 'stripe';
 import type { Firestore } from 'firebase-admin/firestore';
 
@@ -63,6 +64,9 @@ const angularApp = new AngularNodeAppEngine({
   trustProxyHeaders: true,
 });
 
+// Initialise error monitoring (no-op unless SENTRY_DSN is set).
+void initServerMonitoring();
+
 // Allow Firebase Auth popups to communicate back to the opener window.
 app.use((_req, res, next) => {
   res.setHeader('Cross-Origin-Opener-Policy', 'same-origin-allow-popups');
@@ -108,7 +112,7 @@ app.get('/api/site/:uid', async (req, res) => {
       hideBranding,
     });
   } catch (e) {
-    console.error('Error loading site:', e);
+    console.error('Error loading site:', e); captureServerError(e);
     res.status(500).json({ error: 'Server error' });
   }
 });
@@ -139,7 +143,7 @@ app.get('/api/site/:uid/pages/:slug', async (req, res) => {
     }
     res.json({ title: page.title, content: page.content, slug: page.slug });
   } catch (e) {
-    console.error('Error loading page:', e);
+    console.error('Error loading page:', e); captureServerError(e);
     res.status(500).json({ error: 'Server error' });
   }
 });
@@ -306,7 +310,7 @@ app.post('/api/site/:uid/enquiry', express.json(), async (req, res) => {
       res.status(404).json({ error: 'Site not found' });
       return;
     }
-    console.error('Error submitting enquiry:', e);
+    console.error('Error submitting enquiry:', e); captureServerError(e);
     res.status(500).json({ error: 'Server error' });
   }
 });
@@ -367,7 +371,7 @@ app.post('/api/slugs/claim', express.json(), async (req, res) => {
 
     res.json({ slug: candidate });
   } catch (e) {
-    console.error('Slug claim error:', e);
+    console.error('Slug claim error:', e); captureServerError(e);
     res.status(500).json({ error: 'Server error' });
   }
 });
@@ -420,7 +424,7 @@ app.get('/api/admin/users', async (req, res) => {
     }
     res.json({ users });
   } catch (e) {
-    console.error('Admin users error:', e);
+    console.error('Admin users error:', e); captureServerError(e);
     res.status(500).json({ error: 'Server error' });
   }
 });
@@ -511,7 +515,7 @@ app.get('/api/admin/metrics', async (req, res) => {
     metricsCache = { data: result, expiresAt: Date.now() + 30_000 };
     res.json(result);
   } catch (e) {
-    console.error('Admin metrics error:', e);
+    console.error('Admin metrics error:', e); captureServerError(e);
     res.status(500).json({ error: 'Server error' });
   }
 });
@@ -524,7 +528,7 @@ app.get('/api/admin/discounts', async (req, res) => {
     const discounts = snap.docs.map(d => ({ code: d.id, ...d.data() }));
     res.json({ discounts });
   } catch (e) {
-    console.error('Admin discounts error:', e);
+    console.error('Admin discounts error:', e); captureServerError(e);
     res.status(500).json({ error: 'Server error' });
   }
 });
@@ -555,7 +559,7 @@ app.post('/api/admin/discounts', express.json(), async (req, res) => {
     });
     res.json({ success: true });
   } catch (e) {
-    console.error('Admin create discount error:', e);
+    console.error('Admin create discount error:', e); captureServerError(e);
     res.status(500).json({ error: 'Server error' });
   }
 });
@@ -567,7 +571,7 @@ app.delete('/api/admin/discounts/:code', async (req, res) => {
     await db.doc(`discounts/${req.params.code}`).delete();
     res.json({ success: true });
   } catch (e) {
-    console.error('Admin delete discount error:', e);
+    console.error('Admin delete discount error:', e); captureServerError(e);
     res.status(500).json({ error: 'Server error' });
   }
 });
@@ -606,7 +610,7 @@ app.delete('/api/account/:uid', async (req, res) => {
 
     res.json({ success: true });
   } catch (e) {
-    console.error('Account deletion error:', e);
+    console.error('Account deletion error:', e); captureServerError(e);
     res.status(500).json({ error: 'Server error' });
   }
 });
@@ -662,7 +666,7 @@ app.post('/api/ai/generate', express.json(), async (req, res) => {
       res.json({ text: null, fallback: true });
     }
   } catch (e) {
-    console.error('AI endpoint error:', e);
+    console.error('AI endpoint error:', e); captureServerError(e);
     res.status(500).json({ error: 'Server error' });
   }
 });
@@ -828,7 +832,7 @@ Give 3-6 specific, actionable recommendations. Reference actual data. Be encoura
 
     res.json(report);
   } catch (e) {
-    console.error('Growth report error:', e);
+    console.error('Growth report error:', e); captureServerError(e);
     res.status(500).json({ error: 'Server error' });
   }
 });
@@ -966,7 +970,7 @@ app.post('/api/ai/draft-recommendation', express.json(), async (req, res) => {
       });
     }
   } catch (e) {
-    console.error('Draft recommendation error:', e);
+    console.error('Draft recommendation error:', e); captureServerError(e);
     res.status(500).json({ error: 'Server error' });
   }
 });
@@ -1022,7 +1026,7 @@ app.post('/api/stripe/create-checkout-session', express.json(), async (req, res)
 
     res.json({ url: session.url });
   } catch (e) {
-    console.error('Checkout session error:', e);
+    console.error('Checkout session error:', e); captureServerError(e);
     res.status(500).json({ error: 'Failed to create checkout session' });
   }
 });
@@ -1052,7 +1056,7 @@ app.post('/api/stripe/customer-portal', express.json(), async (req, res) => {
     });
     res.json({ url: session.url });
   } catch (e) {
-    console.error('Portal error:', e);
+    console.error('Portal error:', e); captureServerError(e);
     res.status(500).json({ error: 'Failed to open portal' });
   }
 });
@@ -1111,7 +1115,7 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
 
     res.json({ received: true });
   } catch (e) {
-    console.error('Webhook error:', e);
+    console.error('Webhook error:', e); captureServerError(e);
     res.status(400).json({ error: 'Webhook failed' });
   }
 });
