@@ -9,13 +9,16 @@ name: Deploy to Cloud Run
 # keys. Configure these once and the job activates automatically:
 #
 # Repository VARIABLES (Settings → Secrets and variables → Actions → Variables):
-#   GCP_PROJECT_ID      e.g. my-project-123456   (required — gates this workflow)
+#   GCP_PROJECT_ID      e.g. my-project-123456   (required)
 #   GCP_REGION          e.g. us-central1         (optional, default below)
 #   CLOUD_RUN_SERVICE   e.g. businessflow        (optional, default below)
 #
 # Repository SECRETS (Settings → Secrets and variables → Actions → Secrets):
 #   WIF_PROVIDER         projects/NUM/locations/global/workloadIdentityPools/POOL/providers/PROVIDER
 #   WIF_SERVICE_ACCOUNT  deployer@PROJECT.iam.gserviceaccount.com
+#
+# The deploy job stays SKIPPED (not failed) until GCP_PROJECT_ID *and* both
+# WIF_* secrets are all set, so main stays green before deployment is wired up.
 #
 # The service account needs: roles/run.admin, roles/cloudbuild.builds.editor,
 # roles/artifactregistry.writer, roles/storage.admin, and roles/iam.serviceAccountUser
@@ -37,6 +40,8 @@ concurrency:
 jobs:
   build-and-check:
     runs-on: ubuntu-latest
+    outputs:
+      deploy_configured: ${{ steps.cfg.outputs.configured }}
     steps:
       - uses: actions/checkout@v4
 
@@ -55,11 +60,28 @@ jobs:
       - name: Build (SSR)
         run: npm run build
 
+      # Decide whether deployment is fully configured. `secrets` can't be read
+      # in a job-level `if:`, so evaluate it here and expose a boolean output.
+      - id: cfg
+        name: Check Cloud Run deploy configuration
+        env:
+          GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
+          WIF_PROVIDER: ${{ secrets.WIF_PROVIDER }}
+          WIF_SERVICE_ACCOUNT: ${{ secrets.WIF_SERVICE_ACCOUNT }}
+        run: |
+          if [ -n "$GCP_PROJECT_ID" ] && [ -n "$WIF_PROVIDER" ] && [ -n "$WIF_SERVICE_ACCOUNT" ]; then
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "::notice title=Cloud Run deploy skipped::Build passed; deploy was SKIPPED (not failed). Set the GCP_PROJECT_ID variable and the WIF_PROVIDER + WIF_SERVICE_ACCOUNT secrets to enable automatic deploys."
+          fi
+
   deploy:
     needs: build-and-check
-    # Skip (don't fail) until GCP_PROJECT_ID is set, so the repo stays green
-    # before deployment is configured.
-    if: vars.GCP_PROJECT_ID != ''
+    # Skip (don't fail) until the project variable AND both WIF secrets are set.
+    # Gating only on GCP_PROJECT_ID (as before) let the job run half-configured
+    # and hard-fail at the auth step, turning every push to main red.
+    if: needs.build-and-check.outputs.deploy_configured == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: read
