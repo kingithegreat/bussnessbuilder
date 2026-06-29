@@ -7,6 +7,7 @@ import {
 import express from 'express';
 import {join} from 'node:path';
 import { randomUUID } from 'node:crypto';
+import { dispatchEnquiryWebhook } from './server-webhook';
 import type Stripe from 'stripe';
 import type { Firestore } from 'firebase-admin/firestore';
 
@@ -287,6 +288,18 @@ app.post('/api/site/:uid/enquiry', express.json(), async (req, res) => {
         ].join('\n'),
       });
     })().catch(err => console.warn('Notification email failed:', err));
+
+    // Fire-and-forget outbound webhook (gated on the same new-enquiry opt-in)
+    (async () => {
+      const url = process.env['ENQUIRY_WEBHOOK_URL'];
+      if (!url) return;
+      const notifSnap = await db.doc(`users/${uid}/businessData/notifications`).get();
+      const prefs = notifSnap.exists ? notifSnap.data()! : null;
+      const result = await dispatchEnquiryWebhook({ url, prefs, uid, enquiry });
+      if (!result.delivered && result.status !== undefined) {
+        console.warn(`Enquiry webhook returned HTTP ${result.status}`);
+      }
+    })().catch(err => console.warn('Enquiry webhook failed:', err));
 
   } catch (e) {
     if (e instanceof Error && e.message === 'SITE_NOT_FOUND') {
