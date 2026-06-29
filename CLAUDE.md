@@ -112,6 +112,7 @@ GitHub Actions (`deploy.yml`) exists but needs WIF secrets configured. Manual `g
 - `GEMINI_API_KEY` — Server-side Gemini API key for AI endpoint
 - `ADMIN_UIDS` — Comma-separated Firebase UIDs that can access `/app-admin`
 - `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM` — Email notifications
+- `ENQUIRY_WEBHOOK_URL` — Optional. If set, new enquiries are fire-and-forget POSTed here (event `enquiry.created`) for owners opted in to new-enquiry notifications. See `src/server-webhook.ts`.
 - `NG_ALLOWED_HOSTS` — Angular SSR host check (set to `*` for Cloud Run)
 
 ## Server API endpoints
