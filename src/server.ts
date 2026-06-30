@@ -8,6 +8,7 @@ import express from 'express';
 import {join} from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { dispatchEnquiryWebhook } from './server-webhook';
+import { buildRobotsTxt, buildSiteSitemap, originFromRequest, SitemapPage } from './server-seo';
 import { initServerMonitoring, captureServerError } from './server-monitoring';
 import type Stripe from 'stripe';
 import type { Firestore } from 'firebase-admin/firestore';
@@ -146,6 +147,56 @@ app.get('/api/site/:uid/pages/:slug', async (req, res) => {
   } catch (e) {
     console.error('Error loading page:', e); captureServerError(e);
     res.status(500).json({ error: 'Server error' });
+  }
+});
+
+/**
+ * Global robots.txt: public/marketing pages are crawlable, the authenticated
+ * app and raw API are not. Served at the domain root so crawlers honour it.
+ */
+app.get('/robots.txt', (req, res) => {
+  const origin = originFromRequest({
+    forwardedProto: req.header('x-forwarded-proto') ?? undefined,
+    forwardedHost: req.header('x-forwarded-host') ?? undefined,
+    host: req.header('host') ?? undefined,
+  });
+  res.type('text/plain').send(buildRobotsTxt(origin));
+});
+
+/**
+ * Per-site sitemap.xml: the site home plus every published content page, so the
+ * owner can submit it to Search Console and crawlers can discover deep pages.
+ */
+app.get('/site/:uid/sitemap.xml', async (req, res) => {
+  try {
+    const origin = originFromRequest({
+      forwardedProto: req.header('x-forwarded-proto') ?? undefined,
+      forwardedHost: req.header('x-forwarded-host') ?? undefined,
+      host: req.header('host') ?? undefined,
+    });
+    const db = await getDb();
+    const uid = await resolveUid(db, req.params.uid);
+    const mainSnap = await db.doc(`users/${uid}/businessData/main`).get();
+    if (!mainSnap.exists || !mainSnap.data()!['isSetupComplete']) {
+      res.status(404).type('text/plain').send('Site not found');
+      return;
+    }
+    const pagesSnap = await db.doc(`users/${uid}/businessData/pages`).get();
+    const rawPages: Record<string, unknown>[] = pagesSnap.exists ? (pagesSnap.data()!['pages'] || []) : [];
+    const pages: SitemapPage[] = rawPages.map((p) => ({
+      slug: String(p['slug'] || ''),
+      published: !!p['published'],
+      updatedAt: typeof p['updatedAt'] === 'string' ? p['updatedAt'] as string : undefined,
+    }));
+    const homeLastmod = typeof mainSnap.data()!['updatedAt'] === 'string'
+      ? mainSnap.data()!['updatedAt'] as string
+      : undefined;
+    // Use the public-facing identifier from the URL (slug or uid) for canonical links.
+    const xml = buildSiteSitemap(origin, req.params.uid, pages, homeLastmod);
+    res.type('application/xml').send(xml);
+  } catch (e) {
+    console.error('Error building sitemap:', e); captureServerError(e);
+    res.status(500).type('text/plain').send('Server error');
   }
 });
 

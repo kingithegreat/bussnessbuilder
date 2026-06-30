@@ -142,6 +142,8 @@ GitHub Actions (`deploy.yml`) exists but needs WIF secrets configured. Manual `g
 | `GET /healthz` | None | Liveness probe |
 | `GET /api/site/:uid` | None | Public site data (accepts UID or slug) |
 | `GET /api/site/:uid/pages/:slug` | None | Public content page by slug |
+| `GET /robots.txt` | None | Global robots.txt (allows public pages, blocks app/API) |
+| `GET /site/:uid/sitemap.xml` | None | Per-site sitemap (home + published content pages) |
 | `POST /api/site/:uid/enquiry` | None (rate-limited) | Public enquiry submission |
 | `POST /api/slugs/claim` | Firebase token | Claim a URL slug for a site |
 | `GET /api/admin/verify` | Firebase token + ADMIN_UIDS | Verify admin access |
@@ -193,6 +195,15 @@ GitHub Actions (`deploy.yml`) exists but needs WIF secrets configured. Manual `g
   templates — as `businessflow-data-export.json`. `importState` accepts both a
   bare state export and a full bundle (restores the profile portion either way),
   so Export→Import still round-trips. `exportState` is unchanged.
+- **SEO discoverability**: generated sites now expose a global `GET /robots.txt`
+  (crawlable public/marketing pages; `/admin`, `/app-admin`, `/api/` disallowed)
+  and a per-site `GET /site/:uid/sitemap.xml` (home + every published content
+  page, with `<lastmod>`). Owners submit the sitemap URL to Search Console. Pure,
+  unit-tested generators live in `src/server-seo.ts` (`buildRobotsTxt`,
+  `buildSiteSitemap`, `originFromRequest`); Express routes in `server.ts` are thin
+  wiring. NOTE: the `/site/:uid` body itself is still client-rendered (SSR emits
+  the loading shell — see `site-view.component.ts`), so server-rendered `<title>`/
+  OG meta for crawler unfurls remains a follow-up.
 - Page builder section insertion deferred to v1.3
 - Deploy `firestore.rules` to enable analytics tracking: `firebase deploy --only firestore:rules`
 
