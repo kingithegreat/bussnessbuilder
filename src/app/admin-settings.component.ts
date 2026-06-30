@@ -8,6 +8,7 @@ import { SubscriptionService } from './subscription.service';
 import { AuthService } from './auth.service';
 import { ToastService } from './toast.service';
 import { NotificationPreferences, BusinessProfile, BusinessType } from './types';
+import { requiredRecords, validateDomain, verifyDomain, DnsRecord, VerificationResult } from './domain-verification';
 import { BUSINESS_PRESETS } from './presets';
 import { DatePipe } from '@angular/common';
 
@@ -206,23 +207,64 @@ import { DatePipe } from '@angular/common';
       <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
         <div class="p-6 border-b border-gray-100 bg-gray-50/50">
           <h2 class="font-bold text-gray-900 flex items-center gap-2"><mat-icon class="text-[18px] text-gray-400">language</mat-icon> Custom Domain</h2>
+          <p class="text-xs text-gray-500 mt-1">Connect a domain you own and we'll point it at your public site.</p>
         </div>
         <div class="p-6 space-y-4">
           <div>
             <label for="domain" class="block text-sm font-bold text-gray-700 mb-2">Your Domain</label>
-            <input id="domain" type="text" [(ngModel)]="prefs.customDomain" placeholder="www.yourbusiness.com" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+            <div class="flex items-center gap-2">
+              <input id="domain" type="text" [(ngModel)]="prefs.customDomain" (ngModelChange)="onDomainChange()" placeholder="www.yourbusiness.com" class="flex-1 px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm font-mono">
+              <button (click)="checkDomain()" [disabled]="!domainRecords.length || checkingDomain" class="bg-blue-600 text-white px-4 py-2.5 rounded-xl text-sm font-bold hover:bg-blue-700 transition-colors flex items-center gap-1.5 shrink-0 disabled:opacity-50 disabled:cursor-not-allowed">
+                <mat-icon class="text-[18px]" [class.animate-spin]="checkingDomain">{{ checkingDomain ? 'progress_activity' : 'dns' }}</mat-icon>
+                {{ checkingDomain ? 'Checking…' : 'Check DNS' }}
+              </button>
+            </div>
+            @if (domainError) {
+              <p class="text-xs text-red-600 font-medium mt-2 flex items-center gap-1"><mat-icon class="text-[14px]">error</mat-icon> {{ domainError }}</p>
+            }
           </div>
-          @if (prefs.customDomain) {
-            <div class="bg-blue-50 border border-blue-100 rounded-xl p-4 text-sm text-blue-800">
-              <p class="font-bold mb-2">DNS Setup Instructions</p>
-              <ol class="list-decimal pl-4 space-y-1 text-xs">
-                <li>Go to your domain registrar's DNS settings</li>
-                <li>Add a CNAME record pointing <strong>{{ prefs.customDomain }}</strong> to <strong>businessflow-722923667291.us-central1.run.app</strong></li>
-                <li>Wait for DNS propagation (up to 48 hours)</li>
-                <li>Contact support to activate SSL for your domain</li>
-              </ol>
+
+          @if (domainResult) {
+            <div class="rounded-xl p-3 text-sm flex items-center gap-2 font-medium"
+                 [class]="domainBadgeClass()">
+              <mat-icon class="text-[18px]">{{ domainStatusIcon() }}</mat-icon>
+              <span>{{ domainResult.message }}</span>
             </div>
           }
+
+          @if (domainRecords.length) {
+            <div>
+              <p class="text-sm font-bold text-gray-700 mb-2">Add these records at your domain registrar</p>
+              <div class="overflow-hidden rounded-xl border border-gray-200">
+                <table class="w-full text-xs">
+                  <thead class="bg-gray-50 text-gray-500 uppercase tracking-wider">
+                    <tr>
+                      <th class="text-left font-bold px-3 py-2">Type</th>
+                      <th class="text-left font-bold px-3 py-2">Host</th>
+                      <th class="text-left font-bold px-3 py-2">Value</th>
+                      <th class="px-3 py-2"></th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-gray-100">
+                    @for (rec of domainRecords; track rec.type + rec.host + rec.value) {
+                      <tr [class]="recordRowClass(rec)">
+                        <td class="px-3 py-2 font-bold text-gray-700">{{ rec.type }}</td>
+                        <td class="px-3 py-2 font-mono text-gray-700">{{ rec.host }}</td>
+                        <td class="px-3 py-2 font-mono text-gray-700 break-all">{{ rec.value }}</td>
+                        <td class="px-3 py-2 text-right">
+                          <button (click)="copyValue(rec.value)" class="text-blue-600 hover:text-blue-800 inline-flex items-center" title="Copy value">
+                            <mat-icon class="text-[16px]">content_copy</mat-icon>
+                          </button>
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+              <p class="text-xs text-gray-400 mt-2">Apex domains use A records; subdomains use a CNAME. The TXT record proves you own the domain. DNS changes can take up to 48 hours.</p>
+            </div>
+          }
+
           @if (subService.tier() !== 'business') {
             <div class="bg-yellow-50 border border-yellow-100 rounded-xl p-3 text-xs text-yellow-800 flex items-center gap-2">
               <mat-icon class="text-[16px]">info</mat-icon>
@@ -231,6 +273,7 @@ import { DatePipe } from '@angular/common';
           }
         </div>
       </div>
+
 
       <!-- Email Notifications -->
       <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
@@ -306,12 +349,19 @@ export class AdminSettingsComponent implements OnInit {
     customDomain: '',
   };
 
+  // Custom-domain connection flow
+  domainRecords: DnsRecord[] = [];
+  domainResult: VerificationResult | null = null;
+  domainError = '';
+  checkingDomain = false;
+
   ngOnInit() {
     this.profileForm = { ...this.profileForm, ...this.dataService.profile() };
     const saved = this.dataService.getNotificationPrefs();
     if (saved) {
       this.prefs = { ...this.prefs, ...saved };
     }
+    this.onDomainChange();
     if (!this.prefs.notificationEmail) {
       const user = this.authService.currentUser();
       if (user?.email) this.prefs.notificationEmail = user.email;
@@ -354,6 +404,71 @@ export class AdminSettingsComponent implements OnInit {
       openingHours: (this.profileForm.openingHours || '').trim(),
     });
     this.toast.success('Business profile updated!');
+  }
+
+  onDomainChange() {
+    const raw = this.prefs.customDomain || '';
+    if (!raw.trim()) {
+      this.domainError = '';
+      this.domainRecords = [];
+      this.domainResult = null;
+      return;
+    }
+    const v = validateDomain(raw);
+    this.domainError = v.valid ? '' : v.error || 'That domain is not valid.';
+    const uid = this.authService.currentUser()?.uid || '';
+    this.domainRecords = v.valid && uid ? requiredRecords(raw, uid) : [];
+    this.domainResult = null;
+  }
+
+  async checkDomain() {
+    const uid = this.authService.currentUser()?.uid;
+    const raw = this.prefs.customDomain || '';
+    if (!uid || !this.domainRecords.length || this.checkingDomain) return;
+    this.checkingDomain = true;
+    try {
+      this.domainResult = await verifyDomain(raw, uid);
+      if (this.domainResult.state === 'verified') {
+        this.toast.success('Domain verified!');
+      }
+    } catch {
+      this.toast.error('Could not check DNS right now. Please try again.');
+    } finally {
+      this.checkingDomain = false;
+    }
+  }
+
+  async copyValue(value: string) {
+    try {
+      await navigator.clipboard.writeText(value);
+      this.toast.success('Copied!');
+    } catch {
+      this.toast.info(value);
+    }
+  }
+
+  domainBadgeClass(): string {
+    switch (this.domainResult?.state) {
+      case 'verified': return 'bg-green-50 border border-green-100 text-green-800';
+      case 'misconfigured': return 'bg-red-50 border border-red-100 text-red-800';
+      default: return 'bg-blue-50 border border-blue-100 text-blue-800';
+    }
+  }
+
+  domainStatusIcon(): string {
+    switch (this.domainResult?.state) {
+      case 'verified': return 'check_circle';
+      case 'misconfigured': return 'error';
+      default: return 'hourglass_top';
+    }
+  }
+
+  recordRowClass(rec: DnsRecord): string {
+    const check = this.domainResult?.checked.find(
+      (c) => c.record.type === rec.type && c.record.host === rec.host && c.record.value === rec.value,
+    );
+    if (!check) return '';
+    return check.ok ? 'bg-green-50/40' : '';
   }
 
   saveSettings() {
