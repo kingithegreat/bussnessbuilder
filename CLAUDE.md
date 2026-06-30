@@ -177,7 +177,7 @@ GitHub Actions (`deploy.yml`) exists but needs WIF secrets configured. Manual `g
 ## Known issues / TODO
 
 - Custom domains — text field + DNS instructions; no automated mapping yet
-- GitHub Actions WIF secrets not configured for auto-deploy
+- GitHub Actions WIF secrets not configured for auto-deploy — step-by-step setup in [`docs/wif-setup-runbook.md`](docs/wif-setup-runbook.md) (one-time: ~15 min of gcloud + 2 GitHub secrets)
 - Stripe is in test mode — switch keys when ready for real payments
 - Admin `/users` + `/metrics` per-user Firestore reads are now **batched** via `getAllDocs` (chunked parallel `getAll`, `src/server-firestore.ts`) instead of sequential `.get()` in a loop; `/metrics` still has its 30s cache. Output shape unchanged.
 - Growth reports are on-demand only — weekly auto-generation is planned
