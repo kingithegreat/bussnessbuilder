@@ -187,6 +187,12 @@ GitHub Actions (`deploy.yml`) exists but needs WIF secrets configured. Manual `g
   Persistence helpers: `DataService.loadGrowthReport/setGrowthReport`,
   `FirestoreService.loadGrowthReport/saveGrowthReport`.
 - Growth recommendations: `faq`, `service`, `hero`, `cta`, and `trust` drafts auto-insert into the site (hero → tagline + description, cta → ctaText button label, trust → a testimonial). `pricing` recs (free-form guidance with no structured target) get a "Review services" deep-link to `/admin/content?tab=services` instead of an insert. Admin → Content honours `?tab=` for deep-linking.
+- Data export is now **GDPR-complete**: the admin "Export" button downloads a
+  full bundle (`DataService.exportAll`) — business profile **plus** content pages,
+  recommendations, growth report, notification prefs, payment settings, and
+  templates — as `businessflow-data-export.json`. `importState` accepts both a
+  bare state export and a full bundle (restores the profile portion either way),
+  so Export→Import still round-trips. `exportState` is unchanged.
 - Page builder section insertion deferred to v1.3
 - Deploy `firestore.rules` to enable analytics tracking: `firebase deploy --only firestore:rules`
 

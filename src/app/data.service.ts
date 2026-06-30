@@ -211,11 +211,35 @@ export class DataService {
     return JSON.stringify(this.state(), null, 2);
   }
 
+  /**
+   * Full GDPR-style export of everything held for the user, not just the
+   * importable business profile. This is a complete read-only data dump; the
+   * business profile portion can still be restored via importState, while the
+   * remaining sections (pages, recommendations, payments, templates) are
+   * included for the user's records.
+   */
+  exportAll(): string {
+    const bundle = {
+      exportedAt: new Date().toISOString(),
+      businessData: this.state(),
+      contentPages: this.getPages(),
+      recommendations: this.savedRecommendations(),
+      growthReport: this.lastGrowthReport(),
+      notificationPreferences: this.getNotificationPrefs(),
+      paymentSettings: this.getPaymentSettings(),
+      templates: { items: this.templates(), activeTemplateId: this.activeTemplateId() },
+    };
+    return JSON.stringify(bundle, null, 2);
+  }
+
   importState(jsonString: string): boolean {
     try {
       const parsed = JSON.parse(jsonString);
-      if (parsed && parsed.profile) {
-        this.state.set(parsed);
+      // Accept either a bare state export (exportState) or a full data bundle
+      // (exportAll), restoring the business profile portion in both cases.
+      const state = parsed?.businessData?.profile ? parsed.businessData : parsed;
+      if (state && state.profile) {
+        this.state.set(state);
         return true;
       }
     } catch (e) {
