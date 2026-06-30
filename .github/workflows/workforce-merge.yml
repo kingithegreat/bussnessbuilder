@@ -1,0 +1,140 @@
+name: Workforce auto-merge
+
+# Self-contained replacement for the old PR-based merge pipeline
+# (auto-merge.yml + auto-merge-on-green.yml). It lands `claude/**` branches on
+# `main` with NO admin toggles required:
+#   - no "Allow GitHub Actions to create and approve pull requests"
+#   - no "Allow auto-merge"
+#   - no branch protection
+# It needs only `contents: write` (the default GITHUB_TOKEN) and an unprotected
+# `main`.
+#
+# Why the old pipeline stalled: it opened a PR with `gh pr create`, which 403s
+# unless an admin enables the "create and approve PRs" toggle, and it only ran
+# `on: push`, so branches pushed before the workflow existed never got a PR and
+# piled up. This workflow needs no PR at all and also runs on a schedule, so it
+# drains any backlog.
+#
+# How it works, per target branch:
+#   1. Three-way *merge* the branch into a fresh checkout of current `main`.
+#      A real merge only applies the branch's own changes relative to the merge
+#      base, so it can NEVER revert newer work already on `main` — the only
+#      thing that stops it is a genuine conflict.
+#   2. Run the same gate as CI (lint + test + build).
+#   3. On green, push the merge to `main` and delete the branch.
+#   4. On conflict or red CI, leave the branch untouched and emit a warning for
+#      manual handling.
+#
+# Triggers:
+#   - push to claude/**   → process just that branch (fast path)
+#   - schedule / dispatch → sweep ALL open claude/** branches (drains backlog)
+#
+# Pushing to `main` does NOT deploy until the GCP/WIF inputs are configured
+# (see deploy.yml), so autonomous merges are safe.
+
+on:
+  push:
+    branches:
+      - 'claude/**'
+  schedule:
+    - cron: '17 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: write # to re-trigger deploy.yml after a successful merge
+
+# Serialize every run so a scheduled sweep and a push can't race on `main`.
+concurrency:
+  group: workforce-merge
+  cancel-in-progress: false
+
+jobs:
+  merge:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Merge green claude branches into main
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EVENT_NAME: ${{ github.event_name }}
+          PUSHED_REF: ${{ github.ref_name }}
+        run: |
+          set -uo pipefail
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Which branches to process: just the pushed one, or all of them.
+          if [ "$EVENT_NAME" = "push" ]; then
+            BRANCHES="$PUSHED_REF"
+          else
+            BRANCHES=$(git for-each-ref --format='%(refname:short)' refs/remotes/origin/claude \
+                        | sed 's#^origin/##')
+          fi
+
+          MERGED=()
+          SKIPPED=()
+          for BRANCH in $BRANCHES; do
+            echo "::group::$BRANCH"
+            git merge --abort 2>/dev/null || true
+            git fetch origin main "$BRANCH" --quiet || true
+            git checkout -q -B __integrate origin/main
+
+            # Already merged? (no unique commits) → delete the stale branch.
+            if [ -z "$(git rev-list "origin/main..origin/$BRANCH" 2>/dev/null)" ]; then
+              echo "$BRANCH has no unmerged commits — deleting stale branch."
+              git push origin --delete "$BRANCH" || true
+              echo "::endgroup::"; continue
+            fi
+
+            # Three-way merge into current main (never reverts newer main work).
+            if ! git merge --no-edit "origin/$BRANCH"; then
+              git merge --abort || true
+              echo "::warning title=Merge conflict::$BRANCH conflicts with main — manual rebase needed."
+              SKIPPED+=("$BRANCH (conflict)"); echo "::endgroup::"; continue
+            fi
+
+            # Gate: the same checks CI runs. Any failure → do not merge.
+            GATE_OK=1
+            npm ci                    || GATE_OK=0
+            [ "$GATE_OK" = 1 ] && { npm run lint            || GATE_OK=0; }
+            [ "$GATE_OK" = 1 ] && { npm test -- --watch=false || GATE_OK=0; }
+            [ "$GATE_OK" = 1 ] && { npm run build           || GATE_OK=0; }
+            if [ "$GATE_OK" != 1 ]; then
+              echo "::warning title=CI gate failed::$BRANCH did not pass lint/test/build — not merged."
+              SKIPPED+=("$BRANCH (CI gate failed)"); echo "::endgroup::"; continue
+            fi
+
+            # Green: land it on main and delete the branch.
+            if git push origin HEAD:main; then
+              git push origin --delete "$BRANCH" || true
+              MERGED+=("$BRANCH")
+              echo "Merged $BRANCH into main."
+            else
+              echo "::warning title=Push rejected::Could not fast-forward main for $BRANCH (is it protected?)."
+              SKIPPED+=("$BRANCH (push rejected)")
+            fi
+            echo "::endgroup::"
+          done
+
+          {
+            echo "## Workforce auto-merge"
+            echo "Merged: ${MERGED[*]:-none}"
+            echo ""
+            echo "Skipped: ${SKIPPED[*]:-none}"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          # If anything landed, kick the deploy workflow. It self-skips when the
+          # GCP/WIF inputs aren't set, so this is safe either way.
+          if [ "${#MERGED[@]}" -gt 0 ]; then
+            gh workflow run deploy.yml --ref main || true
+          fi

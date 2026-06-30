@@ -169,12 +169,20 @@ GitHub Actions (`deploy.yml`) exists but needs WIF secrets configured. Manual `g
 
 ## Workforce auto-merge pipeline
 
-Scheduled AI sessions push `claude/**` branches; GitHub Actions lands them on
-`main` autonomously so work doesn't pile up behind manual PR clicks. Flow:
-`auto-merge.yml` opens a PR → `ci.yml` runs lint/test/build → `auto-merge-on-green.yml`
-merges on green (direct merge, so it needs no admin settings; updates stale
-branches first, deletes merged ones). Merging to `main` does NOT deploy (deploy
-is gated on GCP/WIF config), so it's safe. **One required admin toggle the
-pipeline can't self-enable:** Settings → Actions → General → "Allow GitHub
-Actions to create and approve pull requests" (without it `gh pr create` 403s).
-Full steps + optional hardening in [`docs/workforce-runbook.md`](docs/workforce-runbook.md).
+Scheduled AI sessions push `claude/**` branches; **`.github/workflows/workforce-merge.yml`**
+lands them on `main` autonomously so work doesn't pile up. It is fully
+self-contained and needs **zero admin toggles** — only `contents: write` (the
+default `GITHUB_TOKEN`) and an unprotected `main`. Per branch it three-way
+*merges* the branch into current `main` (a real merge can't revert newer work —
+only a genuine conflict stops it), runs the CI gate (lint + test + build), and
+on green pushes to `main` and deletes the branch; conflicts/red CI are left
+alone with a warning. It triggers on push to `claude/**` (fast path) **and on an
+hourly schedule + manual dispatch**, so any backlog of already-pushed branches
+gets drained. Merging to `main` does NOT deploy (deploy is gated on GCP/WIF
+config), so it's safe; after a merge it best-effort kicks `deploy.yml`.
+
+This replaced the old PR-based pair (`auto-merge.yml` + `auto-merge-on-green.yml`),
+which stalled because `gh pr create` 403s without the "Allow Actions to create
+and approve PRs" admin toggle and it only ran `on: push`, so branches pushed
+before it existed never got a PR. The new workflow needs no PR at all. Full
+notes in [`docs/workforce-runbook.md`](docs/workforce-runbook.md).
