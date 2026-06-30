@@ -18,8 +18,16 @@ stale snapshot. Before making any change:
 2. **Read the source of truth.** This `CLAUDE.md`, then the Notion brief
    (Projects → 💼 BusinessFlow). Confirm your task isn't **already done** before
    redoing it — check the Live URL and `git log origin/main`.
-3. **Use the branch convention.** Name AI-session branches `claude/whats-next-*`,
-   one task per branch. Open a PR; never push straight to `main`.
+3. **One fresh branch per task — never reuse a branch.** Name AI-session
+   branches `claude/<task>-*` (e.g. `claude/whats-next-*`), a **new** branch for
+   each task, cut from current `origin/main`. Never push straight to `main`.
+   **Why fresh:** the workforce auto-merge pipeline (see bottom of this file)
+   merges every push to `claude/**` into `main` and then **deletes the branch**.
+   Reusing one branch across tasks fights this — it can merge a half-finished
+   snapshot, delete the branch out from under you mid-session, and force
+   rebase/force-push churn. A unique branch per task makes each push a complete
+   unit the pipeline merges once and cleans up. Push only when the task is done
+   and green (lint + test + build), so the pipeline never grabs work-in-progress.
 4. **Before merging ANY branch, check it isn't stale:**
    `git log --oneline <branch>..origin/main`. If `main` has commits the branch
    lacks, merging it may **revert recent work** (e.g. a branch that predates a
@@ -76,6 +84,17 @@ npm run build        # production SSR build
 npm run lint         # ESLint
 npm test -- --watch=false  # Vitest
 ```
+
+**Web sessions auto-install deps.** A SessionStart hook
+(`.claude/hooks/session-start.sh`, registered in `.claude/settings.json`) runs
+`npm install` before each Claude Code on the web session starts, so lint/test/
+build work immediately — no manual install. It is web-only (gated on
+`CLAUDE_CODE_REMOTE`), idempotent, and synchronous (the session waits for it).
+Switch it to async in the hook if you want faster startup at the cost of a
+race window. `settings.json` also allowlists routine read-only `git`/`npm`
+commands to cut permission prompts. **Run tests via `npm test` / `ng test`, not
+bare `vitest`** — the Angular builder owns the vitest config; bare `vitest`
+finds no tests.
 
 ## Deploy
 
