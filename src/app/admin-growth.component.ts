@@ -200,6 +200,21 @@ import { DatePipe } from '@angular/common';
                                 <mat-icon class="text-[12px]">add</mat-icon> Add as Service
                               </button>
                             }
+                            @if (rec.type === 'hero' && rec.status !== 'applied') {
+                              <button (click)="applyHero(rec)" class="bg-blue-50 hover:bg-blue-100 text-blue-600 px-2 py-1 rounded text-[10px] font-bold transition-colors flex items-center gap-1">
+                                <mat-icon class="text-[12px]">add</mat-icon> Apply to Hero
+                              </button>
+                            }
+                            @if (rec.type === 'cta' && rec.status !== 'applied') {
+                              <button (click)="applyCta(rec)" class="bg-blue-50 hover:bg-blue-100 text-blue-600 px-2 py-1 rounded text-[10px] font-bold transition-colors flex items-center gap-1">
+                                <mat-icon class="text-[12px]">add</mat-icon> Apply CTA
+                              </button>
+                            }
+                            @if (rec.type === 'trust' && rec.status !== 'applied') {
+                              <button (click)="addAsTestimonial(rec)" class="bg-blue-50 hover:bg-blue-100 text-blue-600 px-2 py-1 rounded text-[10px] font-bold transition-colors flex items-center gap-1">
+                                <mat-icon class="text-[12px]">add</mat-icon> Add as Testimonial
+                              </button>
+                            }
                             <button (click)="copyDraft(rec)" class="bg-gray-50 hover:bg-gray-100 text-gray-600 px-2 py-1 rounded text-[10px] font-bold transition-colors flex items-center gap-1">
                               <mat-icon class="text-[12px]">content_copy</mat-icon> {{ copiedId() === rec.id ? 'Copied!' : 'Copy' }}
                             </button>
@@ -553,6 +568,83 @@ export class AdminGrowthComponent implements OnInit {
       appliedAt: new Date().toISOString(),
     });
     this.toast.success('Service added to your site!');
+  }
+
+  applyHero(rec: SavedRecommendation) {
+    if (!rec.draftContent) return;
+    // Hero drafts follow "headline\n\nsubtitle". Headline maps to the hero <h1>
+    // (profile.tagline); the rest becomes the hero subtitle (profile.description).
+    const lines = rec.draftContent.split('\n').map(l => l.trim()).filter(Boolean);
+    if (lines.length === 0) return;
+    const headline = lines[0]
+      .replace(/^(?:headline|title|hero)\s*:\s*/i, '')
+      .replace(/^["']|["']$/g, '')
+      .trim();
+    const subtitle = lines.slice(1).join(' ')
+      .replace(/^(?:subtitle|subheading|sub)\s*:\s*/i, '')
+      .replace(/^["']|["']$/g, '')
+      .trim();
+    if (!headline && !subtitle) return;
+    this.dataService.updateProfile({
+      ...(headline ? { tagline: headline } : {}),
+      ...(subtitle ? { description: subtitle } : {}),
+    });
+    this.dataService.updateRecommendation(rec.id, {
+      status: 'applied',
+      appliedAt: new Date().toISOString(),
+    });
+    this.toast.success('Hero section updated!');
+  }
+
+  applyCta(rec: SavedRecommendation) {
+    if (!rec.draftContent) return;
+    // ctaText is a short button label, so reduce the draft to its first phrase.
+    const firstLine = rec.draftContent.split('\n').map(l => l.trim()).find(Boolean) || '';
+    let label = firstLine
+      .replace(/^(?:cta|call to action|heading|button)\s*:\s*/i, '')
+      .replace(/^["']|["']$/g, '')
+      .trim();
+    const sentence = label.match(/^[^.!?]*[.!?]/);
+    if (sentence && sentence[0].trim().length <= 50) label = sentence[0].trim();
+    if (label.length > 50) {
+      label = label.slice(0, 48).replace(/\s+\S*$/, '').trim() + '…';
+    }
+    label = label.replace(/[.!?]+$/, '').trim();
+    if (!label) return;
+    this.dataService.updateProfile({ ctaText: label });
+    this.dataService.updateRecommendation(rec.id, {
+      status: 'applied',
+      appliedAt: new Date().toISOString(),
+    });
+    this.toast.success('Call-to-action updated!');
+  }
+
+  addAsTestimonial(rec: SavedRecommendation) {
+    if (!rec.draftContent) return;
+    // Trust drafts are a testimonial: quote text plus an optional "— Author" line.
+    const lines = rec.draftContent.split('\n').map(l => l.trim()).filter(Boolean);
+    if (lines.length === 0) return;
+    let author = '';
+    const textLines: string[] = [];
+    for (const line of lines) {
+      const attribution = line.match(/^(?:—|–|--|-|by)\s+(.+)$/i);
+      if (attribution && textLines.length > 0) {
+        author = attribution[1].replace(/^["']|["']$/g, '').trim();
+      } else {
+        textLines.push(line);
+      }
+    }
+    const text = textLines.join(' ').replace(/^["']|["']$/g, '').trim();
+    if (!text) return;
+    this.dataService.setTestimonials([
+      ...this.dataService.testimonials(),
+      { id: `tst_${Date.now()}`, author: author || 'Happy customer', rating: 5, text },
+    ]);
+    this.dataService.updateRecommendation(rec.id, {
+      status: 'applied',
+      appliedAt: new Date().toISOString(),
+    });
+    this.toast.success('Testimonial added to your site!');
   }
 
   selectMarketingAction(type: MarketingContentType) {
