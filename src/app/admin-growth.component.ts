@@ -11,6 +11,59 @@ import { MatIconModule } from '@angular/material/icon';
 import { FormsModule } from '@angular/forms';
 import { DatePipe } from '@angular/common';
 
+const stripQuotes = (s: string) => s.replace(/^["']|["']$/g, '').trim();
+
+/**
+ * Parse a `hero` recommendation draft ("headline\n\nsubtitle") into the profile
+ * fields it maps to: the headline becomes the hero <h1> (tagline) and the rest
+ * becomes the hero subtitle (description). Either field may be absent.
+ */
+export function parseHeroDraft(draft: string): { tagline?: string; description?: string } {
+  const lines = draft.split('\n').map(l => l.trim()).filter(Boolean);
+  if (lines.length === 0) return {};
+  const tagline = stripQuotes(lines[0].replace(/^(?:headline|title|hero)\s*:\s*/i, ''));
+  const description = stripQuotes(lines.slice(1).join(' ').replace(/^(?:subtitle|subheading|sub)\s*:\s*/i, ''));
+  return {
+    ...(tagline ? { tagline } : {}),
+    ...(description ? { description } : {}),
+  };
+}
+
+/**
+ * Reduce a `cta` recommendation draft to a short button label suitable for
+ * profile.ctaText: take the first non-empty line, prefer its first sentence,
+ * clamp to ~50 chars on a word boundary, and drop trailing punctuation.
+ */
+export function parseCtaLabel(draft: string): string {
+  const firstLine = draft.split('\n').map(l => l.trim()).find(Boolean) || '';
+  let label = stripQuotes(firstLine.replace(/^(?:cta|call to action|heading|button)\s*:\s*/i, ''));
+  const sentence = label.match(/^[^.!?]*[.!?]/);
+  if (sentence && sentence[0].trim().length <= 50) label = sentence[0].trim();
+  if (label.length > 50) {
+    label = label.slice(0, 48).replace(/\s+\S*$/, '').trim() + '…';
+  }
+  return label.replace(/[.!?]+$/, '').trim();
+}
+
+/**
+ * Parse a `trust` recommendation draft (a testimonial: quote text plus an
+ * optional "— Author" attribution line) into author + text.
+ */
+export function parseTestimonialDraft(draft: string): { author: string; text: string } {
+  const lines = draft.split('\n').map(l => l.trim()).filter(Boolean);
+  let author = '';
+  const textLines: string[] = [];
+  for (const line of lines) {
+    const attribution = line.match(/^(?:—|–|--|-|by)\s+(.+)$/i);
+    if (attribution && textLines.length > 0) {
+      author = stripQuotes(attribution[1]);
+    } else {
+      textLines.push(line);
+    }
+  }
+  return { author, text: stripQuotes(textLines.join(' ')) };
+}
+
 @Component({
   selector: 'app-admin-growth',
   standalone: true,
@@ -572,23 +625,9 @@ export class AdminGrowthComponent implements OnInit {
 
   applyHero(rec: SavedRecommendation) {
     if (!rec.draftContent) return;
-    // Hero drafts follow "headline\n\nsubtitle". Headline maps to the hero <h1>
-    // (profile.tagline); the rest becomes the hero subtitle (profile.description).
-    const lines = rec.draftContent.split('\n').map(l => l.trim()).filter(Boolean);
-    if (lines.length === 0) return;
-    const headline = lines[0]
-      .replace(/^(?:headline|title|hero)\s*:\s*/i, '')
-      .replace(/^["']|["']$/g, '')
-      .trim();
-    const subtitle = lines.slice(1).join(' ')
-      .replace(/^(?:subtitle|subheading|sub)\s*:\s*/i, '')
-      .replace(/^["']|["']$/g, '')
-      .trim();
-    if (!headline && !subtitle) return;
-    this.dataService.updateProfile({
-      ...(headline ? { tagline: headline } : {}),
-      ...(subtitle ? { description: subtitle } : {}),
-    });
+    const update = parseHeroDraft(rec.draftContent);
+    if (!update.tagline && !update.description) return;
+    this.dataService.updateProfile(update);
     this.dataService.updateRecommendation(rec.id, {
       status: 'applied',
       appliedAt: new Date().toISOString(),
@@ -598,18 +637,7 @@ export class AdminGrowthComponent implements OnInit {
 
   applyCta(rec: SavedRecommendation) {
     if (!rec.draftContent) return;
-    // ctaText is a short button label, so reduce the draft to its first phrase.
-    const firstLine = rec.draftContent.split('\n').map(l => l.trim()).find(Boolean) || '';
-    let label = firstLine
-      .replace(/^(?:cta|call to action|heading|button)\s*:\s*/i, '')
-      .replace(/^["']|["']$/g, '')
-      .trim();
-    const sentence = label.match(/^[^.!?]*[.!?]/);
-    if (sentence && sentence[0].trim().length <= 50) label = sentence[0].trim();
-    if (label.length > 50) {
-      label = label.slice(0, 48).replace(/\s+\S*$/, '').trim() + '…';
-    }
-    label = label.replace(/[.!?]+$/, '').trim();
+    const label = parseCtaLabel(rec.draftContent);
     if (!label) return;
     this.dataService.updateProfile({ ctaText: label });
     this.dataService.updateRecommendation(rec.id, {
@@ -621,20 +649,7 @@ export class AdminGrowthComponent implements OnInit {
 
   addAsTestimonial(rec: SavedRecommendation) {
     if (!rec.draftContent) return;
-    // Trust drafts are a testimonial: quote text plus an optional "— Author" line.
-    const lines = rec.draftContent.split('\n').map(l => l.trim()).filter(Boolean);
-    if (lines.length === 0) return;
-    let author = '';
-    const textLines: string[] = [];
-    for (const line of lines) {
-      const attribution = line.match(/^(?:—|–|--|-|by)\s+(.+)$/i);
-      if (attribution && textLines.length > 0) {
-        author = attribution[1].replace(/^["']|["']$/g, '').trim();
-      } else {
-        textLines.push(line);
-      }
-    }
-    const text = textLines.join(' ').replace(/^["']|["']$/g, '').trim();
+    const { author, text } = parseTestimonialDraft(rec.draftContent);
     if (!text) return;
     this.dataService.setTestimonials([
       ...this.dataService.testimonials(),
