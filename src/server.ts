@@ -11,6 +11,7 @@ import { dispatchEnquiryWebhook } from './server-webhook';
 import { initServerMonitoring, captureServerError } from './server-monitoring';
 import type Stripe from 'stripe';
 import type { Firestore } from 'firebase-admin/firestore';
+import { getAllDocs } from './server-firestore';
 
 let _db: Firestore | null = null;
 async function getDb() {
@@ -403,13 +404,15 @@ app.get('/api/admin/users', async (req, res) => {
   try {
     const db = await getDb();
     const usersSnap = await db.collection('users').get();
-    const users = [];
-    for (const userDoc of usersSnap.docs) {
+    // Batch the per-user reads instead of awaiting them one user at a time.
+    const mainSnaps = await getAllDocs(db, usersSnap.docs.map(u => db.doc(`users/${u.id}/businessData/main`)));
+    const subSnaps = await getAllDocs(db, usersSnap.docs.map(u => db.doc(`subscriptions/${u.id}`)));
+    const users = usersSnap.docs.map((userDoc, i) => {
       const data = userDoc.data();
-      const mainSnap = await db.doc(`users/${userDoc.id}/businessData/main`).get();
-      const subSnap = await db.doc(`subscriptions/${userDoc.id}`).get();
+      const mainSnap = mainSnaps[i];
+      const subSnap = subSnaps[i];
       const mainData = mainSnap.exists ? mainSnap.data() : null;
-      users.push({
+      return {
         uid: userDoc.id,
         email: data['email'] || '',
         displayName: data['displayName'] || '',
@@ -420,8 +423,8 @@ app.get('/api/admin/users', async (req, res) => {
         tier: subSnap.exists ? subSnap.data()?.['tier'] || 'free' : 'free',
         enquiryCount: mainData ? (Array.isArray(mainData['enquiries']) ? mainData['enquiries'].length : 0) : 0,
         serviceCount: mainData ? (Array.isArray(mainData['services']) ? mainData['services'].length : 0) : 0,
-      });
-    }
+      };
+    });
     res.json({ users });
   } catch (e) {
     console.error('Admin users error:', e); captureServerError(e);
@@ -454,7 +457,12 @@ app.get('/api/admin/metrics', async (req, res) => {
     let totalFaqs = 0;
     const totalPageViews = 0;
 
-    for (const userDoc of usersSnap.docs) {
+    // Batch the per-user reads up front rather than awaiting each inside the loop.
+    const mainSnaps = await getAllDocs(db, usersSnap.docs.map(u => db.doc(`users/${u.id}/businessData/main`)));
+    const subSnaps = await getAllDocs(db, usersSnap.docs.map(u => db.doc(`subscriptions/${u.id}`)));
+
+    for (let i = 0; i < usersSnap.docs.length; i++) {
+      const userDoc = usersSnap.docs[i];
       const userData = userDoc.data();
       const createdAt = userData['createdAt'] || '';
       if (createdAt) {
@@ -462,7 +470,7 @@ app.get('/api/admin/metrics', async (req, res) => {
         signupsByDate[dateKey] = (signupsByDate[dateKey] || 0) + 1;
       }
 
-      const mainSnap = await db.doc(`users/${userDoc.id}/businessData/main`).get();
+      const mainSnap = mainSnaps[i];
       let businessName = '';
       let siteSlug = '';
       if (mainSnap.exists) {
@@ -484,7 +492,7 @@ app.get('/api/admin/metrics', async (req, res) => {
       }
 
       let tier = 'free';
-      const subSnap = await db.doc(`subscriptions/${userDoc.id}`).get();
+      const subSnap = subSnaps[i];
       if (subSnap.exists) {
         tier = subSnap.data()?.['tier'] || 'free';
         if (tier === 'pro') proUsers++;

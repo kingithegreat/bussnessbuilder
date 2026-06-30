@@ -179,7 +179,7 @@ GitHub Actions (`deploy.yml`) exists but needs WIF secrets configured. Manual `g
 - Custom domains — text field + DNS instructions; no automated mapping yet
 - GitHub Actions WIF secrets not configured for auto-deploy
 - Stripe is in test mode — switch keys when ready for real payments
-- Admin metrics endpoint does O(N) Firestore reads (mitigated by 30s cache)
+- Admin `/users` + `/metrics` per-user Firestore reads are now **batched** via `getAllDocs` (chunked parallel `getAll`, `src/server-firestore.ts`) instead of sequential `.get()` in a loop; `/metrics` still has its 30s cache. Output shape unchanged.
 - Growth reports are on-demand only — weekly auto-generation is planned
 - Growth recommendations: `faq`, `service`, `hero`, `cta`, and `trust` drafts auto-insert into the site (hero → tagline + description, cta → ctaText button label, trust → a testimonial). `pricing` recs (free-form guidance with no structured target) get a "Review services" deep-link to `/admin/content?tab=services` instead of an insert. Admin → Content honours `?tab=` for deep-linking.
 - Page builder section insertion deferred to v1.3
