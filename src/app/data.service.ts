@@ -1,6 +1,6 @@
 import { Injectable, computed, signal, effect, PLATFORM_ID, inject } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
-import { AppState, BusinessProfile, Enquiry, FAQ, Service, Activity, Testimonial, ContentPage, NotificationPreferences, PaymentSettings, SavedRecommendation, SiteTemplate, PublicSiteData } from './types';
+import { AppState, BusinessProfile, Enquiry, FAQ, Service, Activity, Testimonial, ContentPage, GrowthReport, NotificationPreferences, PaymentSettings, SavedRecommendation, SiteTemplate, PublicSiteData } from './types';
 import { FirestoreService } from './firestore.service';
 
 const defaultState: AppState = {
@@ -93,6 +93,8 @@ export class DataService {
   private paymentSettings = signal<PaymentSettings>({ enabled: false, paymentLinks: [] });
   private _recommendations = signal<SavedRecommendation[]>([]);
   readonly savedRecommendations = this._recommendations.asReadonly();
+  private _lastGrowthReport = signal<GrowthReport | null>(null);
+  readonly lastGrowthReport = this._lastGrowthReport.asReadonly();
   private _templates = signal<SiteTemplate[]>([]);
   private _activeTemplateId = signal<string>('');
   readonly templates = this._templates.asReadonly();
@@ -137,6 +139,7 @@ export class DataService {
     this.loadPages(uid);
     this.loadNotificationPrefs(uid);
     this.loadRecommendations(uid);
+    this.loadGrowthReport(uid);
 
     const firestoreData = await this.firestoreService.loadBusinessData(uid);
     if (firestoreData) {
@@ -344,6 +347,18 @@ export class DataService {
     this._recommendations.set(recs);
     if (isPlatformBrowser(this.platformId) && this.uid()) {
       this.firestoreService.saveRecommendations(this.uid()!, recs);
+    }
+  }
+
+  async loadGrowthReport(uid: string) {
+    const report = await this.firestoreService.loadGrowthReport(uid);
+    if (report) this._lastGrowthReport.set(report);
+  }
+
+  setGrowthReport(report: GrowthReport) {
+    this._lastGrowthReport.set(report);
+    if (isPlatformBrowser(this.platformId) && this.uid()) {
+      this.firestoreService.saveGrowthReport(this.uid()!, report);
     }
   }
 

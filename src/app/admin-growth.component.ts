@@ -7,6 +7,7 @@ import { AuthService } from './auth.service';
 import { SubscriptionService } from './subscription.service';
 import { ToastService } from './toast.service';
 import { GrowthReport, GrowthRecommendation, MarketingContentType, Enquiry, SavedRecommendation, RecommendationType, Service } from './types';
+import { shouldAutoGenerateReport } from './growth-schedule';
 import { MatIconModule } from '@angular/material/icon';
 import { FormsModule } from '@angular/forms';
 import { DatePipe } from '@angular/common';
@@ -150,7 +151,7 @@ export function parseTestimonialDraft(draft: string): { author: string; text: st
               <mat-icon class="text-white text-[14px]">auto_awesome</mat-icon>
             </div>
             <h3 class="text-white font-bold text-sm">AI Growth Summary</h3>
-            <span class="ml-auto text-gray-500 text-[10px]">{{ report()!.createdAt | date:'medium' }}</span>
+            <span class="ml-auto text-gray-500 text-[10px]" title="Auto-refreshes weekly">{{ report()!.createdAt | date:'medium' }} · auto-refreshes weekly</span>
           </div>
           <p class="text-gray-300 text-sm leading-relaxed">{{ report()!.generatedSummary }}</p>
           @if (report()!.suggestedActions.length > 0) {
@@ -407,10 +408,18 @@ export class AdminGrowthComponent implements OnInit {
     { type: 'seasonal-offer', label: 'Seasonal Offer', icon: 'celebration', desc: 'Seasonal marketing' },
   ];
 
-  ngOnInit() {
+  async ngOnInit() {
     const user = this.authService.currentUser();
-    if (user) {
-      this.analyticsService.loadAnalytics(user.uid);
+    if (!user) return;
+    this.analyticsService.loadAnalytics(user.uid);
+
+    // Hydrate the last persisted report so it shows immediately, then
+    // auto-regenerate weekly when it goes stale (no manual click needed).
+    await this.dataService.loadGrowthReport(user.uid);
+    const saved = this.dataService.lastGrowthReport();
+    if (saved) this.report.set(saved);
+    if (shouldAutoGenerateReport(saved?.createdAt, Date.now())) {
+      await this.generateReport(true);
     }
   }
 
@@ -448,19 +457,20 @@ export class AdminGrowthComponent implements OnInit {
     return `${days} days ago`;
   }
 
-  async generateReport() {
+  async generateReport(auto = false) {
     this.isGenerating.set(true);
     try {
       const result = await this.aiService.generateGrowthReport();
       if (result) {
         this.report.set(result);
+        this.dataService.setGrowthReport(result);
         this.mergeRecommendations(result.recommendations);
-        this.toast.success('Growth report generated!');
-      } else {
+        if (!auto) this.toast.success('Growth report generated!');
+      } else if (!auto) {
         this.toast.error('Could not generate report. Please try again.');
       }
     } catch {
-      this.toast.error('Failed to generate growth report.');
+      if (!auto) this.toast.error('Failed to generate growth report.');
     } finally {
       this.isGenerating.set(false);
     }

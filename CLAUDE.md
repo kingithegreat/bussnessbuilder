@@ -180,7 +180,12 @@ GitHub Actions (`deploy.yml`) exists but needs WIF secrets configured. Manual `g
 - GitHub Actions WIF secrets not configured for auto-deploy — step-by-step setup in [`docs/wif-setup-runbook.md`](docs/wif-setup-runbook.md) (one-time: ~15 min of gcloud + 2 GitHub secrets)
 - Stripe is in test mode — switch keys when ready for real payments
 - Admin `/users` + `/metrics` per-user Firestore reads are now **batched** via `getAllDocs` (chunked parallel `getAll`, `src/server-firestore.ts`) instead of sequential `.get()` in a loop; `/metrics` still has its 30s cache. Output shape unchanged.
-- Growth reports are on-demand only — weekly auto-generation is planned
+- Growth reports now **auto-generate weekly**: the latest report is persisted to
+  `users/{uid}/businessData/growthReport` and the Growth Coach page (`admin-growth.component.ts`)
+  re-generates it on open when it's ≥7 days old (policy in `src/app/growth-schedule.ts`,
+  unit-tested). Manual "Generate Report" still works; auto runs are silent (no toast).
+  Persistence helpers: `DataService.loadGrowthReport/setGrowthReport`,
+  `FirestoreService.loadGrowthReport/saveGrowthReport`.
 - Growth recommendations: `faq`, `service`, `hero`, `cta`, and `trust` drafts auto-insert into the site (hero → tagline + description, cta → ctaText button label, trust → a testimonial). `pricing` recs (free-form guidance with no structured target) get a "Review services" deep-link to `/admin/content?tab=services` instead of an insert. Admin → Content honours `?tab=` for deep-linking.
 - Page builder section insertion deferred to v1.3
 - Deploy `firestore.rules` to enable analytics tracking: `firebase deploy --only firestore:rules`
