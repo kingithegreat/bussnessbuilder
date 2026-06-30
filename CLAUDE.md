@@ -158,12 +158,11 @@ GitHub Actions (`deploy.yml`) exists but needs WIF secrets configured. Manual `g
 ## Known issues / TODO
 
 - Custom domains — text field + DNS instructions; no automated mapping yet
-- Demo button in admin header could confuse real users
 - GitHub Actions WIF secrets not configured for auto-deploy
 - Stripe is in test mode — switch keys when ready for real payments
 - Admin metrics endpoint does O(N) Firestore reads (mitigated by 30s cache)
 - Growth reports are on-demand only — weekly auto-generation is planned
-- Recommendation "Add as FAQ" is the only auto-insertion; other types require copy-paste
+- Growth recommendations: `faq` and `service` drafts auto-insert into the site; remaining types (hero, pricing, trust, cta, etc.) still require copy-paste
 - Page builder section insertion deferred to v1.3
 - Deploy `firestore.rules` to enable analytics tracking: `firebase deploy --only firestore:rules`
 

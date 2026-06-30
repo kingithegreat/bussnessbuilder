@@ -201,11 +201,6 @@ export class AdminLayoutComponent implements OnInit {
     }
   }
 
-  loadDemo() {
-    this.dataService.loadDemoData();
-    this.toast.success('Demo data loaded!');
-  }
-
   async logout() {
     await this.authService.logout();
   }

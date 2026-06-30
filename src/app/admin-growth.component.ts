@@ -6,7 +6,7 @@ import { AnalyticsService } from './analytics.service';
 import { AuthService } from './auth.service';
 import { SubscriptionService } from './subscription.service';
 import { ToastService } from './toast.service';
-import { GrowthReport, GrowthRecommendation, MarketingContentType, Enquiry, SavedRecommendation, RecommendationType } from './types';
+import { GrowthReport, GrowthRecommendation, MarketingContentType, Enquiry, SavedRecommendation, RecommendationType, Service } from './types';
 import { MatIconModule } from '@angular/material/icon';
 import { FormsModule } from '@angular/forms';
 import { DatePipe } from '@angular/common';
@@ -193,6 +193,11 @@ import { DatePipe } from '@angular/common';
                             @if (rec.type === 'faq' && rec.status !== 'applied') {
                               <button (click)="addAsFaq(rec)" class="bg-blue-50 hover:bg-blue-100 text-blue-600 px-2 py-1 rounded text-[10px] font-bold transition-colors flex items-center gap-1">
                                 <mat-icon class="text-[12px]">add</mat-icon> Add as FAQ
+                              </button>
+                            }
+                            @if (rec.type === 'service' && rec.status !== 'applied') {
+                              <button (click)="addAsService(rec)" class="bg-blue-50 hover:bg-blue-100 text-blue-600 px-2 py-1 rounded text-[10px] font-bold transition-colors flex items-center gap-1">
+                                <mat-icon class="text-[12px]">add</mat-icon> Add as Service
                               </button>
                             }
                             <button (click)="copyDraft(rec)" class="bg-gray-50 hover:bg-gray-100 text-gray-600 px-2 py-1 rounded text-[10px] font-bold transition-colors flex items-center gap-1">
@@ -512,6 +517,42 @@ export class AdminGrowthComponent implements OnInit {
       appliedAt: new Date().toISOString(),
     });
     this.toast.success('FAQ added to your site!');
+  }
+
+  addAsService(rec: SavedRecommendation) {
+    if (!rec.draftContent) return;
+    // Drafts follow the format: "service name\n\ndescription\n\nStarting from $price".
+    const lines = rec.draftContent.split('\n').map(l => l.trim()).filter(Boolean);
+    if (lines.length === 0) return;
+    const name = lines[0].replace(/^(?:name|service)\s*:\s*/i, '').replace(/^\[|\]$/g, '').trim();
+    let price = '';
+    const descLines: string[] = [];
+    for (const line of lines.slice(1)) {
+      let match: RegExpMatchArray | null = null;
+      if (/^(?:starting\s+(?:from|at)|price)\b/i.test(line)) {
+        match = line.match(/\$?\s?[\d][\d.,]*\+?/);
+      } else if (/^\$?[\d][\d.,]*\+?$/.test(line)) {
+        match = line.match(/\$?[\d][\d.,]*\+?/);
+      }
+      if (match && !price) {
+        const raw = match[0].replace(/\s+/g, '');
+        price = raw.startsWith('$') ? raw : `$${raw}`;
+        continue;
+      }
+      descLines.push(line);
+    }
+    const service: Service = {
+      id: `svc_${Date.now()}`,
+      name: name || 'New Service',
+      description: descLines.join(' ').trim() || rec.suggestion,
+    };
+    if (price) service.price = price;
+    this.dataService.setServices([...this.dataService.services(), service]);
+    this.dataService.updateRecommendation(rec.id, {
+      status: 'applied',
+      appliedAt: new Date().toISOString(),
+    });
+    this.toast.success('Service added to your site!');
   }
 
   selectMarketingAction(type: MarketingContentType) {

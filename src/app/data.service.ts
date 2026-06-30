@@ -221,48 +221,6 @@ export class DataService {
     return false;
   }
 
-  loadDemoData() {
-    this.state.set({
-      ...defaultState,
-      profile: {
-        name: 'Demo Cleaners',
-        type: 'cleaner',
-        tagline: 'Spotless cleaning for a healthier, happier home.',
-        description: 'Welcome to Demo Cleaners! Residential and commercial cleaning businesses. Spotless cleaning for a healthier, happier home.. Our goal is to make your life easier through professional, reliable, and high-quality solutions.',
-        email: 'hello@democleaners.com',
-        phone: '(555) 123-4567',
-        address: '123 Main St, Seattle, WA',
-        serviceArea: 'Greater Seattle Area',
-        openingHours: 'Mon-Fri: 9am - 5pm',
-        toneOfVoice: 'Professional, trustworthy, and detail-oriented',
-        brandColor: '#2563eb',
-        heroCopy: 'Spotless cleaning for a healthier, happier home.',
-        ctaText: 'Get a Free Estimate',
-        trustBadges: ['Fully Insured', 'Eco-Friendly Products', 'Satisfaction Guarantee'],
-        enquiryFields: ['Property Size (sq ft)', 'Number of Bedrooms', 'Number of Bathrooms']
-      },
-      services: [
-        { id: 'c1', name: 'Standard Clean', description: 'Regular maintenance cleaning for your home.', price: '$120' },
-        { id: 'c2', name: 'Deep Clean', description: 'Thorough top-to-bottom cleaning including baseboards and inside cabinets.', price: '$250' }
-      ],
-      faqs: [
-        { id: 'f1', question: 'Do I need to provide cleaning supplies?', answer: 'No, we bring our own professional-grade supplies and equipment.' },
-      ],
-      testimonials: [
-        { id: 't1', author: 'Sarah M.', role: 'Homeowner, Ballard', rating: 5, text: 'Demo Cleaners did an incredible job on our move-out deep clean. Spotless, on time, and so friendly. We got our full deposit back!' },
-        { id: 't2', author: 'James T.', role: 'Office Manager', rating: 5, text: 'We switched our weekly office cleaning to them and never looked back. Reliable, thorough, and great communication.' },
-        { id: 't3', author: 'Priya K.', role: 'Repeat Client', rating: 4, text: 'Consistently great results. Booking is easy and the team always pays attention to the little details.' },
-      ],
-      enquiries: [
-        { id: 'e1', name: 'Jane Doe', email: 'jane@example.com', phone: '555-987-6543', serviceInterest: 'Deep Clean', preferredDateTime: 'Next Tuesday morning', urgency: 'Medium', message: 'Looking for a deep clean before my parents visit.', status: 'New', date: new Date().toISOString(), leadScore: 'Hot', nextAction: 'Call to confirm details' }
-      ],
-      activities: [
-        { id: 'a1', type: 'enquiry_received', title: 'New Enquiry', description: 'Jane Doe requested a Deep Clean.', date: new Date().toISOString() }
-      ],
-      isSetupComplete: true
-    });
-  }
-
   addActivity(activity: Omit<Activity, 'id' | 'date'>) {
     const newActivity: Activity = {
       ...activity,
