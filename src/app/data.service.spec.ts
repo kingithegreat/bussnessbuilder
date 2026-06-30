@@ -78,5 +78,22 @@ describe('DataService', () => {
     it('rejects JSON without a profile', () => {
       expect(service.importState(JSON.stringify({ services: [] }))).toBe(false);
     });
+
+    it('exportAll bundles sub-doc sections alongside the business data', () => {
+      const bundle = JSON.parse(service.exportAll());
+      expect(bundle.businessData.profile).toBeDefined();
+      expect(bundle).toHaveProperty('contentPages');
+      expect(bundle).toHaveProperty('recommendations');
+      expect(bundle).toHaveProperty('paymentSettings');
+      expect(bundle).toHaveProperty('templates');
+      expect(typeof bundle.exportedAt).toBe('string');
+    });
+
+    it('importState restores the profile from a full exportAll bundle', () => {
+      service.addEnquiry(baseEnquiry('High'));
+      const bundle = service.exportAll();
+      expect(service.importState(bundle)).toBe(true);
+      expect(service.enquiries()[0].leadScore).toBe('Hot');
+    });
   });
 });

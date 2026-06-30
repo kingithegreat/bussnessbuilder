@@ -174,12 +174,14 @@ export class AdminLayoutComponent implements OnInit {
   }
 
   exportData() {
-    const data = this.dataService.exportState();
+    // Full GDPR-style export of all the user's data (profile + pages,
+    // recommendations, payments, templates). The profile portion re-imports.
+    const data = this.dataService.exportAll();
     const blob = new Blob([data], { type: 'application/json' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'business-profile.json';
+    a.download = 'businessflow-data-export.json';
     a.click();
     window.URL.revokeObjectURL(url);
   }
