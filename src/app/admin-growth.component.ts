@@ -223,6 +223,11 @@ export function parseTestimonialDraft(draft: string): { author: string; text: st
                             <mat-icon class="text-[14px]">inbox</mat-icon> Open Inbox
                           </a>
                         }
+                        @if (rec.type === 'pricing') {
+                          <a routerLink="/admin/content" [queryParams]="{ tab: 'services' }" class="bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 px-3 py-1.5 rounded-lg text-[11px] font-bold transition-colors flex items-center gap-1">
+                            <mat-icon class="text-[14px]">sell</mat-icon> Review services
+                          </a>
+                        }
                         <button (click)="markDone(rec)" class="bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 px-3 py-1.5 rounded-lg text-[11px] font-bold transition-colors flex items-center gap-1">
                           <mat-icon class="text-[14px]">check</mat-icon> Done
                         </button>

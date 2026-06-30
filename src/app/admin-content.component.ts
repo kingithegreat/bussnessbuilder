@@ -8,7 +8,7 @@ import { SubscriptionService } from './subscription.service';
 import { ToastService } from './toast.service';
 import { Service, Testimonial, FAQ } from './types';
 import { ImagePickerComponent } from './image-picker.component';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 
 type Tab = 'services' | 'testimonials' | 'faqs';
 
@@ -252,6 +252,7 @@ export class AdminContentComponent implements OnInit {
   private aiService  = inject(AiService);
   subService = inject(SubscriptionService);
   private toast = inject(ToastService);
+  private route = inject(ActivatedRoute);
 
   tab: Tab = 'services';
   expanded: string | null = null;
@@ -271,6 +272,11 @@ export class AdminContentComponent implements OnInit {
     this.services = JSON.parse(JSON.stringify(this.dataService.services()));
     this.testimonials = JSON.parse(JSON.stringify(this.dataService.testimonials()));
     this.faqs = JSON.parse(JSON.stringify(this.dataService.faqs()));
+    // Allow deep-links (e.g. from Growth recommendations) to open a specific tab.
+    const requested = this.route.snapshot.queryParamMap.get('tab');
+    if (requested && this.tabs.some(t => t.id === requested)) {
+      this.tab = requested as Tab;
+    }
   }
 
   count(t: Tab): number {

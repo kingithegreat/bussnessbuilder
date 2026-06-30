@@ -162,7 +162,7 @@ GitHub Actions (`deploy.yml`) exists but needs WIF secrets configured. Manual `g
 - Stripe is in test mode — switch keys when ready for real payments
 - Admin metrics endpoint does O(N) Firestore reads (mitigated by 30s cache)
 - Growth reports are on-demand only — weekly auto-generation is planned
-- Growth recommendations: `faq`, `service`, `hero`, `cta`, and `trust` drafts auto-insert into the site (hero → tagline + description, cta → ctaText button label, trust → a testimonial); remaining types (pricing, etc.) still require copy-paste
+- Growth recommendations: `faq`, `service`, `hero`, `cta`, and `trust` drafts auto-insert into the site (hero → tagline + description, cta → ctaText button label, trust → a testimonial). `pricing` recs (free-form guidance with no structured target) get a "Review services" deep-link to `/admin/content?tab=services` instead of an insert. Admin → Content honours `?tab=` for deep-linking.
 - Page builder section insertion deferred to v1.3
 - Deploy `firestore.rules` to enable analytics tracking: `firebase deploy --only firestore:rules`
 
