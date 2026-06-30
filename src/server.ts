@@ -560,7 +560,7 @@ app.get('/api/admin/metrics', async (req, res) => {
         createdAt,
         siteSlug,
       });
-    });
+    }
 
     tierBreakdown.free = totalUsers - proUsers - businessUsers;
     recentUsers.sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
