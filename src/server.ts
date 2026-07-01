@@ -1231,7 +1231,7 @@ app.get(['/site/:uid', '/site/:uid/pages/:slug'], async (req, res, next) => {
   }
   try {
     const db = await getDb();
-    const uid = await resolveUid(db, req.params.uid);
+    const uid = await resolveUid(db, req.params['uid'] as string);
     const mainSnap = await db.doc(`users/${uid}/businessData/main`).get();
     if (!mainSnap.exists || !mainSnap.data()!['isSetupComplete']) {
       next();
@@ -1248,11 +1248,12 @@ app.get(['/site/:uid', '/site/:uid/pages/:slug'], async (req, res, next) => {
     });
     const canonical = `${origin}${req.originalUrl.split('?')[0]}`;
 
+    const slug = req.params['slug'] as string | undefined;
     let pageTitle: string | undefined;
-    if (req.params.slug) {
+    if (slug) {
       const pagesSnap = await db.doc(`users/${uid}/businessData/pages`).get();
       const pages: Record<string, unknown>[] = pagesSnap.exists ? (pagesSnap.data()!['pages'] || []) : [];
-      const page = pages.find((pg) => pg['slug'] === req.params.slug && pg['published']);
+      const page = pages.find((pg) => pg['slug'] === slug && pg['published']);
       if (!page) {
         next();
         return;

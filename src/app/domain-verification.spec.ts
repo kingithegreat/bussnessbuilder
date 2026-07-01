@@ -30,33 +30,33 @@ describe('domain-verification', () => {
   describe('validateDomain', () => {
     it('accepts an apex domain', () => {
       const v = validateDomain('example.com');
-      expect(v.valid).toBeTrue();
+      expect(v.valid).toBe(true);
       expect(v.kind).toBe('apex');
       expect(v.normalized).toBe('example.com');
     });
     it('accepts a subdomain', () => {
       const v = validateDomain('www.example.com');
-      expect(v.valid).toBeTrue();
+      expect(v.valid).toBe(true);
       expect(v.kind).toBe('subdomain');
     });
     it('rejects a bare label', () => {
       const v = validateDomain('localhost');
-      expect(v.valid).toBeFalse();
+      expect(v.valid).toBe(false);
       expect(v.kind).toBe('invalid');
       expect(v.error).toContain('full domain');
     });
     it('rejects empty input', () => {
-      expect(validateDomain('').valid).toBeFalse();
+      expect(validateDomain('').valid).toBe(false);
       expect(validateDomain('   ').error).toContain('Enter a domain');
     });
     it('rejects spaces and bad characters', () => {
-      expect(validateDomain('exa mple.com').valid).toBeFalse();
-      expect(validateDomain('exa_mple.com').valid).toBeFalse();
-      expect(validateDomain('-bad.com').valid).toBeFalse();
+      expect(validateDomain('exa mple.com').valid).toBe(false);
+      expect(validateDomain('exa_mple.com').valid).toBe(false);
+      expect(validateDomain('-bad.com').valid).toBe(false);
     });
     it('rejects a numeric / too-short tld', () => {
-      expect(validateDomain('example.c').valid).toBeFalse();
-      expect(validateDomain('example.123').valid).toBeFalse();
+      expect(validateDomain('example.c').valid).toBe(false);
+      expect(validateDomain('example.123').valid).toBe(false);
     });
   });
 
@@ -65,10 +65,10 @@ describe('domain-verification', () => {
       const recs = requiredRecords('example.com', UID);
       const aRecords = recs.filter((r) => r.type === 'A');
       expect(aRecords.length).toBe(HOSTING_A_RECORDS.length);
-      expect(aRecords.every((r) => r.host === '@')).toBeTrue();
+      expect(aRecords.every((r) => r.host === '@')).toBe(true);
       expect(aRecords.map((r) => r.value).sort()).toEqual([...HOSTING_A_RECORDS].sort());
-      expect(recs.some((r) => r.type === 'TXT')).toBeTrue();
-      expect(recs.some((r) => r.type === 'CNAME')).toBeFalse();
+      expect(recs.some((r) => r.type === 'TXT')).toBe(true);
+      expect(recs.some((r) => r.type === 'CNAME')).toBe(false);
     });
     it('returns a CNAME + TXT for a subdomain', () => {
       const recs = requiredRecords('www.example.com', UID);
@@ -76,8 +76,8 @@ describe('domain-verification', () => {
       expect(cname).toBeTruthy();
       expect(cname!.host).toBe('www');
       expect(cname!.value).toBe(`${HOSTING_TARGET}.`);
-      expect(recs.some((r) => r.type === 'A')).toBeFalse();
-      expect(recs.some((r) => r.type === 'TXT')).toBeTrue();
+      expect(recs.some((r) => r.type === 'A')).toBe(false);
+      expect(recs.some((r) => r.type === 'TXT')).toBe(true);
     });
     it('returns nothing for an invalid domain', () => {
       expect(requiredRecords('not a domain', UID)).toEqual([]);
@@ -105,17 +105,17 @@ describe('domain-verification', () => {
   describe('recordMatches', () => {
     it('matches an A record ignoring trailing dots / case', () => {
       const a: DnsRecord = { type: 'A', host: '@', value: '216.239.32.21', ttl: 1 };
-      expect(recordMatches(a, ['216.239.32.21'])).toBeTrue();
-      expect(recordMatches(a, ['1.2.3.4'])).toBeFalse();
+      expect(recordMatches(a, ['216.239.32.21'])).toBe(true);
+      expect(recordMatches(a, ['1.2.3.4'])).toBe(false);
     });
     it('matches a CNAME ignoring trailing dot', () => {
       const c: DnsRecord = { type: 'CNAME', host: 'www', value: `${HOSTING_TARGET}.`, ttl: 1 };
-      expect(recordMatches(c, [HOSTING_TARGET])).toBeTrue();
+      expect(recordMatches(c, [HOSTING_TARGET])).toBe(true);
     });
     it('matches a TXT record by substring (handles surrounding quotes)', () => {
       const t = verificationTxtRecord(UID);
-      expect(recordMatches(t, [`"businessflow-site-verification=${UID}"`])).toBeTrue();
-      expect(recordMatches(t, ['some-other-txt'])).toBeFalse();
+      expect(recordMatches(t, [`"businessflow-site-verification=${UID}"`])).toBe(true);
+      expect(recordMatches(t, ['some-other-txt'])).toBe(false);
     });
   });
 
