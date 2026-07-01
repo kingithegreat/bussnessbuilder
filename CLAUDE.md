@@ -202,8 +202,17 @@ GitHub Actions (`deploy.yml`) exists but needs WIF secrets configured. Manual `g
   unit-tested generators live in `src/server-seo.ts` (`buildRobotsTxt`,
   `buildSiteSitemap`, `originFromRequest`); Express routes in `server.ts` are thin
   wiring. NOTE: the `/site/:uid` body itself is still client-rendered (SSR emits
-  the loading shell — see `site-view.component.ts`), so server-rendered `<title>`/
-  OG meta for crawler unfurls remains a follow-up.
+  the loading shell — see `site-view.component.ts`).
+- **Crawler/social meta (done)**: `/site/:uid` and `/site/:uid/pages/:slug` now
+  serve link-preview bots (Googlebot, facebookexternalhit, Twitterbot, Slackbot,
+  LinkedInBot, WhatsApp…) the app shell with the site's real `<title>` +
+  Open Graph / Twitter Card tags injected into `<head>` (title, description from
+  tagline→description→type fallback, canonical URL, `og:image` from the branding
+  logo). Real browsers are unaffected — they fall through to the normal Angular
+  SSR path, so hydration is untouched. Bot detection + tag building/injection are
+  pure, unit-tested functions in `src/server-meta.ts` (`isCrawler`,
+  `resolveSiteMeta`, `renderMetaTags`, `injectMetaTags`); the Express route in
+  `server.ts` is thin wiring that reads the built shell once and caches it.
 - Page builder section insertion deferred to v1.3
 - Deploy `firestore.rules` to enable analytics tracking: `firebase deploy --only firestore:rules`
 

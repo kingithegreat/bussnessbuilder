@@ -6,9 +6,11 @@ import {
 } from '@angular/ssr/node';
 import express from 'express';
 import {join} from 'node:path';
+import { readFileSync } from 'node:fs';
 import { randomUUID } from 'node:crypto';
 import { dispatchEnquiryWebhook } from './server-webhook';
 import { buildRobotsTxt, buildSiteSitemap, originFromRequest, SitemapPage } from './server-seo';
+import { isCrawler, resolveSiteMeta, injectMetaTags } from './server-meta';
 import { initServerMonitoring, captureServerError } from './server-monitoring';
 import type Stripe from 'stripe';
 import type { Firestore } from 'firebase-admin/firestore';
@@ -1189,6 +1191,94 @@ app.use(
     redirect: false,
   }),
 );
+
+/**
+ * Crawler / social-unfurl metadata for generated public sites.
+ *
+ * The `/site/:uid` body is client-rendered (the Angular route ships a loading
+ * shell, then fetches `/api/site/:uid` in the browser), so link-preview bots —
+ * which don't run JS — only ever saw the generic "BusinessFlow Studio" shell
+ * title with no description or image. For those bots only, we serve the app
+ * shell with the site's real <title> + Open Graph / Twitter tags injected into
+ * <head>. Real browsers fall through untouched to the Angular SSR handler
+ * below, so hydration is unaffected. Pure logic lives in `server-meta.ts`.
+ */
+let _shellHtml: string | null = null;
+function loadShellHtml(): string | null {
+  if (_shellHtml !== null) return _shellHtml || null;
+  for (const name of ['index.csr.html', 'index.html']) {
+    try {
+      _shellHtml = readFileSync(join(browserDistFolder, name), 'utf-8');
+      return _shellHtml;
+    } catch {
+      // try the next candidate
+    }
+  }
+  _shellHtml = '';
+  return null;
+}
+
+app.get(['/site/:uid', '/site/:uid/pages/:slug'], async (req, res, next) => {
+  // Only intercept crawlers; humans get the normal Angular SSR path.
+  if (!isCrawler(req.header('user-agent'))) {
+    next();
+    return;
+  }
+  const shell = loadShellHtml();
+  if (!shell) {
+    next();
+    return;
+  }
+  try {
+    const db = await getDb();
+    const uid = await resolveUid(db, req.params.uid);
+    const mainSnap = await db.doc(`users/${uid}/businessData/main`).get();
+    if (!mainSnap.exists || !mainSnap.data()!['isSetupComplete']) {
+      next();
+      return;
+    }
+    const data = mainSnap.data()!;
+    const profile = (data['profile'] || {}) as Record<string, unknown>;
+    const branding = (((data['customization'] || {}) as Record<string, unknown>)['branding'] || {}) as Record<string, unknown>;
+
+    const origin = originFromRequest({
+      forwardedProto: req.header('x-forwarded-proto') ?? undefined,
+      forwardedHost: req.header('x-forwarded-host') ?? undefined,
+      host: req.header('host') ?? undefined,
+    });
+    const canonical = `${origin}${req.originalUrl.split('?')[0]}`;
+
+    let pageTitle: string | undefined;
+    if (req.params.slug) {
+      const pagesSnap = await db.doc(`users/${uid}/businessData/pages`).get();
+      const pages: Record<string, unknown>[] = pagesSnap.exists ? (pagesSnap.data()!['pages'] || []) : [];
+      const page = pages.find((pg) => pg['slug'] === req.params.slug && pg['published']);
+      if (!page) {
+        next();
+        return;
+      }
+      pageTitle = typeof page['title'] === 'string' ? page['title'] as string : undefined;
+    }
+
+    const meta = resolveSiteMeta(
+      {
+        name: typeof profile['name'] === 'string' ? profile['name'] as string : undefined,
+        type: typeof profile['type'] === 'string' ? profile['type'] as string : undefined,
+        tagline: typeof profile['tagline'] === 'string' ? profile['tagline'] as string : undefined,
+        description: typeof profile['description'] === 'string' ? profile['description'] as string : undefined,
+        logoUrl: typeof branding['logoUrl'] === 'string' ? branding['logoUrl'] as string : undefined,
+      },
+      canonical,
+      pageTitle,
+    );
+
+    res.type('text/html').send(injectMetaTags(shell, meta));
+  } catch (e) {
+    // Never fail the request over metadata — fall back to the SSR shell.
+    console.error('Error rendering crawler meta:', e); captureServerError(e);
+    next();
+  }
+});
 
 /**
  * Handle all other requests by rendering the Angular application.
