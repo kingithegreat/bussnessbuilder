@@ -230,7 +230,14 @@ GitHub Actions (`deploy.yml`) exists but needs WIF secrets configured. Manual `g
   pure, unit-tested functions in `src/server-meta.ts` (`isCrawler`,
   `resolveSiteMeta`, `renderMetaTags`, `injectMetaTags`); the Express route in
   `server.ts` is thin wiring that reads the built shell once and caches it.
-- Page builder section insertion deferred to v1.3
+- **Page builder section insertion (done, v1.3)**: users add sections via the
+  builder's "Add a Section" picker (duplicates of existing types get unique ids
+  like `services-2`, plus a free-text **Custom Content** type) and can remove
+  inserted sections; the 13 seeded sections are hide-only. Pure helpers +
+  catalog in `src/app/section-library.ts` (unit-tested); renderer switches on
+  `sectionRenderType()` and `@default` renders custom `content`. `hero`/`contact`
+  are deliberately not insertable (nav anchors + single enquiry form). Growth
+  Coach "insert as section" (GROWTH_ENGINE.md) can now build on this.
 - Deploy `firestore.rules` to enable analytics tracking: `firebase deploy --only firestore:rules`
 
 ## Workforce auto-merge pipeline
