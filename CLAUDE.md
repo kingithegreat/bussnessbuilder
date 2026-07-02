@@ -205,7 +205,7 @@ GitHub Actions (`deploy.yml`) exists but needs WIF secrets configured. Manual `g
   unit-tested). Manual "Generate Report" still works; auto runs are silent (no toast).
   Persistence helpers: `DataService.loadGrowthReport/setGrowthReport`,
   `FirestoreService.loadGrowthReport/saveGrowthReport`.
-- Growth recommendations: `faq`, `service`, `hero`, `cta`, and `trust` drafts auto-insert into the site (hero → tagline + description, cta → ctaText button label, trust → a testimonial). `pricing` recs (free-form guidance with no structured target) get a "Review services" deep-link to `/admin/content?tab=services` instead of an insert. Admin → Content honours `?tab=` for deep-linking.
+- Growth recommendations: **every type now has an apply path.** `faq`, `service`, `hero`, `cta`, and `trust` drafts auto-insert into the site (hero → tagline + description, cta → ctaText button label, trust → a testimonial). `pricing`, `marketing`, `seo`, and `general` drafts **insert as a custom page section** ("Insert as Section" in the draft preview → `createSection('custom', …)` from `section-library.ts`; heading from the rec title or an explicit `Heading:`/`Title:` first line via `parseSectionDraft`, unit-tested). `pricing` also keeps its "Review services" deep-link to `/admin/content?tab=services`; Admin → Content honours `?tab=` for deep-linking.
 - Data export is now **GDPR-complete**: the admin "Export" button downloads a
   full bundle (`DataService.exportAll`) — business profile **plus** content pages,
   recommendations, growth report, notification prefs, payment settings, and
@@ -237,7 +237,8 @@ GitHub Actions (`deploy.yml`) exists but needs WIF secrets configured. Manual `g
   catalog in `src/app/section-library.ts` (unit-tested); renderer switches on
   `sectionRenderType()` and `@default` renders custom `content`. `hero`/`contact`
   are deliberately not insertable (nav anchors + single enquiry form). Growth
-  Coach "insert as section" (GROWTH_ENGINE.md) can now build on this.
+  Coach "Insert as Section" (see the Growth recommendations bullet above) is
+  built on this — done.
 - Deploy `firestore.rules` to enable analytics tracking: `firebase deploy --only firestore:rules`
 
 ## Workforce auto-merge pipeline

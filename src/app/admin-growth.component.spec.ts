@@ -1,4 +1,4 @@
-import { parseHeroDraft, parseCtaLabel, parseTestimonialDraft } from './admin-growth.component';
+import { parseHeroDraft, parseCtaLabel, parseTestimonialDraft, parseSectionDraft } from './admin-growth.component';
 
 describe('admin-growth recommendation parsers', () => {
   describe('parseHeroDraft', () => {
@@ -84,6 +84,37 @@ describe('admin-growth recommendation parsers', () => {
       const result = parseTestimonialDraft('- Not an author, this is the quote');
       expect(result.text).toBe('- Not an author, this is the quote');
       expect(result.author).toBe('');
+    });
+  });
+
+  describe('parseSectionDraft', () => {
+    it('uses the recommendation title as heading and the draft as body', () => {
+      const result = parseSectionDraft('Boost local SEO', 'We serve Springfield and nearby suburbs.\nCall us for same-day quotes.');
+      expect(result.heading).toBe('Boost local SEO');
+      expect(result.content).toBe('We serve Springfield and nearby suburbs.\nCall us for same-day quotes.');
+    });
+
+    it('lets an explicit "Heading:" first line override the title and drops it from the body', () => {
+      const result = parseSectionDraft('Rec title', 'Heading: Why choose us\nBecause we care.\nAnd we show up on time.');
+      expect(result.heading).toBe('Why choose us');
+      expect(result.content).toBe('Because we care.\nAnd we show up on time.');
+    });
+
+    it('strips quotes from the heading', () => {
+      const result = parseSectionDraft('"Special offers"', 'Title: "Spring deals"\n10% off all bookings in September.');
+      expect(result.heading).toBe('Spring deals');
+      expect(result.content).toBe('10% off all bookings in September.');
+    });
+
+    it('preserves interior blank lines but trims leading/trailing ones', () => {
+      const result = parseSectionDraft('Our promise', '\n\nFirst paragraph.\n\nSecond paragraph.\n\n');
+      expect(result.content).toBe('First paragraph.\n\nSecond paragraph.');
+    });
+
+    it('returns an empty body and a fallback heading for blank input', () => {
+      const result = parseSectionDraft('   ', '  \n  ');
+      expect(result.heading).toBe('New Section');
+      expect(result.content).toBe('');
     });
   });
 });

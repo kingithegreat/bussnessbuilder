@@ -237,19 +237,30 @@ Client-side UI (disabled buttons, upgrade prompts) is a UX convenience only. If 
 
 ## Known Limitations
 
-- Growth reports are generated on demand, not stored historically (future: weekly auto-generation)
-- "Add as FAQ" is the only automatic insertion; other types require copy-paste
-- Page builder section insertion is deferred to v1.3 (safe first version)
+- Reports auto-regenerate weekly (the latest one is persisted), but there is no
+  historical archive — each regeneration replaces the previous report
 - Marketing content uses the existing rate limit pool (20 AI requests/min)
 - Page view tracking requires the analytics Firestore rule to be deployed
 - Recommendation matching on re-generation uses title comparison (not a stable ID)
 
+## Draft insertion coverage
+
+Every recommendation type now has an apply path from the draft preview:
+
+- `faq` → "Add as FAQ", `service` → "Add as Service", `hero` → "Apply to Hero",
+  `cta` → "Apply CTA", `trust` → "Add as Testimonial"
+- `pricing`, `marketing`, `seo`, `general` → **"Insert as Section"**: creates a
+  `custom` free-content page section via `createSection('custom', ...)`
+  (`section-library.ts`), heading from the rec title (or an explicit
+  `Heading:`/`Title:` first line in the draft — `parseSectionDraft`), body from
+  the draft. Rendered by the public page's `@default` section case, no renderer
+  changes. `pricing` keeps its "Review services" deep-link too.
+- `lead-follow-up` → "Open Inbox" navigation link (nothing to insert)
+
 ## Future Improvements
 
-- Weekly auto-generated reports with email digest
 - Historical report comparison (week-over-week trends)
-- "Insert as section" for page builder (hero, CTA, testimonial sections)
-- "Add as Testimonial" button for trust-type recommendations
+- Email digest for the weekly auto-generated report
 - Lead scoring automation based on engagement signals
 - Email sequence templates for follow-up workflows
 - A/B testing recommendations for CTA text

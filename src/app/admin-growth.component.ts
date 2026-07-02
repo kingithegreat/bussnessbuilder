@@ -8,6 +8,7 @@ import { SubscriptionService } from './subscription.service';
 import { ToastService } from './toast.service';
 import { GrowthReport, GrowthRecommendation, MarketingContentType, Enquiry, SavedRecommendation, RecommendationType, Service } from './types';
 import { shouldAutoGenerateReport } from './growth-schedule';
+import { createSection } from './section-library';
 import { MatIconModule } from '@angular/material/icon';
 import { FormsModule } from '@angular/forms';
 import { DatePipe } from '@angular/common';
@@ -64,6 +65,31 @@ export function parseTestimonialDraft(draft: string): { author: string; text: st
   }
   return { author, text: stripQuotes(textLines.join(' ')) };
 }
+
+/**
+ * Parse a free-form recommendation draft into a custom page section. The
+ * recommendation title becomes the heading, unless the draft's first line
+ * carries an explicit "Heading:"/"Title:" label — then that wins and is
+ * dropped from the body. The rest of the draft is the section body verbatim
+ * (rendered with whitespace-pre-line, so blank lines survive).
+ */
+export function parseSectionDraft(title: string, draft: string): { heading: string; content: string } {
+  const lines = draft.split('\n').map(l => l.trim());
+  let heading = stripQuotes(title);
+  const firstIdx = lines.findIndex(Boolean);
+  if (firstIdx !== -1) {
+    const labelled = lines[firstIdx].match(/^(?:heading|title|section)\s*:\s*(.+)$/i);
+    if (labelled) {
+      heading = stripQuotes(labelled[1]);
+      lines.splice(firstIdx, 1);
+    }
+  }
+  const content = lines.join('\n').replace(/^\n+|\n+$/g, '');
+  return { heading: heading || 'New Section', content };
+}
+
+/** Rec types with no specialised insert action — they fall back to a custom page section. */
+const SECTION_INSERT_TYPES: RecommendationType[] = ['pricing', 'marketing', 'seo', 'general'];
 
 @Component({
   selector: 'app-admin-growth',
@@ -272,6 +298,11 @@ export function parseTestimonialDraft(draft: string): { author: string; text: st
                             @if (rec.type === 'trust' && rec.status !== 'applied') {
                               <button (click)="addAsTestimonial(rec)" class="bg-blue-50 hover:bg-blue-100 text-blue-600 px-2 py-1 rounded text-[10px] font-bold transition-colors flex items-center gap-1">
                                 <mat-icon class="text-[12px]">add</mat-icon> Add as Testimonial
+                              </button>
+                            }
+                            @if (canInsertAsSection(rec)) {
+                              <button (click)="insertAsSection(rec)" class="bg-blue-50 hover:bg-blue-100 text-blue-600 px-2 py-1 rounded text-[10px] font-bold transition-colors flex items-center gap-1">
+                                <mat-icon class="text-[12px]">add</mat-icon> Insert as Section
                               </button>
                             }
                             <button (click)="copyDraft(rec)" class="bg-gray-50 hover:bg-gray-100 text-gray-600 px-2 py-1 rounded text-[10px] font-bold transition-colors flex items-center gap-1">
@@ -675,6 +706,26 @@ export class AdminGrowthComponent implements OnInit {
       appliedAt: new Date().toISOString(),
     });
     this.toast.success('Testimonial added to your site!');
+  }
+
+  canInsertAsSection(rec: SavedRecommendation): boolean {
+    return SECTION_INSERT_TYPES.includes(rec.type) && rec.status !== 'applied';
+  }
+
+  insertAsSection(rec: SavedRecommendation) {
+    if (!rec.draftContent) return;
+    const { heading, content } = parseSectionDraft(rec.title, rec.draftContent);
+    if (!content) return;
+    const sections = this.dataService.customization().sections;
+    const section = createSection('custom', sections);
+    section.heading = heading;
+    section.content = content;
+    this.dataService.updateCustomization({ sections: [...sections, section] });
+    this.dataService.updateRecommendation(rec.id, {
+      status: 'applied',
+      appliedAt: new Date().toISOString(),
+    });
+    this.toast.success('Section added to your site!');
   }
 
   selectMarketingAction(type: MarketingContentType) {
