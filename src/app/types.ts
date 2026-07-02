@@ -76,12 +76,19 @@ export interface Activity {
 
 export interface SectionConfig {
   id: string;
+  // Render key for inserted sections (see section-library.ts). The 13 seeded
+  // sections omit it and render by their id; inserted instances need it so
+  // their id can stay unique while reusing an existing render path.
+  type?: string;
   visible: boolean;
   order: number;
   heading: string;
   subheading: string;
   layoutVariant?: string;
   imageUrl?: string;
+  // Body text for 'custom' sections, rendered by the public page's default
+  // section block.
+  content?: string;
 }
 
 export interface FormFieldConfig {

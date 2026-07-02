@@ -7,6 +7,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { SlicePipe, NgTemplateOutlet } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { CustomizationSettings, SectionConfig, FormFieldConfig } from './types';
+import { sectionRenderType } from './section-library';
 import { EditableTextDirective } from './editable-text.directive';
 import { AnalyticsService } from './analytics.service';
 import { AuthService } from './auth.service';
@@ -110,7 +111,7 @@ import { ToastService } from './toast.service';
 
       @for (section of sortedSections(); track section.id) {
         @if (section.visible) {
-          @switch (section.id) {
+          @switch (renderType(section)) {
             @case ('hero') {
               <section class="py-20 md:py-32">
                 <div class="max-w-5xl mx-auto px-6">
@@ -231,7 +232,7 @@ import { ToastService } from './toast.service';
             }
 
             @case ('about') {
-              <section id="about" class="py-16 md:py-24">
+              <section [id]="section.id" class="py-16 md:py-24">
                 <div class="max-w-5xl mx-auto px-6">
                   <div class="mb-8 md:mb-12">
                     <h2 class="text-2xl md:text-3xl font-bold text-gray-900 mb-2" [appEditableText]="editable()" (textChange)="onTextEdit('section', 'heading', $event, section.id)">{{ section.heading }}</h2>
@@ -352,7 +353,7 @@ import { ToastService } from './toast.service';
 
             @case ('services') {
               <!-- Services -->
-              <section id="services" class="py-20 md:py-28">
+              <section [id]="section.id" class="py-20 md:py-28">
                 <div class="max-w-5xl mx-auto px-6">
                   <div class="mb-10 md:mb-14 flex justify-between items-end">
                     <div>
@@ -478,7 +479,7 @@ import { ToastService } from './toast.service';
             @case ('testimonials') {
               <!-- Testimonials -->
               @if (testimonials().length) {
-              <section id="testimonials" class="py-12 md:py-24 bg-gray-50 border-y border-gray-200">
+              <section [id]="section.id" class="py-12 md:py-24 bg-gray-50 border-y border-gray-200">
                 <div class="max-w-5xl mx-auto px-4 md:px-6">
                   <div class="text-center mb-8 md:mb-12">
                     <h2 class="text-2xl md:text-3xl font-bold text-gray-900 mb-2" [appEditableText]="editable()" (textChange)="onTextEdit('section', 'heading', $event, section.id)">{{ section.heading }}</h2>
@@ -592,7 +593,7 @@ import { ToastService } from './toast.service';
 
             @case ('contact') {
               <!-- Contact -->
-              <section id="contact" class="py-16 md:py-24">
+              <section [id]="section.id" class="py-16 md:py-24">
                 <div class="max-w-5xl mx-auto px-6">
                   @if (!section.layoutVariant || section.layoutVariant === 'split') {
                     <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch overflow-hidden">
@@ -801,16 +802,23 @@ import { ToastService } from './toast.service';
             }
 
             @default {
-              <!-- Fallback for other sections -->
+              <!-- Fallback for other sections, and the body of inserted
+                   'custom' content sections -->
               <section [id]="section.id" class="py-16 md:py-24">
                 <div class="max-w-5xl mx-auto px-6">
                   <div class="mb-12">
                     <h2 class="text-3xl font-bold text-gray-900 mb-2" [style.color]="customization().branding.themeMode === 'dark' ? 'white' : 'black'">{{ section.heading }}</h2>
                     <p class="text-gray-500 font-medium">{{ section.subheading }}</p>
                   </div>
-                  <div [style.borderRadius]="cardRadius" class="bg-gray-50 border border-gray-100 p-10 flex items-center justify-center text-gray-400 text-sm">
-                    {{ section.heading }} Content Coming Soon
-                  </div>
+                  @if (section.content) {
+                    <div [style.borderRadius]="cardRadius" class="glass-card p-8 md:p-10">
+                      <p class="text-gray-700 leading-relaxed whitespace-pre-line">{{ section.content }}</p>
+                    </div>
+                  } @else if (renderType(section) !== 'custom') {
+                    <div [style.borderRadius]="cardRadius" class="bg-gray-50 border border-gray-100 p-10 flex items-center justify-center text-gray-400 text-sm">
+                      {{ section.heading }} Content Coming Soon
+                    </div>
+                  }
                 </div>
               </section>
             }
@@ -864,6 +872,10 @@ export class PublicPageComponent {
 
   getSection(id: string): SectionConfig | undefined {
     return this.customization().sections.find(s => s.id === id);
+  }
+
+  renderType(section: SectionConfig): string {
+    return sectionRenderType(section);
   }
 
   getPaymentLink(serviceName: string): string | null {

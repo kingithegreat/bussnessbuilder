@@ -6,6 +6,7 @@ import { DataService } from './data.service';
 import { ToastService } from './toast.service';
 import { AuthService } from './auth.service';
 import { CustomizationSettings, SectionConfig } from './types';
+import { INSERTABLE_SECTION_TYPES, canRemoveSection, createSection, removeSectionAt, sectionRenderType } from './section-library';
 import { PublicPageComponent } from './public-page.component';
 import { ImagePickerComponent } from './image-picker.component';
 
@@ -38,7 +39,7 @@ import { ImagePickerComponent } from './image-picker.component';
                   <mat-icon class="text-gray-400 cursor-move">drag_indicator</mat-icon>
                   <div>
                     <h3 class="font-bold text-gray-900 text-sm flex items-center gap-2">
-                      {{ getSectionName(section.id) }}
+                      {{ getSectionName(section) }}
                       @if (!section.visible) {
                         <span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-gray-200 text-gray-500 uppercase tracking-wider">Hidden</span>
                       }
@@ -78,30 +79,58 @@ import { ImagePickerComponent } from './image-picker.component';
                     <input [id]="'sub_'+section.id" type="text" [(ngModel)]="section.subheading" (ngModelChange)="onPreviewChange()" class="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm text-gray-700">
                   </div>
                   
-                  @if (getVariants(section.id).length > 0) {
+                  @if (renderType(section) === 'custom') {
+                    <div>
+                      <label [for]="'content_'+section.id" class="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Content</label>
+                      <textarea [id]="'content_'+section.id" rows="5" [(ngModel)]="section.content" (ngModelChange)="onPreviewChange()" placeholder="Write the text for this section…" class="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm text-gray-700"></textarea>
+                    </div>
+                  }
+
+                  @if (getVariants(renderType(section)).length > 0) {
                     <div>
                       <label [for]="'var_'+section.id" class="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Layout Variant</label>
                       <select [id]="'var_'+section.id" [(ngModel)]="section.layoutVariant" (ngModelChange)="onPreviewChange()" class="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm text-gray-700 font-medium">
                         <option value="default">Default</option>
-                        @for(variant of getVariants(section.id); track variant.id) {
+                        @for(variant of getVariants(renderType(section)); track variant.id) {
                            <option [value]="variant.id">{{ variant.label }}</option>
                         }
                       </select>
                     </div>
                   }
 
-                  @if (sectionSupportsImage(section.id, section.layoutVariant)) {
+                  @if (sectionSupportsImage(renderType(section), section.layoutVariant)) {
                     <app-image-picker
                       [label]="'Section Image'"
-                      [section]="getImageSection(section.id)"
+                      [section]="getImageSection(renderType(section))"
                       [currentUrl]="section.imageUrl || ''"
                       (imageSelected)="onSectionImageSelected(section, $event)"
                     ></app-image-picker>
+                  }
+
+                  @if (canRemove(section)) {
+                    <button (click)="removeSection(i)" class="w-full flex items-center justify-center gap-1.5 text-red-600 hover:text-red-700 hover:bg-red-50 border border-red-200 rounded-lg px-3 py-2 text-xs font-bold transition-colors">
+                      <mat-icon class="text-[16px]">delete_outline</mat-icon> Remove Section
+                    </button>
                   }
                 </div>
               }
             </div>
           }
+
+          <!-- Add section -->
+          <div class="bg-white rounded-xl border border-dashed border-gray-300 p-4 space-y-3">
+            <label for="new_section_type" class="block text-[10px] font-bold text-gray-500 uppercase tracking-wider">Add a Section</label>
+            <div class="flex gap-2">
+              <select id="new_section_type" [(ngModel)]="newSectionType" class="flex-grow min-w-0 px-3 py-2 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm text-gray-700 font-medium">
+                @for (t of insertableTypes; track t.type) {
+                  <option [value]="t.type">{{ t.label }}</option>
+                }
+              </select>
+              <button (click)="addSection()" class="flex items-center gap-1 bg-blue-600 text-white px-3 py-2 rounded-lg text-xs font-bold shadow-sm hover:bg-blue-700 transition-colors shrink-0">
+                <mat-icon class="text-[16px]">add</mat-icon> Add
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -174,6 +203,8 @@ export class AdminBuilderComponent implements OnInit {
   localCust!: CustomizationSettings;
   expandedSection: string | null = null;
   previewMode: 'desktop' | 'tablet' | 'mobile' = 'desktop';
+  insertableTypes = INSERTABLE_SECTION_TYPES;
+  newSectionType = INSERTABLE_SECTION_TYPES[0].type;
 
   private history: string[] = [];
   private historyIndex = -1;
@@ -210,7 +241,10 @@ export class AdminBuilderComponent implements OnInit {
     this.localCust = JSON.parse(this.history[this.historyIndex]);
   }
 
-  getSectionName(id: string): string {
+  getSectionName(section: SectionConfig): string {
+    // Inserted sections show their (editable) heading so two instances of the
+    // same type stay distinguishable in the list.
+    if (section.type) return section.heading || this.typeLabel(section.type);
     const names: Record<string, string> = {
       hero: 'Hero / Header',
       about: 'About Us',
@@ -226,7 +260,35 @@ export class AdminBuilderComponent implements OnInit {
       badges: 'Trust Badges',
       cta: 'Call to Action'
     };
-    return names[id] || id;
+    return names[section.id] || section.id;
+  }
+
+  private typeLabel(type: string): string {
+    return INSERTABLE_SECTION_TYPES.find(t => t.type === type)?.label || type;
+  }
+
+  renderType(section: SectionConfig): string {
+    return sectionRenderType(section);
+  }
+
+  canRemove(section: SectionConfig): boolean {
+    return canRemoveSection(section);
+  }
+
+  addSection() {
+    const section = createSection(this.newSectionType, this.localCust.sections);
+    this.localCust.sections.push(section);
+    this.expandedSection = section.id;
+    this.reindex();
+    this.toast.success(`${this.typeLabel(this.newSectionType)} section added`);
+  }
+
+  removeSection(index: number) {
+    const target = this.localCust.sections[index];
+    if (!target || !this.canRemove(target)) return;
+    if (this.expandedSection === target.id) this.expandedSection = null;
+    this.localCust.sections = removeSectionAt(this.localCust.sections, index);
+    this.onPreviewChange();
   }
 
   getVariants(sectionId: string): {id: string, label: string}[] {
