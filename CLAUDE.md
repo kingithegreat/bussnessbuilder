@@ -60,12 +60,14 @@ So context/tasks never need re-explaining and every AI stays current:
 - **Human / cross-tool mirror = Notion** (Projects → 💼 BusinessFlow). Mirrors
   the key facts for quick reading + the decisions log. Notion keeps its own page
   version history as a **second backup**.
-- **Durable backup of Notion = [`docs/brain-snapshot.md`](docs/brain-snapshot.md)**,
-  regenerated from the Notion brief daily (and on demand) by the **Snapshot Notion
-  brain** GitHub Action. It needs one repo secret, `NOTION_TOKEN` (a Notion
-  internal-integration secret; the brain page must be shared with that
-  integration) — see `.github/workflows/snapshot-notion-brain.yml` for setup. The
-  file is generated; don't hand-edit it.
+- **Durable backups of Notion = [`docs/brain-snapshot.md`](docs/brain-snapshot.md)
+  (the 💼 BusinessFlow brief) and [`docs/playbook-snapshot.md`](docs/playbook-snapshot.md)
+  (the 📚 Lessons & Playbook rulebook)**, regenerated from Notion daily (and on
+  demand) by the **Snapshot Notion brain** GitHub Action. It needs one repo
+  secret, `NOTION_TOKEN` (a Notion internal-integration secret; the pages must be
+  shared with that integration — sharing the parent "Aden Brain" hub covers both)
+  — see `.github/workflows/snapshot-notion-brain.yml` for setup. The files are
+  generated; don't hand-edit them.
 - **End every session by syncing the brain:** update this file *and* the Notion
   brief with what changed, what's deployed, and what's next. Stale brain =
   repeated work.
@@ -190,7 +192,10 @@ GitHub Actions (`deploy.yml`) exists but needs WIF secrets configured. Manual `g
 
 ## Known issues / TODO
 
-- Custom domains — text field + DNS instructions; no automated mapping yet
+- Custom domains — a live **connect flow** shipped (`src/app/domain-verification.ts`
+  + settings UI): validated domain input, copyable A/CNAME/TXT records, and a live
+  DNS-over-HTTPS status badge. Still missing: automated Cloud Run domain *mapping*
+  (owner must add the mapping in GCP manually).
 - GitHub Actions WIF secrets not configured for auto-deploy — step-by-step setup in [`docs/wif-setup-runbook.md`](docs/wif-setup-runbook.md) (one-time: ~15 min of gcloud + 2 GitHub secrets)
 - Stripe is in test mode — switch keys when ready for real payments
 - Admin `/users` + `/metrics` per-user Firestore reads are now **batched** via `getAllDocs` (chunked parallel `getAll`, `src/server-firestore.ts`) instead of sequential `.get()` in a loop; `/metrics` still has its 30s cache. Output shape unchanged.
@@ -245,5 +250,17 @@ config), so it's safe; after a merge it best-effort kicks `deploy.yml`.
 This replaced the old PR-based pair (`auto-merge.yml` + `auto-merge-on-green.yml`),
 which stalled because `gh pr create` 403s without the "Allow Actions to create
 and approve PRs" admin toggle and it only ran `on: push`, so branches pushed
-before it existed never got a PR. The new workflow needs no PR at all. Full
-notes in [`docs/workforce-runbook.md`](docs/workforce-runbook.md).
+before it existed never got a PR. **Both old workflow files are now deleted**
+(`auto-merge.yml` lingered until 2026-07-02 and double-fired on every `claude/**`
+push alongside workforce-merge — don't resurrect it). The new workflow needs no
+PR at all. Full notes in [`docs/workforce-runbook.md`](docs/workforce-runbook.md).
+
+**Stale-branch hygiene (2026-07-02):** three permanently-conflicting `claude/**`
+branches were pruned and PR #18 closed — `claude/lucid-gauss-mj0y7a` (the
+obsolete pre-rewrite static scaffold; merging it would have deleted
+`src/server.ts`), `claude/whats-next-crawler-meta-68296` (landed as PR #19), and
+`claude/whats-next-session-protocol` (content already on `main`). Do **not**
+recreate or restore them. The pipeline skips conflicting branches with only a
+warning on a green run, so a stuck branch is easy to miss — if a `claude/**`
+branch survives more than a couple of hourly sweeps, check the workforce-merge
+logs for its conflict and either rebase it or delete it.
