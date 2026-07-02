@@ -1,4 +1,4 @@
-import { Component, inject, signal, OnInit, PLATFORM_ID } from '@angular/core';
+import { Component, inject, signal, OnInit, PLATFORM_ID, REQUEST_CONTEXT, TransferState } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { isPlatformBrowser } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
@@ -8,6 +8,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { DataService } from './data.service';
 import { PublicPageComponent } from './public-page.component';
 import { PublicSiteData } from './types';
+import { PUBLIC_SITE_STATE_KEY, readPublicSiteContext } from './public-site-context';
 
 @Component({
   selector: 'app-site-view',
@@ -40,14 +41,27 @@ export class SiteViewComponent implements OnInit {
   private http = inject(HttpClient);
   private dataService = inject(DataService);
   private platformId = inject(PLATFORM_ID);
+  private requestContext = inject(REQUEST_CONTEXT, { optional: true });
+  private transferState = inject(TransferState);
 
   loading = signal(true);
   error = signal(false);
 
   ngOnInit() {
-    // Only the browser fetches site data; on the server we render the loading
-    // shell, which the client then replaces after hydration/bootstrap.
-    if (!isPlatformBrowser(this.platformId)) return;
+    if (!isPlatformBrowser(this.platformId)) {
+      // Server: render the real site body when server.ts supplied the site via
+      // request context, and stash it in TransferState so the browser's first
+      // load reuses it instead of re-fetching. Without context (data load
+      // failed, or a path server.ts doesn't cover) keep the loading shell —
+      // the browser then fetches as before.
+      const ctx = readPublicSiteContext(this.requestContext);
+      if (ctx) {
+        this.transferState.set(PUBLIC_SITE_STATE_KEY, ctx);
+        this.dataService.loadPublicSite(ctx.uid, ctx.data);
+        this.loading.set(false);
+      }
+      return;
+    }
 
     // React to the route param (not just a one-time snapshot) so navigating
     // between /site/:uid routes re-loads the correct site instead of getting
@@ -62,6 +76,14 @@ export class SiteViewComponent implements OnInit {
             this.error.set(true);
             this.loading.set(false);
             return of(null);
+          }
+          // First load: the server may have already rendered this site and
+          // serialized its payload into ng-state — reuse it (once) instead of
+          // re-fetching. Later paramMap emissions (navigations) fetch fresh.
+          const transferred = this.transferState.get(PUBLIC_SITE_STATE_KEY, null);
+          if (transferred) {
+            this.transferState.remove(PUBLIC_SITE_STATE_KEY);
+            return of({ uid: transferred.uid, data: transferred.data as PublicSiteData | null, failed: false });
           }
           return this.http.get<PublicSiteData>(`/api/site/${uid}`).pipe(
             switchMap((data) => of({ uid, data, failed: false })),

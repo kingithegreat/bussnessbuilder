@@ -11,6 +11,7 @@ import { randomUUID } from 'node:crypto';
 import { dispatchEnquiryWebhook } from './server-webhook';
 import { buildRobotsTxt, buildSiteSitemap, originFromRequest, SitemapPage } from './server-seo';
 import { isCrawler, resolveSiteMeta, injectMetaTags } from './server-meta';
+import { buildPublicSiteData } from './server-site';
 import { initServerMonitoring, captureServerError } from './server-monitoring';
 import type Stripe from 'stripe';
 import type { Firestore } from 'firebase-admin/firestore';
@@ -104,17 +105,12 @@ app.get('/api/site/:uid', async (req, res) => {
 
     const paySnap = await db.doc(`users/${uid}/businessData/payments`).get();
     const subSnap = await db.doc(`subscriptions/${uid}`).get();
-    const hideBranding = subSnap.exists && subSnap.data()?.['tier'] === 'business';
-
-    res.json({
-      profile: data['profile'],
-      services: data['services'] || [],
-      testimonials: data['testimonials'] || [],
-      faqs: data['faqs'] || [],
-      customization: data['customization'],
-      paymentSettings: paySnap.exists ? paySnap.data() : null,
-      hideBranding,
-    });
+    // data is setup-complete (checked above), so the builder never returns null.
+    res.json(buildPublicSiteData(
+      data,
+      paySnap.exists ? paySnap.data()! : null,
+      subSnap.exists ? subSnap.data()! : null,
+    ));
   } catch (e) {
     console.error('Error loading site:', e); captureServerError(e);
     res.status(500).json({ error: 'Server error' });
@@ -1193,15 +1189,17 @@ app.use(
 );
 
 /**
- * Crawler / social-unfurl metadata for generated public sites.
+ * Public-site rendering for generated sites — two audiences, one route:
  *
- * The `/site/:uid` body is client-rendered (the Angular route ships a loading
- * shell, then fetches `/api/site/:uid` in the browser), so link-preview bots —
- * which don't run JS — only ever saw the generic "BusinessFlow Studio" shell
- * title with no description or image. For those bots only, we serve the app
- * shell with the site's real <title> + Open Graph / Twitter tags injected into
- * <head>. Real browsers fall through untouched to the Angular SSR handler
- * below, so hydration is unaffected. Pure logic lives in `server-meta.ts`.
+ * - Link-preview bots (no JS, no need for the body): get the app shell with
+ *   the site's real <title> + Open Graph / Twitter tags injected into <head>.
+ *   Pure logic lives in `server-meta.ts`.
+ * - Browsers (and JS-running crawlers): the site home page is server-rendered
+ *   with real content — the site data is loaded here once and handed to
+ *   Angular SSR via request context (see `src/app/public-site-context.ts`),
+ *   then reused by the browser via TransferState instead of re-fetching
+ *   `/api/site/:uid`. Content pages (`/pages/:slug`) and any load failure
+ *   fall through to the classic client-rendered shell.
  */
 let _shellHtml: string | null = null;
 function loadShellHtml(): string | null {
@@ -1219,9 +1217,45 @@ function loadShellHtml(): string | null {
 }
 
 app.get(['/site/:uid', '/site/:uid/pages/:slug'], async (req, res, next) => {
-  // Only intercept crawlers; humans get the normal Angular SSR path.
   if (!isCrawler(req.header('user-agent'))) {
-    next();
+    // Humans: server-render the site home page with real content by loading
+    // the site once and handing it to Angular SSR via request context
+    // (consumed by SiteViewComponent, which also serializes it to
+    // TransferState so the browser skips the /api/site re-fetch). Content
+    // pages and any failure fall through to the plain Angular SSR shell —
+    // the previous behaviour, where the browser fetches the data itself.
+    if (req.params['slug']) {
+      next();
+      return;
+    }
+    try {
+      const db = await getDb();
+      const uid = await resolveUid(db, req.params['uid'] as string);
+      const [mainSnap, paySnap, subSnap] = await Promise.all([
+        db.doc(`users/${uid}/businessData/main`).get(),
+        db.doc(`users/${uid}/businessData/payments`).get(),
+        db.doc(`subscriptions/${uid}`).get(),
+      ]);
+      const data = buildPublicSiteData(
+        mainSnap.exists ? mainSnap.data()! : undefined,
+        paySnap.exists ? paySnap.data()! : null,
+        subSnap.exists ? subSnap.data()! : null,
+      );
+      if (!data) {
+        next();
+        return;
+      }
+      const response = await angularApp.handle(req, { publicSite: { uid, data } });
+      if (response) {
+        await writeResponseToNodeResponse(response, res);
+      } else {
+        next();
+      }
+    } catch (e) {
+      // Never fail the page over SSR data — fall back to the client-rendered shell.
+      console.error('Error server-rendering site:', e); captureServerError(e);
+      next();
+    }
     return;
   }
   const shell = loadShellHtml();

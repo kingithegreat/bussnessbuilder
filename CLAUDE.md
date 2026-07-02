@@ -218,8 +218,20 @@ GitHub Actions (`deploy.yml`) exists but needs WIF secrets configured. Manual `g
   page, with `<lastmod>`). Owners submit the sitemap URL to Search Console. Pure,
   unit-tested generators live in `src/server-seo.ts` (`buildRobotsTxt`,
   `buildSiteSitemap`, `originFromRequest`); Express routes in `server.ts` are thin
-  wiring. NOTE: the `/site/:uid` body itself is still client-rendered (SSR emits
-  the loading shell — see `site-view.component.ts`).
+  wiring.
+- **Public site SSR (done)**: the `/site/:uid` home page now **server-renders with
+  real content**. `server.ts` loads the site once (shared pure assembly
+  `buildPublicSiteData` in `src/server-site.ts`, also used by `GET /api/site/:uid`)
+  and passes it to `angularApp.handle(req, { publicSite: { uid, data } })`;
+  `SiteViewComponent` reads it on the server via `REQUEST_CONTEXT`
+  (contract + validation in `src/app/public-site-context.ts`, unit-tested) and
+  serializes it to `TransferState`, so the browser's first load reuses the
+  payload instead of re-fetching. Fail-safe: any load error / unpublished site /
+  content pages (`/site/:uid/pages/:slug`) fall through to the previous
+  client-rendered loading-shell behaviour. Note: client hydration is NOT enabled
+  (the browser still re-bootstraps); crawlers and view-source get the full body,
+  which was the goal. Follow-ups if ever needed: SSR for content pages,
+  `provideClientHydration()` to avoid the client re-render.
 - **Crawler/social meta (done)**: `/site/:uid` and `/site/:uid/pages/:slug` now
   serve link-preview bots (Googlebot, facebookexternalhit, Twitterbot, Slackbot,
   LinkedInBot, WhatsApp…) the app shell with the site's real `<title>` +
