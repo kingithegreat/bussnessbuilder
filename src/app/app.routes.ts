@@ -21,11 +21,12 @@ import { AdminGrowthComponent } from './admin-growth.component';
 import { ContentPageViewComponent } from './content-page-view.component';
 import { PublicContentPageComponent } from './public-content-page.component';
 import { SiteViewComponent } from './site-view.component';
+import { PreviewFrameComponent } from './preview-frame.component';
 import { AppAdminLayoutComponent } from './app-admin-layout.component';
 import { AppAdminDashboardComponent } from './app-admin-dashboard.component';
 import { AppAdminUsersComponent } from './app-admin-users.component';
 import { AppAdminDiscountsComponent } from './app-admin-discounts.component';
-import { authGuard, setupGuard, publicGuard, appAdminGuard } from './auth.guard';
+import { authGuard, setupGuard, publicGuard, appAdminGuard, previewFrameGuard } from './auth.guard';
 
 export const routes: Routes = [
   { path: '', component: LandingComponent },
@@ -39,6 +40,10 @@ export const routes: Routes = [
   { path: 'pages/:slug', component: ContentPageViewComponent },
   { path: 'setup', component: SetupWizardComponent, canActivate: [setupGuard] },
   { path: 'public', component: PublicPageComponent, canActivate: [publicGuard] },
+  // Content of the page builder's live-preview iframe. Rendered with zero
+  // admin chrome; guarded auth-only (previewFrameGuard deliberately skips
+  // dataService.init() so the iframe's DataService never autosaves).
+  { path: 'preview-frame', component: PreviewFrameComponent, canActivate: [previewFrameGuard] },
   {
     path: 'admin',
     component: AdminLayoutComponent,

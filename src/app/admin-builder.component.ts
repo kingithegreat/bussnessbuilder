@@ -1,19 +1,20 @@
-import { Component, inject, OnInit, computed } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, ElementRef, OnDestroy, OnInit, PLATFORM_ID, ViewChild, computed, effect, inject } from '@angular/core';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { MatIconModule } from '@angular/material/icon';
 import { DataService } from './data.service';
 import { ToastService } from './toast.service';
 import { AuthService } from './auth.service';
-import { CustomizationSettings, SectionConfig } from './types';
+import { CustomizationSettings, PublicSiteData, SectionConfig } from './types';
 import { INSERTABLE_SECTION_TYPES, canRemoveSection, createSection, removeSectionAt, sectionRenderType } from './section-library';
-import { PublicPageComponent } from './public-page.component';
+import { PREVIEW_MSG_SOURCE, PreviewPingMsg, PreviewStateMsg, PreviewToParentMsg } from './preview-messages';
 import { ImagePickerComponent } from './image-picker.component';
 
 @Component({
   selector: 'app-admin-builder',
   standalone: true,
-  imports: [CommonModule, FormsModule, MatIconModule, PublicPageComponent, ImagePickerComponent],
+  imports: [CommonModule, FormsModule, MatIconModule, ImagePickerComponent],
   template: `
     <div class="h-full min-h-0 flex flex-col md:flex-row bg-[#F5F5F7]">
       <!-- Sidebar / Editor -->
@@ -171,20 +172,52 @@ import { ImagePickerComponent } from './image-picker.component';
           <div class="bg-white shadow-2xl overflow-hidden transition-all duration-300 relative w-full h-full rounded-2xl border border-gray-300"
                [style.maxWidth]="previewMode === 'mobile' ? '375px' : previewMode === 'tablet' ? '768px' : '100%'"
                [style.height]="previewMode === 'mobile' ? '812px' : previewMode === 'tablet' ? '1024px' : '100%'">
-            <!-- Iframe approach or direct embed. Since styles are global, direct embed works well and is interactive -->
-            <div class="w-full h-full overflow-y-auto overflow-x-hidden">
-               <app-public-page [previewCustomization]="localCust" [editable]="true" (textEdited)="onTextEdited($event)"></app-public-page>
-            </div>
+            <!-- Real iframe = real independent viewport, so the public page's
+                 Tailwind md:/lg: breakpoints respond to the device-mode width
+                 (375px/768px) instead of the browser window. State is pushed
+                 in (and edits received) via postMessage — see preview-messages.ts. -->
+            <iframe
+              #previewFrame
+              [src]="previewFrameSrc"
+              (load)="onFrameLoad()"
+              class="w-full h-full"
+              style="border:0; display:block;"
+              title="Live site preview">
+            </iframe>
           </div>
         </div>
       </div>
     </div>
   `
 })
-export class AdminBuilderComponent implements OnInit {
+export class AdminBuilderComponent implements OnInit, OnDestroy {
   dataService = inject(DataService);
   private toast = inject(ToastService);
   private authService = inject(AuthService);
+  private platformId = inject(PLATFORM_ID);
+
+  // Hardcoded same-origin constant (not user input), so trusting it is safe.
+  previewFrameSrc: SafeResourceUrl = inject(DomSanitizer).bypassSecurityTrustResourceUrl('/preview-frame');
+
+  @ViewChild('previewFrame') previewFrameRef?: ElementRef<HTMLIFrameElement>;
+  private previewReady = false;
+  private boundOnMessage = (e: MessageEvent) => this.onPreviewMessage(e);
+
+  constructor() {
+    // Echo-back: inline edits to profile/services/faqs (and payment/branding
+    // changes) write straight to DataService, bypassing localCust — this
+    // effect tracks those signals and re-pushes a fresh snapshot so the
+    // just-committed edit doesn't appear to revert inside the iframe.
+    effect(() => {
+      this.dataService.profile();
+      this.dataService.services();
+      this.dataService.faqs();
+      this.dataService.testimonials();
+      this.dataService.getPaymentSettings();
+      this.dataService.hideBranding();
+      this.pushPreview();
+    });
+  }
 
   // Public URL for the live site, served by the public /site/:uid route.
   // Prefer the friendly slug, but fall back to the user's UID — the public
@@ -211,9 +244,72 @@ export class AdminBuilderComponent implements OnInit {
   private maxHistory = 50;
 
   ngOnInit() {
+    // Register before the template (and thus the iframe) renders, so the
+    // iframe's 'ready' message can never race past us.
+    if (isPlatformBrowser(this.platformId)) {
+      window.addEventListener('message', this.boundOnMessage);
+    }
     this.localCust = JSON.parse(JSON.stringify(this.dataService.customization()));
     this.localCust.sections.sort((a, b) => a.order - b.order);
     this.pushHistory();
+  }
+
+  ngOnDestroy() {
+    if (isPlatformBrowser(this.platformId)) {
+      window.removeEventListener('message', this.boundOnMessage);
+    }
+  }
+
+  onFrameLoad() {
+    // Defensive: if the iframe document ever reloads, require a fresh 'ready'
+    // handshake before pushing state to the new document.
+    this.previewReady = false;
+    // The iframe's load event waits on subresources (fonts, images) and so can
+    // fire AFTER the child has already bootstrapped, posted 'ready', and
+    // received its first state — at which point the child's timed 'ready'
+    // retries are spent and nothing would ever set previewReady back to true,
+    // permanently freezing the preview. Ping the child so an
+    // already-bootstrapped document re-announces itself with a fresh 'ready'
+    // (restoring previewReady and re-pushing state). On a genuine fresh
+    // (re)load the ping is harmlessly lost — the new document's own ngOnInit
+    // 'ready' (plus retries) completes the handshake as before.
+    if (!isPlatformBrowser(this.platformId)) return;
+    const frame = this.previewFrameRef?.nativeElement?.contentWindow;
+    if (!frame) return;
+    const msg: PreviewPingMsg = { source: PREVIEW_MSG_SOURCE, type: 'ping' };
+    frame.postMessage(msg, window.location.origin);
+  }
+
+  private onPreviewMessage(event: MessageEvent) {
+    // Only accept same-origin messages carrying our source tag.
+    if (event.origin !== window.location.origin) return;
+    const data = event.data as PreviewToParentMsg | null | undefined;
+    if (!data || data.source !== PREVIEW_MSG_SOURCE) return;
+    if (data.type === 'ready') {
+      this.previewReady = true;
+      this.pushPreview();
+    } else if (data.type === 'textEdited' && data.payload) {
+      this.onTextEdited(data.payload);
+    }
+  }
+
+  private pushPreview() {
+    // localCust guard: the echo-back effect can fire before ngOnInit assigns it.
+    if (!this.previewReady || !this.localCust) return;
+    if (!isPlatformBrowser(this.platformId)) return;
+    const frame = this.previewFrameRef?.nativeElement?.contentWindow;
+    if (!frame) return;
+    const payload: PublicSiteData = {
+      profile: this.dataService.profile(),
+      services: this.dataService.services(),
+      testimonials: this.dataService.testimonials(),
+      faqs: this.dataService.faqs(),
+      customization: this.localCust,
+      paymentSettings: this.dataService.getPaymentSettings(),
+      hideBranding: this.dataService.hideBranding(),
+    };
+    const msg: PreviewStateMsg = { source: PREVIEW_MSG_SOURCE, type: 'state', payload };
+    frame.postMessage(msg, window.location.origin);
   }
 
   private pushHistory() {
@@ -233,12 +329,14 @@ export class AdminBuilderComponent implements OnInit {
     if (!this.canUndo()) return;
     this.historyIndex--;
     this.localCust = JSON.parse(this.history[this.historyIndex]);
+    this.pushPreview();
   }
 
   redo() {
     if (!this.canRedo()) return;
     this.historyIndex++;
     this.localCust = JSON.parse(this.history[this.historyIndex]);
+    this.pushPreview();
   }
 
   getSectionName(section: SectionConfig): string {
@@ -369,6 +467,7 @@ export class AdminBuilderComponent implements OnInit {
   onPreviewChange() {
     this.localCust = { ...this.localCust, sections: [...this.localCust.sections] };
     this.pushHistory();
+    this.pushPreview();
   }
 
   onTextEdited(event: {target: string, field: string, value: string, id?: string}) {

@@ -92,6 +92,33 @@ export const publicGuard: CanActivateFn = async () => {
   return true;
 };
 
+// Auth-only guard for the page builder's /preview-frame iframe. It must NOT
+// call dataService.init() (unlike authGuard): the iframe's own DataService
+// instance has to stay autosave-dormant — it only ever receives state via
+// loadPublicSite() from the parent builder page. Running init() here would arm
+// the Firestore autosave effect and persist transient preview state.
+export const previewFrameGuard: CanActivateFn = async () => {
+  const authService = inject(AuthService);
+  const router = inject(Router);
+
+  if (authService.isLoading()) {
+    await new Promise<void>(resolve => {
+      const check = setInterval(() => {
+        if (!authService.isLoading()) {
+          clearInterval(check);
+          resolve();
+        }
+      }, 50);
+    });
+  }
+
+  if (!authService.isLoggedIn()) {
+    return router.parseUrl('/login');
+  }
+
+  return true;
+};
+
 export const appAdminGuard: CanActivateFn = async () => {
   const authService = inject(AuthService);
   const http = inject(HttpClient);

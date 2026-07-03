@@ -918,11 +918,10 @@ export class PublicPageComponent {
       styles['background-image'] = `url(${brand.backgroundImageUrl})`;
       styles['background-size'] = 'cover';
       styles['background-position'] = 'center';
-      // 'fixed' anchors to the viewport; inside the builder's embedded (non-iframe)
-      // preview the page sits in nested scroll containers instead of the real
-      // viewport, so 'fixed' detaches/flickers there. Only use it on the real
-      // published render.
-      styles['background-attachment'] = this.editable() ? 'scroll' : 'fixed';
+      // The builder preview now renders inside a real <iframe> with its own
+      // viewport (see preview-frame.component.ts), so 'fixed' anchors correctly
+      // there too — no editable-mode workaround needed anymore.
+      styles['background-attachment'] = 'fixed';
     }
 
     return styles;
