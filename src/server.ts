@@ -17,14 +17,32 @@ import type Stripe from 'stripe';
 import type { Firestore } from 'firebase-admin/firestore';
 import { getAllDocs } from './server-firestore';
 
+// The Firebase Admin default app must be initialized before ANY firebase-admin/*
+// submodule is used (Firestore, Auth, ...). getDb() used to be the only place that
+// called initializeApp(), so on a cold Cloud Run instance whose first request hit
+// an auth-only endpoint (e.g. account deletion, admin verify) instead of a
+// Firestore-touching one, firebase-admin/auth's getAuth() would throw
+// FirebaseAppError: "The default Firebase app does not exist" and every such
+// request 401'd. Route all firebase-admin entry points through this shared,
+// memoized initializer so app init can never race with which endpoint runs first.
+let _firebaseAppReady: Promise<void> | null = null;
+async function ensureFirebaseApp(): Promise<void> {
+  if (!_firebaseAppReady) {
+    _firebaseAppReady = (async () => {
+      const admin = await import('firebase-admin/app');
+      if (admin.getApps().length === 0) {
+        admin.initializeApp({ credential: admin.applicationDefault() });
+      }
+    })();
+  }
+  return _firebaseAppReady;
+}
+
 let _db: Firestore | null = null;
 async function getDb() {
   if (_db) return _db;
-  const admin = await import('firebase-admin/app');
+  await ensureFirebaseApp();
   const firestore = await import('firebase-admin/firestore');
-  if (admin.getApps().length === 0) {
-    admin.initializeApp({ credential: admin.applicationDefault() });
-  }
   _db = firestore.getFirestore();
   return _db;
 }
@@ -35,6 +53,7 @@ async function verifyFirebaseUser(req: express.Request, uid: string): Promise<bo
   if (!token) return false;
 
   try {
+    await ensureFirebaseApp();
     const auth = await import('firebase-admin/auth');
     const decoded = await auth.getAuth().verifyIdToken(token);
     return decoded.uid === uid;
@@ -433,6 +452,7 @@ async function verifyAdmin(req: express.Request): Promise<string | null> {
   const [, token] = authHeader.match(/^Bearer (.+)$/) || [];
   if (!token) return null;
   try {
+    await ensureFirebaseApp();
     const auth = await import('firebase-admin/auth');
     const decoded = await auth.getAuth().verifyIdToken(token);
     const adminUids = (process.env['ADMIN_UIDS'] || '').split(',').map(s => s.trim()).filter(Boolean);
