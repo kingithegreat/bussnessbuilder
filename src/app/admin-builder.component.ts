@@ -15,7 +15,7 @@ import { ImagePickerComponent } from './image-picker.component';
   standalone: true,
   imports: [CommonModule, FormsModule, MatIconModule, PublicPageComponent, ImagePickerComponent],
   template: `
-    <div class="h-full flex flex-col md:flex-row bg-[#F5F5F7]">
+    <div class="h-full min-h-0 flex flex-col md:flex-row bg-[#F5F5F7]">
       <!-- Sidebar / Editor -->
       <div class="w-full md:w-80 lg:w-96 bg-white border-r border-gray-200 shadow-sm flex flex-col max-h-[40vh] md:max-h-none md:h-full overflow-y-auto shrink-0 z-10">
         <div class="p-6 border-b border-gray-100 sticky top-0 bg-white/80 backdrop-blur z-10 flex justify-between items-center">
@@ -135,7 +135,7 @@ import { ImagePickerComponent } from './image-picker.component';
       </div>
 
       <!-- Preview Area -->
-      <div class="flex-grow flex flex-col h-full bg-[#E5E5EA]">
+      <div class="flex-grow flex flex-col h-full min-h-0 min-w-0 bg-[#E5E5EA]">
         <div class="h-14 border-b border-gray-200 bg-white flex items-center justify-between px-4 shrink-0">
           <div class="flex items-center gap-1">
             <button (click)="undo()" [disabled]="!canUndo()" class="p-2 rounded-lg text-gray-500 hover:text-gray-900 disabled:opacity-30 transition-colors" title="Undo">
@@ -167,7 +167,7 @@ import { ImagePickerComponent } from './image-picker.component';
           }
         </div>
         
-        <div class="flex-grow overflow-auto p-4 md:p-8 flex items-start justify-center">
+        <div class="flex-grow min-h-0 overflow-auto p-4 md:p-8 flex items-start justify-center">
           <div class="bg-white shadow-2xl overflow-hidden transition-all duration-300 relative w-full h-full rounded-2xl border border-gray-300"
                [style.maxWidth]="previewMode === 'mobile' ? '375px' : previewMode === 'tablet' ? '768px' : '100%'"
                [style.height]="previewMode === 'mobile' ? '812px' : previewMode === 'tablet' ? '1024px' : '100%'">

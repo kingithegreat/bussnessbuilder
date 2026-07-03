@@ -918,7 +918,11 @@ export class PublicPageComponent {
       styles['background-image'] = `url(${brand.backgroundImageUrl})`;
       styles['background-size'] = 'cover';
       styles['background-position'] = 'center';
-      styles['background-attachment'] = 'fixed';
+      // 'fixed' anchors to the viewport; inside the builder's embedded (non-iframe)
+      // preview the page sits in nested scroll containers instead of the real
+      // viewport, so 'fixed' detaches/flickers there. Only use it on the real
+      // published render.
+      styles['background-attachment'] = this.editable() ? 'scroll' : 'fixed';
     }
 
     return styles;
