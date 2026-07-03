@@ -30,3 +30,28 @@ export function readPublicSiteContext(ctx: unknown): PublicSiteContext | null {
   if (typeof uid !== 'string' || !uid || !data || typeof data !== 'object') return null;
   return { uid, data: data as PublicSiteData };
 }
+
+export interface PublicPageContext {
+  uid: string;
+  page: { slug: string; title: string; content: string };
+}
+
+export const PUBLIC_PAGE_STATE_KEY = makeStateKey<PublicPageContext>('bf-public-page');
+
+/**
+ * Validate the untyped SSR request context for a content page. Returns null
+ * for anything that isn't a `{ publicPage: { uid, page } }` payload — the
+ * component then falls back to the loading shell exactly as before.
+ */
+export function readPublicPageContext(ctx: unknown): PublicPageContext | null {
+  if (!ctx || typeof ctx !== 'object') return null;
+  const entry = (ctx as Record<string, unknown>)['publicPage'];
+  if (!entry || typeof entry !== 'object') return null;
+  const { uid, page } = entry as Record<string, unknown>;
+  if (typeof uid !== 'string' || !uid) return null;
+  if (!page || typeof page !== 'object') return null;
+  const { slug, title, content } = page as Record<string, unknown>;
+  if (typeof slug !== 'string' || !slug) return null;
+  if (typeof title !== 'string' || typeof content !== 'string') return null;
+  return { uid, page: { slug, title, content } };
+}

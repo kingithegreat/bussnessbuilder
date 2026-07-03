@@ -38,3 +38,32 @@ export function buildPublicSiteData(
     hideBranding: subscription?.['tier'] === 'business',
   };
 }
+
+export interface PublicPagePayload {
+  slug: string;
+  title: string;
+  content: string;
+}
+
+/**
+ * Build the public content-page payload from the business main doc and the
+ * `pages` sub-doc. Returns null when setup isn't complete, there's no pages
+ * doc, or no page matches `slug` and is published — callers fall back to the
+ * plain client-rendered shell in that case.
+ */
+export function buildPublicPageData(
+  main: Record<string, unknown> | undefined,
+  pagesDoc: Record<string, unknown> | null,
+  slug: string,
+): PublicPagePayload | null {
+  if (!main || !main['isSetupComplete']) return null;
+  if (!pagesDoc) return null;
+  const pages = (pagesDoc['pages'] as Record<string, unknown>[] | undefined) || [];
+  const page = pages.find((p) => p && p['slug'] === slug && !!p['published']);
+  if (!page) return null;
+  return {
+    slug: typeof page['slug'] === 'string' ? (page['slug'] as string) : slug,
+    title: typeof page['title'] === 'string' ? (page['title'] as string) : '',
+    content: typeof page['content'] === 'string' ? (page['content'] as string) : '',
+  };
+}

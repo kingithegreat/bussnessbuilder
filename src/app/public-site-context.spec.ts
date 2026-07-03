@@ -1,4 +1,4 @@
-import { readPublicSiteContext } from './public-site-context';
+import { readPublicSiteContext, readPublicPageContext } from './public-site-context';
 
 describe('readPublicSiteContext', () => {
   const data = { profile: { name: 'Biz', type: 'Cleaning', email: 'a@b.c' } };
@@ -24,5 +24,32 @@ describe('readPublicSiteContext', () => {
   it('rejects a publicSite entry with missing or non-object data', () => {
     expect(readPublicSiteContext({ publicSite: { uid: 'user-1' } })).toBeNull();
     expect(readPublicSiteContext({ publicSite: { uid: 'user-1', data: 'x' } })).toBeNull();
+  });
+});
+
+describe('readPublicPageContext', () => {
+  const page = { slug: 'about', title: 'About', content: 'Body text' };
+
+  it('accepts a well-formed { publicPage: { uid, page } } context', () => {
+    expect(readPublicPageContext({ publicPage: { uid: 'user-1', page } })).toEqual({ uid: 'user-1', page });
+  });
+
+  it('rejects null, primitives and empty objects', () => {
+    expect(readPublicPageContext(null)).toBeNull();
+    expect(readPublicPageContext('nope')).toBeNull();
+    expect(readPublicPageContext({})).toBeNull();
+  });
+
+  it('rejects a missing or empty uid', () => {
+    expect(readPublicPageContext({ publicPage: { page } })).toBeNull();
+    expect(readPublicPageContext({ publicPage: { uid: '', page } })).toBeNull();
+    expect(readPublicPageContext({ publicPage: { uid: 7, page } })).toBeNull();
+  });
+
+  it('rejects a missing or malformed page', () => {
+    expect(readPublicPageContext({ publicPage: { uid: 'u' } })).toBeNull();
+    expect(readPublicPageContext({ publicPage: { uid: 'u', page: { title: 'A', content: 'B' } } })).toBeNull();
+    expect(readPublicPageContext({ publicPage: { uid: 'u', page: { slug: 's', content: 'B' } } })).toBeNull();
+    expect(readPublicPageContext({ publicPage: { uid: 'u', page: { slug: 's', title: 'A' } } })).toBeNull();
   });
 });

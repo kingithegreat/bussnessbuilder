@@ -219,19 +219,22 @@ GitHub Actions (`deploy.yml`) exists but needs WIF secrets configured. Manual `g
   unit-tested generators live in `src/server-seo.ts` (`buildRobotsTxt`,
   `buildSiteSitemap`, `originFromRequest`); Express routes in `server.ts` are thin
   wiring.
-- **Public site SSR (done)**: the `/site/:uid` home page now **server-renders with
-  real content**. `server.ts` loads the site once (shared pure assembly
-  `buildPublicSiteData` in `src/server-site.ts`, also used by `GET /api/site/:uid`)
-  and passes it to `angularApp.handle(req, { publicSite: { uid, data } })`;
-  `SiteViewComponent` reads it on the server via `REQUEST_CONTEXT`
+- **Public site SSR (done)**: both the `/site/:uid` home page and content pages
+  (`/site/:uid/pages/:slug`) now **server-render with real content**. `server.ts`
+  loads the site/page once (shared pure assemblies `buildPublicSiteData` and
+  `buildPublicPageData` in `src/server-site.ts`, also used by
+  `GET /api/site/:uid` and `GET /api/site/:uid/pages/:slug`) and passes it to
+  `angularApp.handle(req, { publicSite: { uid, data } })` or
+  `{ publicPage: { uid, page } }`; `SiteViewComponent` /
+  `PublicContentPageComponent` read it on the server via `REQUEST_CONTEXT`
   (contract + validation in `src/app/public-site-context.ts`, unit-tested) and
-  serializes it to `TransferState`, so the browser's first load reuses the
-  payload instead of re-fetching. Fail-safe: any load error / unpublished site /
-  content pages (`/site/:uid/pages/:slug`) fall through to the previous
-  client-rendered loading-shell behaviour. Note: client hydration is NOT enabled
-  (the browser still re-bootstraps); crawlers and view-source get the full body,
-  which was the goal. Follow-ups if ever needed: SSR for content pages,
-  `provideClientHydration()` to avoid the client re-render.
+  serialize it to `TransferState`, so the browser's first load reuses the
+  payload instead of re-fetching. Fail-safe: any load error / unpublished
+  site/page falls through to the previous client-rendered loading-shell
+  behaviour. Note: client hydration is NOT enabled (the browser still
+  re-bootstraps); crawlers and view-source get the full body, which was the
+  goal. Follow-up if ever needed: `provideClientHydration()` to avoid the
+  client re-render.
 - **Crawler/social meta (done)**: `/site/:uid` and `/site/:uid/pages/:slug` now
   serve link-preview bots (Googlebot, facebookexternalhit, Twitterbot, Slackbot,
   LinkedInBot, WhatsApp…) the app shell with the site's real `<title>` +

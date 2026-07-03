@@ -1,4 +1,4 @@
-import { buildPublicSiteData } from './server-site';
+import { buildPublicSiteData, buildPublicPageData } from './server-site';
 
 describe('buildPublicSiteData', () => {
   const main = {
@@ -45,5 +45,45 @@ describe('buildPublicSiteData', () => {
     expect(buildPublicSiteData(main, null, { tier: 'pro' })!.hideBranding).toBe(false);
     expect(buildPublicSiteData(main, null, null)!.hideBranding).toBe(false);
     expect(buildPublicSiteData(main, null, { tier: 'business' })!.hideBranding).toBe(true);
+  });
+});
+
+describe('buildPublicPageData', () => {
+  const main = { isSetupComplete: true };
+  const pagesDoc = {
+    pages: [
+      { slug: 'about', title: 'About Us', content: 'Our story', published: true },
+      { slug: 'draft', title: 'Draft', content: 'wip', published: false },
+    ],
+  };
+
+  it('returns the matching published page', () => {
+    expect(buildPublicPageData(main, pagesDoc, 'about')).toEqual({
+      slug: 'about',
+      title: 'About Us',
+      content: 'Our story',
+    });
+  });
+
+  it('returns null when setup is not complete', () => {
+    expect(buildPublicPageData({ isSetupComplete: false }, pagesDoc, 'about')).toBeNull();
+  });
+
+  it('returns null when there is no pages doc', () => {
+    expect(buildPublicPageData(main, null, 'about')).toBeNull();
+  });
+
+  it('returns null for an unknown or unpublished slug', () => {
+    expect(buildPublicPageData(main, pagesDoc, 'missing')).toBeNull();
+    expect(buildPublicPageData(main, pagesDoc, 'draft')).toBeNull();
+  });
+
+  it('defaults title and content to empty strings when malformed', () => {
+    const malformed = { pages: [{ slug: 'about', published: true }] };
+    expect(buildPublicPageData(main, malformed, 'about')).toEqual({
+      slug: 'about',
+      title: '',
+      content: '',
+    });
   });
 });

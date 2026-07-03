@@ -1,7 +1,8 @@
-import { Component, inject, signal, OnInit, PLATFORM_ID } from '@angular/core';
+import { Component, inject, signal, OnInit, PLATFORM_ID, REQUEST_CONTEXT, TransferState } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { isPlatformBrowser } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
+import { PUBLIC_PAGE_STATE_KEY, readPublicPageContext } from './public-site-context';
 
 @Component({
   selector: 'app-public-content-page',
@@ -38,6 +39,8 @@ export class PublicContentPageComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private http = inject(HttpClient);
   private platformId = inject(PLATFORM_ID);
+  private requestContext = inject(REQUEST_CONTEXT, { optional: true });
+  private transferState = inject(TransferState);
 
   uid = '';
   loading = signal(true);
@@ -50,16 +53,37 @@ export class PublicContentPageComponent implements OnInit {
       this.loading.set(false);
       return;
     }
-    if (isPlatformBrowser(this.platformId)) {
-      this.http.get<{ title: string; content: string; slug: string }>(`/api/site/${this.uid}/pages/${slug}`).subscribe({
-        next: (data) => {
-          this.page.set(data);
-          this.loading.set(false);
-        },
-        error: () => {
-          this.loading.set(false);
-        }
-      });
+    if (!isPlatformBrowser(this.platformId)) {
+      // Server: render the real page body when server.ts supplied it via
+      // request context, and stash it in TransferState so the browser's first
+      // load reuses it instead of re-fetching. Without matching context, keep
+      // the loading shell — the browser then fetches as before.
+      const ctx = readPublicPageContext(this.requestContext);
+      if (ctx && ctx.uid === this.uid && ctx.page.slug === slug) {
+        this.transferState.set(PUBLIC_PAGE_STATE_KEY, ctx);
+        this.page.set(ctx.page);
+        this.loading.set(false);
+      }
+      return;
     }
+
+    // Browser: reuse the server-serialized page once (skips the round-trip on
+    // the SSR'd first paint), otherwise fetch it as before.
+    const transferred = this.transferState.get(PUBLIC_PAGE_STATE_KEY, null);
+    if (transferred && transferred.uid === this.uid && transferred.page.slug === slug) {
+      this.transferState.remove(PUBLIC_PAGE_STATE_KEY);
+      this.page.set(transferred.page);
+      this.loading.set(false);
+      return;
+    }
+    this.http.get<{ title: string; content: string; slug: string }>(`/api/site/${this.uid}/pages/${slug}`).subscribe({
+      next: (data) => {
+        this.page.set(data);
+        this.loading.set(false);
+      },
+      error: () => {
+        this.loading.set(false);
+      }
+    });
   }
 }

@@ -11,7 +11,7 @@ import { randomUUID } from 'node:crypto';
 import { dispatchEnquiryWebhook } from './server-webhook';
 import { buildRobotsTxt, buildSiteSitemap, originFromRequest, SitemapPage } from './server-seo';
 import { isCrawler, resolveSiteMeta, injectMetaTags } from './server-meta';
-import { buildPublicSiteData } from './server-site';
+import { buildPublicSiteData, buildPublicPageData } from './server-site';
 import { initServerMonitoring, captureServerError } from './server-monitoring';
 import type Stripe from 'stripe';
 import type { Firestore } from 'firebase-admin/firestore';
@@ -1194,12 +1194,12 @@ app.use(
  * - Link-preview bots (no JS, no need for the body): get the app shell with
  *   the site's real <title> + Open Graph / Twitter tags injected into <head>.
  *   Pure logic lives in `server-meta.ts`.
- * - Browsers (and JS-running crawlers): the site home page is server-rendered
- *   with real content — the site data is loaded here once and handed to
- *   Angular SSR via request context (see `src/app/public-site-context.ts`),
- *   then reused by the browser via TransferState instead of re-fetching
- *   `/api/site/:uid`. Content pages (`/pages/:slug`) and any load failure
- *   fall through to the classic client-rendered shell.
+ * - Browsers (and JS-running crawlers): both the site home page and content
+ *   pages (`/pages/:slug`) are server-rendered with real content — the data
+ *   is loaded here once and handed to Angular SSR via request context (see
+ *   `src/app/public-site-context.ts`), then reused by the browser via
+ *   TransferState instead of re-fetching `/api/site/:uid`. Any load failure
+ *   falls through to the classic client-rendered shell.
  */
 let _shellHtml: string | null = null;
 function loadShellHtml(): string | null {
@@ -1224,8 +1224,34 @@ app.get(['/site/:uid', '/site/:uid/pages/:slug'], async (req, res, next) => {
     // TransferState so the browser skips the /api/site re-fetch). Content
     // pages and any failure fall through to the plain Angular SSR shell —
     // the previous behaviour, where the browser fetches the data itself.
-    if (req.params['slug']) {
-      next();
+    const slug = req.params['slug'] as string | undefined;
+    if (slug) {
+      try {
+        const db = await getDb();
+        const uid = await resolveUid(db, req.params['uid'] as string);
+        const [mainSnap, pagesSnap] = await Promise.all([
+          db.doc(`users/${uid}/businessData/main`).get(),
+          db.doc(`users/${uid}/businessData/pages`).get(),
+        ]);
+        const page = buildPublicPageData(
+          mainSnap.exists ? mainSnap.data()! : undefined,
+          pagesSnap.exists ? pagesSnap.data()! : null,
+          slug,
+        );
+        if (!page) {
+          next();
+          return;
+        }
+        const response = await angularApp.handle(req, { publicPage: { uid, page } });
+        if (response) {
+          await writeResponseToNodeResponse(response, res);
+        } else {
+          next();
+        }
+      } catch (e) {
+        console.error('Error server-rendering content page:', e); captureServerError(e);
+        next();
+      }
       return;
     }
     try {
