@@ -13,6 +13,13 @@ import { buildRobotsTxt, buildSiteSitemap, originFromRequest, SitemapPage } from
 import { isCrawler, resolveSiteMeta, injectMetaTags } from './server-meta';
 import { buildPublicSiteData, buildPublicPageData } from './server-site';
 import { initServerMonitoring, captureServerError } from './server-monitoring';
+import {
+  startSiteVerification,
+  confirmSiteVerification,
+  createDomainMapping,
+  getDomainMappingStatus,
+  DomainMappingState,
+} from './server-domain-mapping';
 import type Stripe from 'stripe';
 import type { Firestore } from 'firebase-admin/firestore';
 import { getAllDocs } from './server-firestore';
@@ -1194,6 +1201,165 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
   } catch (e) {
     console.error('Webhook error:', e); captureServerError(e);
     res.status(400).json({ error: 'Webhook failed' });
+  }
+});
+
+// --- Custom domain mapping automation (Business tier only) ---
+// Two-stage flow driven by src/server-domain-mapping.ts: Google Site
+// Verification must recognize this server's own identity as the domain's
+// owner before the Cloud Run Domain Mappings API will accept a mapping for
+// it — see that module's header comment for why. State is persisted to
+// domainMappings/{uid}, a server-write-only Firestore doc (see firestore.rules).
+
+async function requireBusinessTier(db: Firestore, uid: string): Promise<boolean> {
+  const snap = await db.doc(`subscriptions/${uid}`).get();
+  const tier = snap.exists ? snap.data()?.['tier'] : 'free';
+  return tier === 'business';
+}
+
+async function saveDomainMappingState(db: Firestore, uid: string, state: DomainMappingState): Promise<void> {
+  await db.doc(`domainMappings/${uid}`).set(state);
+}
+
+app.post('/api/domain/verification/start', express.json(), async (req, res) => {
+  try {
+    const { uid, domain } = req.body;
+    if (typeof uid !== 'string' || typeof domain !== 'string' || !domain) {
+      res.status(400).json({ error: 'Invalid request' });
+      return;
+    }
+    if (!await verifyFirebaseUser(req, uid)) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+    const db = await getDb();
+    if (!await requireBusinessTier(db, uid)) {
+      res.status(403).json({ error: 'Custom domain mapping requires the Business plan' });
+      return;
+    }
+
+    const result = await startSiteVerification(domain);
+    const state: DomainMappingState = 'errorCode' in result
+      ? { status: 'error', domain, errorCode: result.errorCode, errorMessage: result.errorMessage, updatedAt: new Date().toISOString() }
+      : { status: 'site-verification-pending', domain, ownershipTxtRecord: result.ownershipTxtRecord, updatedAt: new Date().toISOString() };
+
+    await saveDomainMappingState(db, uid, state);
+    res.json(state);
+  } catch (e) {
+    console.error('Domain verification start error:', e); captureServerError(e);
+    res.status(500).json({ error: 'Failed to start domain verification' });
+  }
+});
+
+app.post('/api/domain/verification/confirm', express.json(), async (req, res) => {
+  try {
+    const { uid, domain } = req.body;
+    if (typeof uid !== 'string' || typeof domain !== 'string' || !domain) {
+      res.status(400).json({ error: 'Invalid request' });
+      return;
+    }
+    if (!await verifyFirebaseUser(req, uid)) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+    const db = await getDb();
+    if (!await requireBusinessTier(db, uid)) {
+      res.status(403).json({ error: 'Custom domain mapping requires the Business plan' });
+      return;
+    }
+
+    const prior = await db.doc(`domainMappings/${uid}`).get();
+    const ownershipTxtRecord = prior.exists ? prior.data()?.['ownershipTxtRecord'] : undefined;
+
+    const result = await confirmSiteVerification(domain);
+    const state: DomainMappingState = result.verified
+      ? { status: 'site-verified', domain, ownershipTxtRecord, updatedAt: new Date().toISOString() }
+      : { status: 'site-verification-pending', domain, ownershipTxtRecord, errorMessage: result.errorMessage, updatedAt: new Date().toISOString() };
+
+    await saveDomainMappingState(db, uid, state);
+    res.json(state);
+  } catch (e) {
+    console.error('Domain verification confirm error:', e); captureServerError(e);
+    res.status(500).json({ error: 'Failed to confirm domain verification' });
+  }
+});
+
+app.post('/api/domain/mapping/create', express.json(), async (req, res) => {
+  try {
+    const { uid, domain } = req.body;
+    if (typeof uid !== 'string' || typeof domain !== 'string' || !domain) {
+      res.status(400).json({ error: 'Invalid request' });
+      return;
+    }
+    if (!await verifyFirebaseUser(req, uid)) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+    const db = await getDb();
+    if (!await requireBusinessTier(db, uid)) {
+      res.status(403).json({ error: 'Custom domain mapping requires the Business plan' });
+      return;
+    }
+
+    const prior = await db.doc(`domainMappings/${uid}`).get();
+    if (!prior.exists || prior.data()?.['status'] !== 'site-verified') {
+      res.status(400).json({ error: 'Confirm domain ownership before creating the mapping' });
+      return;
+    }
+
+    const result = await createDomainMapping(domain);
+    const state: DomainMappingState = 'errorCode' in result
+      ? { status: 'error', domain, errorCode: result.errorCode, errorMessage: result.errorMessage, updatedAt: new Date().toISOString() }
+      : { status: 'mapping-pending', domain, cloudRunDnsRecords: result.cloudRunDnsRecords, updatedAt: new Date().toISOString() };
+
+    await saveDomainMappingState(db, uid, state);
+    res.json(state);
+  } catch (e) {
+    console.error('Domain mapping create error:', e); captureServerError(e);
+    res.status(500).json({ error: 'Failed to create the domain mapping' });
+  }
+});
+
+app.post('/api/domain/mapping/refresh', express.json(), async (req, res) => {
+  try {
+    const { uid } = req.body;
+    if (typeof uid !== 'string') {
+      res.status(400).json({ error: 'Invalid request' });
+      return;
+    }
+    if (!await verifyFirebaseUser(req, uid)) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+    const db = await getDb();
+    if (!await requireBusinessTier(db, uid)) {
+      res.status(403).json({ error: 'Custom domain mapping requires the Business plan' });
+      return;
+    }
+
+    const prior = await db.doc(`domainMappings/${uid}`).get();
+    const domain = prior.exists ? prior.data()?.['domain'] : undefined;
+    if (!domain) {
+      res.status(400).json({ error: 'No domain mapping in progress' });
+      return;
+    }
+
+    const result = await getDomainMappingStatus(domain);
+    const state: DomainMappingState = 'errorCode' in result
+      ? { status: 'error', domain, errorCode: result.errorCode, errorMessage: result.errorMessage, updatedAt: new Date().toISOString() }
+      : {
+          status: result.ready ? 'active' : 'cert-provisioning',
+          domain,
+          cloudRunDnsRecords: result.cloudRunDnsRecords.length ? result.cloudRunDnsRecords : prior.data()?.['cloudRunDnsRecords'],
+          certMessage: result.certMessage,
+          updatedAt: new Date().toISOString(),
+        };
+
+    await saveDomainMappingState(db, uid, state);
+    res.json(state);
+  } catch (e) {
+    console.error('Domain mapping refresh error:', e); captureServerError(e);
+    res.status(500).json({ error: 'Failed to refresh mapping status' });
   }
 });
 

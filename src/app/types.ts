@@ -1,3 +1,5 @@
+import { DnsRecord } from './domain-verification';
+
 export type BusinessType = 'cleaner' | 'barber' | 'personal trainer' | 'tutor' | 'lawn mowing' | 'mechanic' | 'rental' | 'cafe' | 'consultant' | 'shop' | 'other';
 
 export interface BusinessProfile {
@@ -144,6 +146,27 @@ export interface SubscriptionData {
   stripeSubscriptionId?: string;
   currentPeriodEnd?: string;
   cancelAtPeriodEnd?: boolean;
+}
+
+/** Progress of automated Cloud Run domain mapping — server-authoritative, see src/server-domain-mapping.ts */
+export type DomainMappingStatus =
+  | 'none'
+  | 'site-verification-pending'
+  | 'site-verified'
+  | 'mapping-pending'
+  | 'cert-provisioning'
+  | 'active'
+  | 'error';
+
+export interface DomainMappingState {
+  status: DomainMappingStatus;
+  domain: string;
+  ownershipTxtRecord?: DnsRecord;
+  cloudRunDnsRecords?: DnsRecord[];
+  certMessage?: string;
+  errorCode?: string;
+  errorMessage?: string;
+  updatedAt: string;
 }
 
 export interface ContentPage {

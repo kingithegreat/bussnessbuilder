@@ -3,11 +3,12 @@ import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { MatIconModule } from '@angular/material/icon';
 import { RouterLink, Router } from '@angular/router';
+import { Firestore, doc, getDoc } from '@angular/fire/firestore';
 import { DataService } from './data.service';
 import { SubscriptionService } from './subscription.service';
 import { AuthService } from './auth.service';
 import { ToastService } from './toast.service';
-import { NotificationPreferences, BusinessProfile, BusinessType } from './types';
+import { NotificationPreferences, BusinessProfile, BusinessType, DomainMappingState } from './types';
 import { requiredRecords, validateDomain, verifyDomain, DnsRecord, VerificationResult } from './domain-verification';
 import { BUSINESS_PRESETS } from './presets';
 import { DatePipe } from '@angular/common';
@@ -271,6 +272,91 @@ import { DatePipe } from '@angular/common';
               Custom domains are available on the Business plan.
             </div>
           }
+
+          @if (subService.tier() === 'business' && domainResult?.state === 'verified') {
+            <div class="border-t border-gray-100 pt-4">
+              <p class="text-sm font-bold text-gray-700 mb-1">Step 2: Connect to Google</p>
+              <p class="text-xs text-gray-500 mb-3">We'll verify ownership with Google and create the Cloud Run mapping automatically.</p>
+
+              @if (mappingState) {
+                <div class="rounded-xl p-3 text-sm flex items-center gap-2 font-medium mb-3" [class]="mappingBadgeClass()">
+                  <mat-icon class="text-[18px]" [class.animate-spin]="mappingBusy()">{{ mappingStatusIcon() }}</mat-icon>
+                  <span>{{ mappingStatusLabel() }}</span>
+                </div>
+              }
+
+              @if (mappingState?.ownershipTxtRecord; as ownershipRecord) {
+                <div class="mb-3">
+                  <p class="text-xs font-bold text-gray-700 mb-1">Add this record to prove ownership to Google</p>
+                  <div class="overflow-hidden rounded-xl border border-gray-200">
+                    <table class="w-full text-xs">
+                      <tbody>
+                        <tr>
+                          <td class="px-3 py-2 font-bold text-gray-700">{{ ownershipRecord.type }}</td>
+                          <td class="px-3 py-2 font-mono text-gray-700">{{ ownershipRecord.host }}</td>
+                          <td class="px-3 py-2 font-mono text-gray-700 break-all">{{ ownershipRecord.value }}</td>
+                          <td class="px-3 py-2 text-right">
+                            <button (click)="copyValue(ownershipRecord.value)" class="text-blue-600 hover:text-blue-800 inline-flex items-center" title="Copy value">
+                              <mat-icon class="text-[16px]">content_copy</mat-icon>
+                            </button>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              }
+
+              @if (mappingState?.cloudRunDnsRecords; as cloudRunRecords) {
+                @if (cloudRunRecords.length) {
+                  <div class="mb-3">
+                    <p class="text-xs font-bold text-gray-700 mb-1">Cloud Run mapping records</p>
+                    <div class="overflow-hidden rounded-xl border border-gray-200">
+                      <table class="w-full text-xs">
+                        <tbody class="divide-y divide-gray-100">
+                          @for (rec of cloudRunRecords; track rec.type + rec.host + rec.value) {
+                            <tr>
+                              <td class="px-3 py-2 font-bold text-gray-700">{{ rec.type }}</td>
+                              <td class="px-3 py-2 font-mono text-gray-700">{{ rec.host }}</td>
+                              <td class="px-3 py-2 font-mono text-gray-700 break-all">{{ rec.value }}</td>
+                              <td class="px-3 py-2 text-right">
+                                <button (click)="copyValue(rec.value)" class="text-blue-600 hover:text-blue-800 inline-flex items-center" title="Copy value">
+                                  <mat-icon class="text-[16px]">content_copy</mat-icon>
+                                </button>
+                              </td>
+                            </tr>
+                          }
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                }
+              }
+
+              <div class="flex flex-wrap gap-2">
+                @if (!mappingState || mappingState.status === 'none' || mappingState.status === 'error') {
+                  <button (click)="startGoogleVerification()" [disabled]="startingVerification" class="bg-blue-600 text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-blue-700 transition-colors disabled:opacity-50">
+                    {{ startingVerification ? 'Starting…' : 'Start Google verification' }}
+                  </button>
+                }
+                @if (mappingState?.status === 'site-verification-pending') {
+                  <button (click)="confirmGoogleVerification()" [disabled]="confirmingVerification" class="bg-blue-600 text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-blue-700 transition-colors disabled:opacity-50">
+                    {{ confirmingVerification ? 'Confirming…' : "I've added the record — confirm" }}
+                  </button>
+                }
+                @if (mappingState?.status === 'site-verified') {
+                  <button (click)="createGoogleMapping()" [disabled]="creatingMapping" class="bg-blue-600 text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-blue-700 transition-colors disabled:opacity-50">
+                    {{ creatingMapping ? 'Mapping…' : 'Create mapping' }}
+                  </button>
+                }
+                @if (mappingState?.status === 'mapping-pending' || mappingState?.status === 'cert-provisioning') {
+                  <button (click)="refreshMappingStatus()" [disabled]="refreshingStatus" class="border border-gray-300 text-gray-700 px-4 py-2 rounded-xl text-xs font-bold hover:bg-gray-50 transition-colors disabled:opacity-50">
+                    {{ refreshingStatus ? 'Checking…' : 'Refresh status' }}
+                  </button>
+                }
+              </div>
+            </div>
+          }
         </div>
       </div>
 
@@ -331,6 +417,7 @@ export class AdminSettingsComponent implements OnInit {
   private toast = inject(ToastService);
   private http = inject(HttpClient);
   private router = inject(Router);
+  private firestore = inject(Firestore);
 
   newTemplateName = '';
   siteUrl = '';
@@ -355,6 +442,13 @@ export class AdminSettingsComponent implements OnInit {
   domainError = '';
   checkingDomain = false;
 
+  // Cloud Run domain mapping automation (step 2, after DNS is verified)
+  mappingState: DomainMappingState | null = null;
+  startingVerification = false;
+  confirmingVerification = false;
+  creatingMapping = false;
+  refreshingStatus = false;
+
   ngOnInit() {
     this.profileForm = { ...this.profileForm, ...this.dataService.profile() };
     const saved = this.dataService.getNotificationPrefs();
@@ -373,6 +467,17 @@ export class AdminSettingsComponent implements OnInit {
       if (slug) {
         this.friendlyUrl = `${window.location.origin}/site/${slug}`;
       }
+      this.loadMappingState(user.uid);
+    }
+  }
+
+  private async loadMappingState(uid: string) {
+    try {
+      const ref = doc(this.firestore, 'domainMappings', uid);
+      const snap = await getDoc(ref);
+      this.mappingState = snap.exists() ? (snap.data() as DomainMappingState) : null;
+    } catch (e) {
+      console.error('Failed to load domain mapping', e);
     }
   }
 
@@ -469,6 +574,154 @@ export class AdminSettingsComponent implements OnInit {
     );
     if (!check) return '';
     return check.ok ? 'bg-green-50/40' : '';
+  }
+
+  private async domainMappingHeaders(): Promise<HeadersInit | null> {
+    const token = await this.authService.getIdToken();
+    return token ? { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` } : null;
+  }
+
+  private mappingErrorMessage(code?: string): string {
+    switch (code) {
+      case 'SITE_VERIFICATION_API_DISABLED':
+      case 'RUN_API_DISABLED':
+        return "Custom domain mapping isn't fully set up on our end yet — check back soon or contact support.";
+      case 'DOMAIN_ALREADY_MAPPED':
+        return 'This domain is already connected somewhere else — remove it there first.';
+      case 'MAPPING_QUOTA_EXCEEDED':
+        return 'Too many domain mappings right now — please try again shortly.';
+      case 'NOT_YET_VERIFIED':
+        return "Google hasn't seen the verification record yet — DNS changes can take up to 48 hours.";
+      case 'PERMISSION_DENIED':
+        return "We don't have permission to do this yet — contact support.";
+      default:
+        return "Something went wrong — our team's been notified.";
+    }
+  }
+
+  async startGoogleVerification() {
+    const user = this.authService.currentUser();
+    const domain = validateDomain(this.prefs.customDomain || '').normalized;
+    if (!user || !domain || this.startingVerification) return;
+    this.startingVerification = true;
+    try {
+      const headers = await this.domainMappingHeaders();
+      if (!headers) { this.toast.error('Please sign in again.'); return; }
+      const resp = await fetch('/api/domain/verification/start', {
+        method: 'POST', headers, body: JSON.stringify({ uid: user.uid, domain }),
+      });
+      const data = await resp.json();
+      if (!resp.ok) { this.toast.error(data.error || this.mappingErrorMessage()); return; }
+      this.mappingState = data;
+      if (data.errorCode) this.toast.error(this.mappingErrorMessage(data.errorCode));
+    } catch {
+      this.toast.error('Could not reach the server. Please try again.');
+    } finally {
+      this.startingVerification = false;
+    }
+  }
+
+  async confirmGoogleVerification() {
+    const user = this.authService.currentUser();
+    const domain = this.mappingState?.domain;
+    if (!user || !domain || this.confirmingVerification) return;
+    this.confirmingVerification = true;
+    try {
+      const headers = await this.domainMappingHeaders();
+      if (!headers) { this.toast.error('Please sign in again.'); return; }
+      const resp = await fetch('/api/domain/verification/confirm', {
+        method: 'POST', headers, body: JSON.stringify({ uid: user.uid, domain }),
+      });
+      const data = await resp.json();
+      if (!resp.ok) { this.toast.error(data.error || this.mappingErrorMessage()); return; }
+      this.mappingState = data;
+      if (data.status === 'site-verified') this.toast.success('Ownership verified with Google!');
+      else if (data.errorCode) this.toast.error(this.mappingErrorMessage(data.errorCode));
+      else this.toast.info(data.errorMessage || "Not visible to Google yet — try again shortly.");
+    } catch {
+      this.toast.error('Could not reach the server. Please try again.');
+    } finally {
+      this.confirmingVerification = false;
+    }
+  }
+
+  async createGoogleMapping() {
+    const user = this.authService.currentUser();
+    const domain = this.mappingState?.domain;
+    if (!user || !domain || this.creatingMapping) return;
+    this.creatingMapping = true;
+    try {
+      const headers = await this.domainMappingHeaders();
+      if (!headers) { this.toast.error('Please sign in again.'); return; }
+      const resp = await fetch('/api/domain/mapping/create', {
+        method: 'POST', headers, body: JSON.stringify({ uid: user.uid, domain }),
+      });
+      const data = await resp.json();
+      if (!resp.ok) { this.toast.error(data.error || this.mappingErrorMessage()); return; }
+      this.mappingState = data;
+      if (data.status === 'mapping-pending') this.toast.success('Mapping created! Add the records below to finish.');
+      else if (data.errorCode) this.toast.error(this.mappingErrorMessage(data.errorCode));
+    } catch {
+      this.toast.error('Could not reach the server. Please try again.');
+    } finally {
+      this.creatingMapping = false;
+    }
+  }
+
+  async refreshMappingStatus() {
+    const user = this.authService.currentUser();
+    if (!user || this.refreshingStatus) return;
+    this.refreshingStatus = true;
+    try {
+      const headers = await this.domainMappingHeaders();
+      if (!headers) { this.toast.error('Please sign in again.'); return; }
+      const resp = await fetch('/api/domain/mapping/refresh', {
+        method: 'POST', headers, body: JSON.stringify({ uid: user.uid }),
+      });
+      const data = await resp.json();
+      if (!resp.ok) { this.toast.error(data.error || this.mappingErrorMessage()); return; }
+      this.mappingState = data;
+      if (data.status === 'active') this.toast.success('Your custom domain is live!');
+      else if (data.errorCode) this.toast.error(this.mappingErrorMessage(data.errorCode));
+    } catch {
+      this.toast.error('Could not reach the server. Please try again.');
+    } finally {
+      this.refreshingStatus = false;
+    }
+  }
+
+  mappingBusy(): boolean {
+    return this.startingVerification || this.confirmingVerification || this.creatingMapping || this.refreshingStatus;
+  }
+
+  mappingBadgeClass(): string {
+    switch (this.mappingState?.status) {
+      case 'active': return 'bg-green-50 border border-green-100 text-green-800';
+      case 'error': return 'bg-red-50 border border-red-100 text-red-800';
+      default: return 'bg-blue-50 border border-blue-100 text-blue-800';
+    }
+  }
+
+  mappingStatusIcon(): string {
+    switch (this.mappingState?.status) {
+      case 'active': return 'check_circle';
+      case 'error': return 'error';
+      default: return this.mappingBusy() ? 'progress_activity' : 'hourglass_top';
+    }
+  }
+
+  mappingStatusLabel(): string {
+    const s = this.mappingState;
+    if (!s) return '';
+    switch (s.status) {
+      case 'site-verification-pending': return 'Add the TXT record below, then confirm with Google.';
+      case 'site-verified': return 'Ownership verified with Google — ready to create the mapping.';
+      case 'mapping-pending': return 'Mapping created — add the records below, then refresh status.';
+      case 'cert-provisioning': return s.certMessage || 'Provisioning SSL certificate — this can take a while.';
+      case 'active': return 'Your custom domain is live and serving traffic.';
+      case 'error': return s.errorMessage ? this.mappingErrorMessage(s.errorCode) : 'Something went wrong.';
+      default: return '';
+    }
   }
 
   saveSettings() {

@@ -192,10 +192,25 @@ GitHub Actions (`deploy.yml`) exists but needs WIF secrets configured. Manual `g
 
 ## Known issues / TODO
 
-- Custom domains — a live **connect flow** shipped (`src/app/domain-verification.ts`
-  + settings UI): validated domain input, copyable A/CNAME/TXT records, and a live
-  DNS-over-HTTPS status badge. Still missing: automated Cloud Run domain *mapping*
-  (owner must add the mapping in GCP manually).
+- Custom domains — the connect flow (`src/app/domain-verification.ts` + settings
+  UI: validated domain input, copyable A/CNAME/TXT records, live DNS-over-HTTPS
+  status badge) **and** automated Cloud Run domain **mapping** are now both
+  shipped. Mapping automation lives in `src/server-domain-mapping.ts` (pure
+  builders/parsers, unit-tested) + four `/api/domain/...` endpoints in
+  `src/server.ts`, gated to the Business tier; UI is a "Step 2: Connect to
+  Google" section in Settings that appears once DNS is verified. It drives
+  Google Site Verification (the server's own runtime service account must
+  become a verified domain owner before Cloud Run's Domain Mappings API will
+  accept a mapping — see `src/server-domain-mapping.ts`'s header comment) and
+  then the mapping create/status calls, persisting progress to a new
+  server-write-only `domainMappings/{uid}` Firestore doc. **Still needed before
+  this is live:** the one-time GCP setup in
+  [`docs/domain-mapping-setup-runbook.md`](docs/domain-mapping-setup-runbook.md)
+  (enable the Site Verification API, grant the runtime service account
+  `roles/run.developer`) — that's Aden's to do (credentials/IAM). The exact
+  Domain Mappings API wire format has **not** been exercised against the live
+  project (no production GCP access while writing it); Part C of the runbook
+  walks through the first live test.
 - GitHub Actions WIF secrets not configured for auto-deploy — step-by-step setup in [`docs/wif-setup-runbook.md`](docs/wif-setup-runbook.md) (one-time: ~15 min of gcloud + 2 GitHub secrets)
 - Stripe is in test mode — switch keys when ready for real payments
 - Admin `/users` + `/metrics` per-user Firestore reads are now **batched** via `getAllDocs` (chunked parallel `getAll`, `src/server-firestore.ts`) instead of sequential `.get()` in a loop; `/metrics` still has its 30s cache. Output shape unchanged.
