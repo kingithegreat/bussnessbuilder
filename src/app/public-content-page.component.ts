@@ -2,6 +2,8 @@ import { Component, inject, signal, OnInit, PLATFORM_ID, REQUEST_CONTEXT, Transf
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { isPlatformBrowser } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
+import { switchMap, catchError } from 'rxjs/operators';
+import { of } from 'rxjs';
 import { PUBLIC_PAGE_STATE_KEY, readPublicPageContext } from './public-site-context';
 
 @Component({
@@ -47,19 +49,15 @@ export class PublicContentPageComponent implements OnInit {
   page = signal<{ title: string; content: string; slug: string } | null>(null);
 
   ngOnInit() {
-    this.uid = this.route.snapshot.paramMap.get('uid') || '';
-    const slug = this.route.snapshot.paramMap.get('slug');
-    if (!this.uid || !slug) {
-      this.loading.set(false);
-      return;
-    }
     if (!isPlatformBrowser(this.platformId)) {
       // Server: render the real page body when server.ts supplied it via
       // request context, and stash it in TransferState so the browser's first
       // load reuses it instead of re-fetching. Without matching context, keep
       // the loading shell — the browser then fetches as before.
+      this.uid = this.route.snapshot.paramMap.get('uid') || '';
+      const slug = this.route.snapshot.paramMap.get('slug');
       const ctx = readPublicPageContext(this.requestContext);
-      if (ctx && ctx.uid === this.uid && ctx.page.slug === slug) {
+      if (ctx && slug && ctx.uid === this.uid && ctx.page.slug === slug) {
         this.transferState.set(PUBLIC_PAGE_STATE_KEY, ctx);
         this.page.set(ctx.page);
         this.loading.set(false);
@@ -67,23 +65,38 @@ export class PublicContentPageComponent implements OnInit {
       return;
     }
 
-    // Browser: reuse the server-serialized page once (skips the round-trip on
-    // the SSR'd first paint), otherwise fetch it as before.
-    const transferred = this.transferState.get(PUBLIC_PAGE_STATE_KEY, null);
-    if (transferred && transferred.uid === this.uid && transferred.page.slug === slug) {
-      this.transferState.remove(PUBLIC_PAGE_STATE_KEY);
-      this.page.set(transferred.page);
-      this.loading.set(false);
-      return;
-    }
-    this.http.get<{ title: string; content: string; slug: string }>(`/api/site/${this.uid}/pages/${slug}`).subscribe({
-      next: (data) => {
-        this.page.set(data);
+    // Browser: react to the route param (not just a one-time snapshot) so
+    // navigating between /site/:uid/pages/:slug routes re-loads the correct
+    // page instead of getting stuck on a stale view — same fix already
+    // shipped for SiteViewComponent (see its ngOnInit for the sibling case).
+    this.route.paramMap
+      .pipe(
+        switchMap((params) => {
+          const uid = params.get('uid') || '';
+          const slug = params.get('slug');
+          this.uid = uid;
+          this.loading.set(true);
+          this.page.set(null);
+          if (!uid || !slug) {
+            this.loading.set(false);
+            return of(null);
+          }
+          // First load: the server may have already rendered this page and
+          // serialized its payload into ng-state — reuse it (once) instead of
+          // re-fetching. Later paramMap emissions (navigations) fetch fresh.
+          const transferred = this.transferState.get(PUBLIC_PAGE_STATE_KEY, null);
+          if (transferred && transferred.uid === uid && transferred.page.slug === slug) {
+            this.transferState.remove(PUBLIC_PAGE_STATE_KEY);
+            return of(transferred.page);
+          }
+          return this.http.get<{ title: string; content: string; slug: string }>(`/api/site/${uid}/pages/${slug}`).pipe(
+            catchError(() => of(null))
+          );
+        })
+      )
+      .subscribe((page) => {
+        this.page.set(page);
         this.loading.set(false);
-      },
-      error: () => {
-        this.loading.set(false);
-      }
-    });
+      });
   }
 }
