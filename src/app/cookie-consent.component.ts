@@ -1,5 +1,4 @@
-import { Component, signal, inject, PLATFORM_ID } from '@angular/core';
-import { isPlatformBrowser } from '@angular/common';
+import { Component, signal, afterNextRender } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 @Component({
@@ -28,16 +27,18 @@ import { RouterLink } from '@angular/router';
   `
 })
 export class CookieConsentComponent {
-  private platformId = inject(PLATFORM_ID);
   visible = signal(false);
 
   constructor() {
-    if (isPlatformBrowser(this.platformId)) {
+    // Reveal only after the first client render. afterNextRender never runs on
+    // the server AND runs after hydration completes, so the banner can't cause
+    // a hydration mismatch (the SSR pass renders no banner).
+    afterNextRender(() => {
       const consent = localStorage.getItem('cookie-consent');
       if (!consent) {
         this.visible.set(true);
       }
-    }
+    });
   }
 
   accept() {
