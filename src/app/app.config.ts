@@ -6,6 +6,7 @@ import { provideRouter, withInMemoryScrolling } from '@angular/router';
 import {
   provideClientHydration,
   withEventReplay,
+  withHttpTransferCacheOptions,
 } from '@angular/platform-browser';
 import { provideHttpClient, withFetch } from '@angular/common/http';
 import { provideFirebaseApp, initializeApp } from '@angular/fire/app';
@@ -24,7 +25,11 @@ export const appConfig: ApplicationConfig = {
     // Hydrate the server-rendered DOM instead of destroying and re-rendering it
     // (SSR pattern landed with home + content-page SSR; see app.routes.server.ts).
     // Event replay captures user interactions that happen before hydration completes.
-    provideClientHydration(withEventReplay()),
+    // Transfer-cache reuses HTTP GETs made during SSR on the client instead of
+    // re-firing them right after hydration — without this, every public content
+    // page fetches /api/site/:uid/pages/:slug twice (once on the server, once
+    // again on the client) for identical data.
+    provideClientHydration(withEventReplay(), withHttpTransferCacheOptions({})),
     provideFirebaseApp(() => initializeApp(environment.firebase)),
     provideAuth(() => getAuth()),
     provideFirestore(() => getFirestore()),
