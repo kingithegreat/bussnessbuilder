@@ -111,4 +111,3 @@ Workload Identity Federation. Set these GitHub repo variables/secrets:
 
 - Variables: `GCP_PROJECT_ID`, `GCP_REGION`, `CLOUD_RUN_SERVICE`
 - Secrets: `WIF_PROVIDER`, `WIF_SERVICE_ACCOUNT`
-<!-- diagnostic 2: confirming the PAT fix actually lands a push now (safe to ignore) -->
