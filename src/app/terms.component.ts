@@ -16,7 +16,7 @@ import { RouterLink } from '@angular/router';
       <main class="max-w-4xl mx-auto px-4 sm:px-6 pb-20">
         <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 md:p-12">
           <h1 class="text-3xl md:text-4xl font-bold tracking-tight mb-2">Terms of Service</h1>
-          <p class="text-gray-500 text-sm mb-10">Last updated: 25 June 2026</p>
+          <p class="text-gray-500 text-sm mb-10">Last updated: 7 July 2026</p>
 
           <div class="prose prose-gray max-w-none space-y-8 text-sm leading-relaxed text-gray-700">
             <section>
@@ -112,10 +112,15 @@ import { RouterLink } from '@angular/router';
                 <li>Payments are processed securely through Stripe</li>
                 <li>Subscriptions renew automatically unless cancelled before the renewal date</li>
                 <li>You may cancel your subscription at any time through your account settings</li>
-                <li>Refunds are handled on a case-by-case basis at our discretion</li>
+                <li>Refund requests are handled under the Refund Policy set out below</li>
                 <li>We reserve the right to change pricing with 30 days' notice</li>
               </ul>
               <p class="mt-2">Free tier users have access to core site-building features with certain usage limits (e.g., number of services, enquiry volume). All site customisation features — including the page builder, templates, gradients, background images, fonts, and layouts — are available on all tiers.</p>
+              <h3 class="font-semibold text-gray-900 mt-4 mb-2">8.1 Refund Policy</h3>
+              <p><strong>First subscription, 14-day window.</strong> If you are dissatisfied with your first paid subscription, you may request a full refund within fourteen (14) days of the initial charge by contacting us at the email address in Section 16. This applies only to a customer's first paid subscription, not to renewals.</p>
+              <p class="mt-2"><strong>Renewals and partial periods.</strong> Except as stated above or as required by applicable law, fees are non-refundable — we do not provide refunds or credits for partial billing periods, unused time, downgrades, or renewal charges. Cancelling stops future charges but does not refund the current period already paid for.</p>
+              <p class="mt-2"><strong>Your statutory rights.</strong> Nothing in this policy limits any non-waivable refund, cancellation, or remedy rights you have under the Consumer Guarantees Act 1993, the Fair Trading Act 1986, or other New Zealand consumer protection law.</p>
+              <p class="mt-2">We may decline refund requests we reasonably determine to be fraudulent, abusive, or in violation of these Terms.</p>
             </section>
 
             <section>
@@ -164,7 +169,7 @@ import { RouterLink } from '@angular/router';
 
             <section>
               <h2 class="text-lg font-bold text-gray-900 mb-3">15. Governing Law</h2>
-              <p>These Terms shall be governed by and construed in accordance with applicable law, without regard to conflict of law principles. Any disputes arising from these Terms or your use of the Service shall be resolved through good-faith negotiation first, and if necessary, through binding arbitration or the courts of competent jurisdiction.</p>
+              <p>These Terms shall be governed by and construed in accordance with the laws of New Zealand, without regard to conflict of law principles. Any disputes arising from these Terms or your use of the Service shall be resolved through good-faith negotiation first, and if necessary, through the courts of New Zealand, which shall have exclusive jurisdiction. Nothing in this clause limits any non-waivable rights you have as a consumer under the law of your own country of residence.</p>
             </section>
 
             <section>
