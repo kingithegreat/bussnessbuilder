@@ -10,6 +10,7 @@ import { AuthService } from './auth.service';
 import { ToastService } from './toast.service';
 import { NotificationPreferences, BusinessProfile, BusinessType, DomainMappingState } from './types';
 import { requiredRecords, validateDomain, verifyDomain, DnsRecord, VerificationResult } from './domain-verification';
+import { resolvePublicSiteUrl, qrFilenameFor } from './qr-code';
 import { BUSINESS_PRESETS } from './presets';
 import { DatePipe } from '@angular/common';
 
@@ -93,6 +94,9 @@ import { DatePipe } from '@angular/common';
             <button (click)="copySiteUrl()" class="bg-blue-600 text-white px-4 py-2.5 rounded-xl text-sm font-bold hover:bg-blue-700 transition-colors flex items-center gap-1.5 shrink-0">
               <mat-icon class="text-[18px]">content_copy</mat-icon> Copy
             </button>
+            <button (click)="toggleQrCode()" class="border border-gray-300 text-gray-700 px-4 py-2.5 rounded-xl text-sm font-bold hover:bg-gray-50 transition-colors flex items-center gap-1.5 shrink-0">
+              <mat-icon class="text-[18px]">qr_code</mat-icon> QR Code
+            </button>
           </div>
           @if (friendlyUrl) {
             <p class="text-xs text-green-600 font-medium mt-2 flex items-center gap-1">
@@ -102,6 +106,24 @@ import { DatePipe } from '@angular/common';
           <a [href]="friendlyUrl || siteUrl" target="_blank" class="text-blue-600 text-xs font-bold hover:underline mt-2 inline-flex items-center gap-1">
             <mat-icon class="text-[14px]">open_in_new</mat-icon> Open in new tab
           </a>
+
+          @if (showQrPanel) {
+            <div class="mt-4 pt-4 border-t border-gray-100 flex flex-col items-center gap-3">
+              @if (generatingQr) {
+                <p class="text-xs text-gray-400">Generating…</p>
+              } @else if (qrError) {
+                <p class="text-xs text-red-600 font-medium flex items-center gap-1">
+                  <mat-icon class="text-[14px]">error</mat-icon> {{ qrError }}
+                </p>
+              } @else if (qrDataUrl) {
+                <img [src]="qrDataUrl" alt="QR code linking to your public site" class="w-40 h-40 rounded-lg border border-gray-200" />
+                <button (click)="downloadQrCode()" class="bg-blue-600 text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-blue-700 transition-colors flex items-center gap-1.5">
+                  <mat-icon class="text-[16px]">download</mat-icon> Download PNG
+                </button>
+                <p class="text-xs text-gray-500 text-center max-w-xs">Print this on business cards, flyers, or in-store signage — customers scan it to open your site instantly.</p>
+              }
+            </div>
+          }
         </div>
       </div>
 
@@ -423,6 +445,12 @@ export class AdminSettingsComponent implements OnInit {
   siteUrl = '';
   friendlyUrl = '';
 
+  // QR code for the public site link
+  showQrPanel = false;
+  qrDataUrl: string | null = null;
+  qrError = '';
+  generatingQr = false;
+
   presets = BUSINESS_PRESETS;
   profileForm: BusinessProfile = {
     name: '', type: '', tagline: '', description: '', email: '', phone: '',
@@ -489,6 +517,36 @@ export class AdminSettingsComponent implements OnInit {
     } catch {
       this.toast.info(url);
     }
+  }
+
+  /** Toggle the QR panel; generate the code lazily the first time it opens. */
+  async toggleQrCode() {
+    this.showQrPanel = !this.showQrPanel;
+    if (!this.showQrPanel || this.qrDataUrl || this.generatingQr) return;
+
+    this.generatingQr = true;
+    this.qrError = '';
+    try {
+      // Lazy-loaded: keeps the QR library out of the initial bundle for the
+      // vast majority of visits that never open this panel.
+      const QRCode = await import('qrcode');
+      const url = resolvePublicSiteUrl({ mappingState: this.mappingState, friendlyUrl: this.friendlyUrl, siteUrl: this.siteUrl });
+      this.qrDataUrl = await QRCode.toDataURL(url, { width: 512, margin: 2 });
+    } catch (e) {
+      console.error('Failed to generate QR code', e);
+      this.qrError = "Couldn't generate a QR code right now — try again in a moment.";
+    } finally {
+      this.generatingQr = false;
+    }
+  }
+
+  downloadQrCode() {
+    if (!this.qrDataUrl) return;
+    const url = resolvePublicSiteUrl({ mappingState: this.mappingState, friendlyUrl: this.friendlyUrl, siteUrl: this.siteUrl });
+    const link = document.createElement('a');
+    link.href = this.qrDataUrl;
+    link.download = qrFilenameFor(url);
+    link.click();
   }
 
   saveProfile() {
