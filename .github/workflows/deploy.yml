@@ -107,6 +107,12 @@ jobs:
           source: .
           env_vars: |-
             NG_ALLOWED_HOSTS=*
+          # Explicit (it's also the action default): merge with — never overwrite —
+          # env vars set directly on the service. The live Stripe keys / price IDs
+          # are configured on Cloud Run outside this workflow (see
+          # docs/GO_LIVE_STRIPE.md) and MUST survive every CI deploy.
+          env_vars_update_strategy: merge
+          secrets_update_strategy: merge
 
       - name: Show service URL
         run: echo "Deployed to ${{ steps.deploy.outputs.url }}"

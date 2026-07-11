@@ -36,8 +36,8 @@
 - [x] Price IDs read from env vars at request time (not module load)
 - [x] Handles checkout.session.completed, subscription.updated, subscription.deleted
 - [x] Customer portal integration for self-service billing
-- [ ] Switch from test keys to live keys when ready for real payments
-- [ ] Configure Stripe webhook endpoint for production domain
+- [ ] Switch from test keys to live keys when ready for real payments — **exact runbook: `docs/GO_LIVE_STRIPE.md`**
+- [ ] Configure Stripe webhook endpoint for production domain (covered in `docs/GO_LIVE_STRIPE.md` step 2)
 - [ ] Enable Stripe Radar for fraud detection
 
 ## Rate Limiting
@@ -73,7 +73,7 @@
 - [x] GitHub Actions workflow with lint + build checks before deploy
 - [x] Workload Identity Federation (keyless auth, no JSON key files)
 - [x] Workflow gates behind GCP_PROJECT_ID variable
-- [ ] Configure WIF_PROVIDER and WIF_SERVICE_ACCOUNT secrets in GitHub
+- [x] Configure WIF_PROVIDER and WIF_SERVICE_ACCOUNT secrets in GitHub (done 2026-07-10 — auto-deploy verified live)
 - [ ] Add test step once test suite is expanded
 
 ## Legal & Compliance
@@ -103,9 +103,12 @@
 
 ## Pre-Launch Manual Steps
 
-1. Switch Stripe to live mode (update STRIPE_SECRET_KEY, price IDs, webhook secret)
-2. Configure WIF secrets in GitHub for automated deploys
+1. Switch Stripe to live mode — follow `docs/GO_LIVE_STRIPE.md` end to end (~45–60 min)
 3. Set up custom domain if desired
 4. Set up uptime monitoring
 5. Review legal pages with a lawyer
 6. Test full signup → subscription → site publish flow end-to-end
+
+## Audit log
+
+- **2026-07-11** — full pre-release audit: lint clean, 213/213 tests, production build compiles (font-inlining failure in sandbox is a network restriction, CI green), `npm audit` 6 moderate (all the known firebase-admin@10 major-bump cluster, tracked), Firestore/Storage rules reviewed (owner-only data, server-only payment collections, default deny — no blockers), no secrets in repo, deploy workflow env-var merge strategy made explicit so manually-set live Stripe vars survive CI deploys.
