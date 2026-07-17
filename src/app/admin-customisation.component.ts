@@ -253,18 +253,23 @@ import { ImagePickerComponent } from './image-picker.component';
             </div>
             
             <div class="divide-y divide-gray-100">
-              @for (section of localCust.sections; track section.id) {
+              @for (section of localCust.sections; track section.id; let i = $index) {
                 <div class="p-4 sm:p-6 flex flex-col sm:flex-row gap-4 items-start sm:items-center hover:bg-gray-50 transition-colors">
-                  <div class="flex items-center gap-4 w-full sm:w-1/3 shrink-0">
-                    <button class="text-gray-400 cursor-grab active:cursor-grabbing hover:text-gray-600">
-                      <mat-icon>drag_indicator</mat-icon>
-                    </button>
+                  <div class="flex items-center gap-3 w-full sm:w-1/3 shrink-0">
+                    <div class="flex flex-col">
+                      <button (click)="moveSectionUp(i)" [disabled]="i === 0" class="text-gray-400 hover:text-gray-700 disabled:opacity-30" title="Move up">
+                        <mat-icon class="text-[18px]">keyboard_arrow_up</mat-icon>
+                      </button>
+                      <button (click)="moveSectionDown(i)" [disabled]="i === localCust.sections.length - 1" class="text-gray-400 hover:text-gray-700 disabled:opacity-30" title="Move down">
+                        <mat-icon class="text-[18px]">keyboard_arrow_down</mat-icon>
+                      </button>
+                    </div>
                     <label class="relative inline-flex items-center cursor-pointer shrink-0">
                       <input type="checkbox" [(ngModel)]="section.visible" class="sr-only peer">
                       <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
                     </label>
                     <div>
-                      <h4 class="font-bold text-gray-900 capitalize">{{ section.id }}</h4>
+                      <h4 class="font-bold text-gray-900">{{ getSectionName(section) }}</h4>
                       <p class="text-[10px] text-gray-500 uppercase font-bold tracking-wider">{{ section.visible ? 'Visible' : 'Hidden' }}</p>
                     </div>
                   </div>
@@ -496,6 +501,33 @@ export class AdminCustomisationComponent implements OnInit {
   ngOnInit() {
     // Create a deep copy of the customization settings
     this.localCust = JSON.parse(JSON.stringify(this.dataService.customization()));
+    this.localCust.sections.sort((a, b) => a.order - b.order);
+  }
+
+  getSectionName(section: { id: string; type?: string; heading?: string }): string {
+    if (section.type) return section.heading || section.type;
+    const names: Record<string, string> = {
+      hero: 'Hero / Header', about: 'About Us', services: 'Services',
+      products: 'Products', pricing: 'Pricing', testimonials: 'Testimonials',
+      gallery: 'Gallery', faq: 'FAQ', contact: 'Contact Form',
+      location: 'Location Map', hours: 'Business Hours', badges: 'Trust Badges',
+      cta: 'Call to Action'
+    };
+    return names[section.id] || section.id;
+  }
+
+  moveSectionUp(index: number) {
+    if (index === 0) return;
+    const s = this.localCust.sections;
+    [s[index - 1], s[index]] = [s[index], s[index - 1]];
+    s.forEach((sec, i) => sec.order = i + 1);
+  }
+
+  moveSectionDown(index: number) {
+    if (index === this.localCust.sections.length - 1) return;
+    const s = this.localCust.sections;
+    [s[index], s[index + 1]] = [s[index + 1], s[index]];
+    s.forEach((sec, i) => sec.order = i + 1);
   }
 
   updateStatuses(val: string) {

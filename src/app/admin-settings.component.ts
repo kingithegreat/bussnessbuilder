@@ -74,6 +74,18 @@ import { DatePipe } from '@angular/common';
             <span class="block text-sm font-bold text-gray-700 mb-1">Business Description</span>
             <textarea [(ngModel)]="profileForm.description" rows="3" placeholder="A short description of your business" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm"></textarea>
           </div>
+          <div class="sm:col-span-2">
+            <span class="block text-sm font-bold text-gray-700 mb-1">Trust Badges</span>
+            <input type="text" [ngModel]="profileForm.trustBadges.join(', ')" (ngModelChange)="updateTrustBadges($event)" placeholder="e.g. Fully Insured, 5-Star Rated, Locally Owned" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+            <p class="text-xs text-gray-400 mt-1">Comma separated. Shown in your hero, about, and trust badges sections.</p>
+            @if (profileForm.trustBadges.length) {
+              <div class="flex flex-wrap gap-2 mt-2">
+                @for (badge of profileForm.trustBadges; track badge) {
+                  <span class="px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-xs font-bold">{{ badge }}</span>
+                }
+              </div>
+            }
+          </div>
           <div class="sm:col-span-2 flex justify-end">
             <button (click)="saveProfile()" class="bg-blue-600 text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow-sm hover:bg-blue-700 transition-colors flex items-center gap-2">
               <mat-icon class="text-[18px]">save</mat-icon> Save Business Profile
@@ -565,8 +577,13 @@ export class AdminSettingsComponent implements OnInit {
       address: (this.profileForm.address || '').trim(),
       serviceArea: (this.profileForm.serviceArea || '').trim(),
       openingHours: (this.profileForm.openingHours || '').trim(),
+      trustBadges: this.profileForm.trustBadges,
     });
     this.toast.success('Business profile updated!');
+  }
+
+  updateTrustBadges(val: string) {
+    this.profileForm.trustBadges = val.split(',').map(s => s.trim()).filter(Boolean);
   }
 
   onDomainChange() {

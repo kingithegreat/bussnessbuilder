@@ -450,6 +450,7 @@ export class AdminBuilderComponent implements OnInit, OnDestroy {
   sectionSupportsImage(sectionId: string, variant?: string): boolean {
     if (sectionId === 'hero' && variant === 'split') return true;
     if (sectionId === 'about' && variant === 'split') return true;
+    if (sectionId === 'gallery') return true; // shown first in the gallery grid
     return false;
   }
 

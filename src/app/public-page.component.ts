@@ -2,7 +2,7 @@ import { Component, inject, computed, input, output, effect, signal } from '@ang
 import { DataService } from './data.service';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
-import { Title, Meta } from '@angular/platform-browser';
+import { Title, Meta, DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { MatIconModule } from '@angular/material/icon';
 import { SlicePipe, NgTemplateOutlet } from '@angular/common';
 import { RouterLink } from '@angular/router';
@@ -113,7 +113,7 @@ import { ToastService } from './toast.service';
         @if (section.visible) {
           @switch (renderType(section)) {
             @case ('hero') {
-              <section class="py-20 md:py-32">
+              <section [id]="section.id" class="py-20 md:py-32">
                 <div class="max-w-5xl mx-auto px-6">
                   <!-- Centered Hero -->
                   @if (!section.layoutVariant || section.layoutVariant === 'centered') {
@@ -558,7 +558,7 @@ import { ToastService } from './toast.service';
             @case ('faq') {
               <!-- FAQs -->
               @if (faqs().length) {
-              <section id="faqs" class="py-12 md:py-24 bg-white border-y border-gray-200">
+              <section [id]="section.id" class="py-12 md:py-24 bg-white border-y border-gray-200">
                 <div class="max-w-5xl mx-auto px-4 md:px-6">
                   <div class="text-center mb-8 md:mb-12">
                     <h2 class="text-2xl md:text-3xl font-bold text-gray-900 mb-2" [appEditableText]="editable()" (textChange)="onTextEdit('section', 'heading', $event, section.id)">{{ section.heading }}</h2>
@@ -801,6 +801,242 @@ import { ToastService } from './toast.service';
               </section>
             }
 
+            @case ('products') {
+              <!-- Products: image-forward grid of the business's services/items -->
+              <section [id]="section.id" class="py-20 md:py-28">
+                <div class="max-w-5xl mx-auto px-6">
+                  <div class="mb-10 md:mb-14">
+                    <h2 class="text-2xl md:text-3xl font-bold text-gray-900 mb-2" [appEditableText]="editable()" (textChange)="onTextEdit('section', 'heading', $event, section.id)">{{ section.heading }}</h2>
+                    <p class="text-gray-500 font-medium" [appEditableText]="editable()" (textChange)="onTextEdit('section', 'subheading', $event, section.id)">{{ section.subheading }}</p>
+                  </div>
+                  <div class="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
+                    @for (service of services(); track service.id) {
+                      <div [style.borderRadius]="cardRadius" class="bg-white border border-gray-100/80 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 overflow-hidden flex flex-col">
+                        @if (service.imageUrl) {
+                          <img [src]="service.imageUrl" [alt]="service.name" referrerpolicy="no-referrer" class="w-full aspect-square object-cover">
+                        } @else {
+                          <div class="w-full aspect-square bg-gray-50 flex items-center justify-center" [style.color]="customization().branding.primaryColor">
+                            <mat-icon class="text-4xl opacity-40">inventory_2</mat-icon>
+                          </div>
+                        }
+                        <div class="p-4 md:p-5 flex flex-col flex-grow">
+                          <h3 class="text-sm md:text-base font-bold text-gray-900" [appEditableText]="editable()" (textChange)="onTextEdit('service', 'name', $event, service.id)">{{ service.name }}</h3>
+                          @if (service.price) {
+                            <p class="font-bold text-gray-900 text-sm mt-auto pt-3">{{ service.price }}</p>
+                          }
+                          @if (getPaymentLink(service.name); as payUrl) {
+                            <a [href]="payUrl" target="_blank" rel="noopener" [style.backgroundColor]="customization().branding.primaryColor" [style.borderRadius]="buttonRadius" class="mt-3 inline-flex items-center justify-center gap-1.5 text-white px-4 py-2 text-xs font-bold shadow-sm hover:opacity-90 transition-opacity">
+                              <mat-icon class="text-[16px]">shopping_cart</mat-icon> Buy Now
+                            </a>
+                          }
+                        </div>
+                      </div>
+                    }
+                  </div>
+                </div>
+              </section>
+            }
+
+            @case ('pricing') {
+              <!-- Pricing: service prices as prominent cards -->
+              <section [id]="section.id" class="py-20 md:py-28">
+                <div class="max-w-5xl mx-auto px-6">
+                  <div class="mb-10 md:mb-14 text-center">
+                    <h2 class="text-2xl md:text-3xl font-bold text-gray-900 mb-2" [appEditableText]="editable()" (textChange)="onTextEdit('section', 'heading', $event, section.id)">{{ section.heading }}</h2>
+                    <p class="text-gray-500 font-medium" [appEditableText]="editable()" (textChange)="onTextEdit('section', 'subheading', $event, section.id)">{{ section.subheading }}</p>
+                  </div>
+                  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    @for (service of services(); track service.id) {
+                      <div [style.borderRadius]="cardRadius" class="bg-white border border-gray-100/80 shadow-sm hover:shadow-lg transition-all duration-300 p-8 flex flex-col h-full text-center">
+                        <h3 class="text-lg font-bold text-gray-900 mb-2" [appEditableText]="editable()" (textChange)="onTextEdit('service', 'name', $event, service.id)">{{ service.name }}</h3>
+                        <p class="text-3xl font-black mb-1" [style.color]="customization().branding.primaryColor">{{ service.price || 'Enquire' }}</p>
+                        @if (service.duration) {
+                          <p class="text-gray-400 text-xs uppercase tracking-wider font-bold mb-4">{{ service.duration }}</p>
+                        }
+                        <p class="text-gray-500 text-sm leading-relaxed flex-grow mb-6" [appEditableText]="editable()" (textChange)="onTextEdit('service', 'description', $event, service.id)">{{ service.description }}</p>
+                        @if (getPaymentLink(service.name); as payUrl) {
+                          <a [href]="payUrl" target="_blank" rel="noopener" [style.backgroundColor]="customization().branding.primaryColor" [style.borderRadius]="buttonRadius" class="inline-flex items-center justify-center gap-1.5 text-white px-6 py-2.5 text-sm font-bold shadow-sm hover:opacity-90 transition-opacity">
+                            <mat-icon class="text-[16px]">payment</mat-icon> Pay Now
+                          </a>
+                        } @else {
+                          <a href="#contact" (click)="scrollTo('contact', $event)" [style.borderColor]="customization().branding.primaryColor" [style.color]="customization().branding.primaryColor" [style.borderRadius]="buttonRadius" class="inline-flex items-center justify-center border-2 px-6 py-2.5 text-sm font-bold hover:opacity-80 transition-opacity cursor-pointer">
+                            Get Started
+                          </a>
+                        }
+                      </div>
+                    }
+                  </div>
+                </div>
+              </section>
+            }
+
+            @case ('gallery') {
+              <!-- Gallery: section image + all service images in a grid -->
+              <section [id]="section.id" class="py-20 md:py-28">
+                <div class="max-w-5xl mx-auto px-6">
+                  <div class="mb-10 md:mb-14">
+                    <h2 class="text-2xl md:text-3xl font-bold text-gray-900 mb-2" [appEditableText]="editable()" (textChange)="onTextEdit('section', 'heading', $event, section.id)">{{ section.heading }}</h2>
+                    <p class="text-gray-500 font-medium" [appEditableText]="editable()" (textChange)="onTextEdit('section', 'subheading', $event, section.id)">{{ section.subheading }}</p>
+                  </div>
+                  @if (galleryImages(section).length > 0) {
+                    <div class="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
+                      @for (img of galleryImages(section); track img.url) {
+                        <div [style.borderRadius]="cardRadius" class="overflow-hidden shadow-sm hover:shadow-lg transition-shadow duration-300 group">
+                          <img [src]="img.url" [alt]="img.alt" referrerpolicy="no-referrer" loading="lazy" class="w-full aspect-square object-cover group-hover:scale-105 transition-transform duration-500">
+                        </div>
+                      }
+                    </div>
+                  } @else if (editable()) {
+                    <div [style.borderRadius]="cardRadius" class="bg-gray-50 border-2 border-dashed border-gray-200 p-10 text-center text-gray-400 text-sm">
+                      Add a section image in the builder, or add images to your services — they'll appear here automatically.
+                    </div>
+                  }
+                </div>
+              </section>
+            }
+
+            @case ('location') {
+              <!-- Location: address + service area with an embedded map -->
+              <section [id]="section.id" class="py-20 md:py-28">
+                <div class="max-w-5xl mx-auto px-6">
+                  <div class="mb-10 md:mb-14">
+                    <h2 class="text-2xl md:text-3xl font-bold text-gray-900 mb-2" [appEditableText]="editable()" (textChange)="onTextEdit('section', 'heading', $event, section.id)">{{ section.heading }}</h2>
+                    <p class="text-gray-500 font-medium" [appEditableText]="editable()" (textChange)="onTextEdit('section', 'subheading', $event, section.id)">{{ section.subheading }}</p>
+                  </div>
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-stretch">
+                    <div [style.borderRadius]="cardRadius" class="bg-white border border-gray-100/80 shadow-sm p-8 flex flex-col justify-center gap-6">
+                      @if (profile().address) {
+                        <div class="flex items-start gap-4">
+                          <div [style.color]="customization().branding.primaryColor" [style.backgroundColor]="'color-mix(in srgb, ' + customization().branding.primaryColor + ' 10%, transparent)'" class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0">
+                            <mat-icon class="text-[20px]">location_on</mat-icon>
+                          </div>
+                          <div>
+                            <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Address</p>
+                            <p class="text-gray-900 font-semibold text-sm">{{ profile().address }}</p>
+                          </div>
+                        </div>
+                      }
+                      @if (profile().serviceArea) {
+                        <div class="flex items-start gap-4">
+                          <div [style.color]="customization().branding.primaryColor" [style.backgroundColor]="'color-mix(in srgb, ' + customization().branding.primaryColor + ' 10%, transparent)'" class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0">
+                            <mat-icon class="text-[20px]">map</mat-icon>
+                          </div>
+                          <div>
+                            <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Service Area</p>
+                            <p class="text-gray-900 font-semibold text-sm">{{ profile().serviceArea }}</p>
+                          </div>
+                        </div>
+                      }
+                      @if (profile().phone) {
+                        <div class="flex items-start gap-4">
+                          <div [style.color]="customization().branding.primaryColor" [style.backgroundColor]="'color-mix(in srgb, ' + customization().branding.primaryColor + ' 10%, transparent)'" class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0">
+                            <mat-icon class="text-[20px]">call</mat-icon>
+                          </div>
+                          <div>
+                            <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Phone</p>
+                            <p class="text-gray-900 font-semibold text-sm">{{ profile().phone }}</p>
+                          </div>
+                        </div>
+                      }
+                      @if (!profile().address && !profile().serviceArea && !profile().phone && editable()) {
+                        <p class="text-gray-400 text-sm text-center">Add your address, service area, or phone in Settings → Business Profile to fill this in.</p>
+                      }
+                    </div>
+                    @if (mapEmbedUrl) {
+                      <div [style.borderRadius]="cardRadius" class="overflow-hidden shadow-sm border border-gray-100/80 min-h-[280px]">
+                        <iframe [src]="mapEmbedUrl" class="w-full h-full min-h-[280px]" style="border:0" loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="Business location map"></iframe>
+                      </div>
+                    } @else {
+                      <div [style.borderRadius]="cardRadius" class="bg-gray-50 border border-gray-100 min-h-[280px] flex flex-col items-center justify-center text-gray-300 gap-2">
+                        <mat-icon class="text-5xl">location_on</mat-icon>
+                        @if (editable()) {
+                          <p class="text-gray-400 text-xs">Add an address to show a live map here</p>
+                        }
+                      </div>
+                    }
+                  </div>
+                </div>
+              </section>
+            }
+
+            @case ('hours') {
+              <!-- Business Hours: rows parsed from profile.openingHours -->
+              <section [id]="section.id" class="py-20 md:py-28">
+                <div class="max-w-3xl mx-auto px-6">
+                  <div class="mb-10 md:mb-14 text-center">
+                    <h2 class="text-2xl md:text-3xl font-bold text-gray-900 mb-2" [appEditableText]="editable()" (textChange)="onTextEdit('section', 'heading', $event, section.id)">{{ section.heading }}</h2>
+                    <p class="text-gray-500 font-medium" [appEditableText]="editable()" (textChange)="onTextEdit('section', 'subheading', $event, section.id)">{{ section.subheading }}</p>
+                  </div>
+                  <div [style.borderRadius]="cardRadius" class="bg-white border border-gray-100/80 shadow-sm p-8">
+                    @if (openingHoursLines().length > 0) {
+                      <div class="divide-y divide-gray-50">
+                        @for (line of openingHoursLines(); track $index) {
+                          <div class="flex items-center gap-4 py-4 first:pt-0 last:pb-0">
+                            <div [style.color]="customization().branding.primaryColor" class="shrink-0">
+                              <mat-icon class="text-[20px]">schedule</mat-icon>
+                            </div>
+                            <p class="text-gray-900 font-semibold text-sm">{{ line }}</p>
+                          </div>
+                        }
+                      </div>
+                    } @else {
+                      <div class="text-center text-gray-400 text-sm py-6">
+                        @if (editable()) {
+                          Set your opening hours in Settings → Business Profile to fill this in.
+                        } @else {
+                          Contact us for our current opening hours.
+                        }
+                      </div>
+                    }
+                  </div>
+                </div>
+              </section>
+            }
+
+            @case ('badges') {
+              <!-- Trust Badges: profile.trustBadges as prominent cards -->
+              <section [id]="section.id" class="py-20 md:py-28">
+                <div class="max-w-5xl mx-auto px-6">
+                  <div class="mb-10 md:mb-14 text-center">
+                    <h2 class="text-2xl md:text-3xl font-bold text-gray-900 mb-2" [appEditableText]="editable()" (textChange)="onTextEdit('section', 'heading', $event, section.id)">{{ section.heading }}</h2>
+                    <p class="text-gray-500 font-medium" [appEditableText]="editable()" (textChange)="onTextEdit('section', 'subheading', $event, section.id)">{{ section.subheading }}</p>
+                  </div>
+                  @if (profile().trustBadges && profile().trustBadges.length) {
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      @for (badge of profile().trustBadges; track badge) {
+                        <div [style.borderRadius]="cardRadius" class="bg-white border border-gray-100/80 shadow-sm p-6 flex flex-col items-center text-center gap-3">
+                          <div [style.color]="customization().branding.primaryColor" [style.backgroundColor]="'color-mix(in srgb, ' + customization().branding.primaryColor + ' 10%, transparent)'" class="w-12 h-12 rounded-full flex items-center justify-center">
+                            <mat-icon>verified</mat-icon>
+                          </div>
+                          <p class="text-sm font-bold text-gray-900">{{ badge }}</p>
+                        </div>
+                      }
+                    </div>
+                  } @else if (editable()) {
+                    <div [style.borderRadius]="cardRadius" class="bg-gray-50 border-2 border-dashed border-gray-200 p-10 text-center text-gray-400 text-sm">
+                      Add trust badges in Settings → Business Profile (e.g. "Fully Insured", "5-Star Rated") and they'll appear here.
+                    </div>
+                  }
+                </div>
+              </section>
+            }
+
+            @case ('cta') {
+              <!-- Call to Action: full-width banner driving to the contact form -->
+              <section [id]="section.id" class="py-12 md:py-16">
+                <div class="max-w-5xl mx-auto px-6">
+                  <div [style.borderRadius]="cardRadius" [style.background]="'linear-gradient(135deg, ' + customization().branding.primaryColor + ', color-mix(in srgb, ' + customization().branding.primaryColor + ' 70%, black))'" class="p-10 md:p-16 text-center shadow-lg">
+                    <h2 class="text-2xl md:text-4xl font-black text-white mb-3" [appEditableText]="editable()" (textChange)="onTextEdit('section', 'heading', $event, section.id)">{{ section.heading }}</h2>
+                    <p class="text-white/80 font-medium mb-8 max-w-xl mx-auto" [appEditableText]="editable()" (textChange)="onTextEdit('section', 'subheading', $event, section.id)">{{ section.subheading }}</p>
+                    <a href="#contact" (click)="scrollTo('contact', $event)" [style.color]="customization().branding.primaryColor" [style.borderRadius]="buttonRadius" class="inline-flex items-center gap-2 bg-white px-8 py-3.5 text-sm font-bold shadow-md hover:scale-[1.03] transition-transform cursor-pointer">
+                      {{ customization().branding.ctaText || 'Get in Touch' }}
+                      <mat-icon class="text-[18px]">arrow_forward</mat-icon>
+                    </a>
+                  </div>
+                </div>
+              </section>
+            }
+
             @default {
               <!-- Fallback for other sections, and the body of inserted
                    'custom' content sections -->
@@ -883,6 +1119,47 @@ export class PublicPageComponent {
     if (!ps.enabled) return null;
     const link = ps.paymentLinks.find(l => l.active && l.name.toLowerCase() === serviceName.toLowerCase());
     return link?.stripePaymentLink || null;
+  }
+
+  // Gallery = the section's own image (if set in the builder) followed by
+  // every service image. Deduped so a service image reused as the section
+  // image doesn't show twice.
+  galleryImages(section: SectionConfig): { url: string; alt: string }[] {
+    const seen = new Set<string>();
+    const imgs: { url: string; alt: string }[] = [];
+    const push = (url: string | undefined, alt: string) => {
+      if (url && !seen.has(url)) { seen.add(url); imgs.push({ url, alt }); }
+    };
+    push(section.imageUrl, section.heading || 'Gallery image');
+    for (const svc of this.services()) push(svc.imageUrl, svc.name);
+    return imgs;
+  }
+
+  // Split the free-text opening hours into display rows. Supports newlines,
+  // commas, and semicolons ("Mon-Fri: 9am-5pm, Sat: 10am-2pm").
+  openingHoursLines(): string[] {
+    return (this.profile().openingHours || '')
+      .split(/\r?\n|,|;/)
+      .map(s => s.trim())
+      .filter(Boolean);
+  }
+
+  // Keyless Google Maps embed for the location section. The SafeResourceUrl is
+  // cached per address — returning a fresh sanitized object every change
+  // detection would make Angular reload the iframe constantly.
+  private sanitizer = inject(DomSanitizer);
+  private cachedMapAddress = '';
+  private cachedMapUrl: SafeResourceUrl | null = null;
+  get mapEmbedUrl(): SafeResourceUrl | null {
+    const address = (this.profile().address || '').trim();
+    if (!address) return null;
+    if (address !== this.cachedMapAddress) {
+      this.cachedMapAddress = address;
+      this.cachedMapUrl = this.sanitizer.bypassSecurityTrustResourceUrl(
+        `https://maps.google.com/maps?q=${encodeURIComponent(address)}&z=15&output=embed`
+      );
+    }
+    return this.cachedMapUrl;
   }
 
   get wrapperStyles() {
