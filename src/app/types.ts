@@ -108,7 +108,48 @@ export interface FormFieldConfig {
   };
 }
 
+// User-overridable text for every fixed label on the public page. All fields
+// optional — a blank/missing value falls back to DEFAULT_PAGE_TEXT, so old
+// saved configs (which have no `text` object at all) keep rendering exactly
+// as before.
+export interface PageTextSettings {
+  navServices?: string;
+  navAbout?: string;
+  navContact?: string;
+  heroBadge?: string;
+  secondaryCta?: string;
+  priceLabel?: string;
+  contactFormTitle?: string;
+  contactSubmit?: string;
+  contactSuccessTitle?: string;
+  contactSuccessMessage?: string;
+  contactSendAnother?: string;
+}
+
+export const DEFAULT_PAGE_TEXT: Required<PageTextSettings> = {
+  navServices: 'Services',
+  navAbout: 'About',
+  navContact: 'Contact',
+  heroBadge: '', // empty = auto ("type • service area")
+  secondaryCta: 'View Services',
+  priceLabel: 'Starting at',
+  contactFormTitle: 'Send an Enquiry',
+  contactSubmit: 'Send Message',
+  contactSuccessTitle: 'Message Sent!',
+  contactSuccessMessage: "Thanks for reaching out. We'll get back to you shortly.",
+  contactSendAnother: 'Send another message',
+};
+
+export function pageText(
+  settings: CustomizationSettings,
+  key: keyof PageTextSettings
+): string {
+  const v = settings.text?.[key];
+  return v && v.trim() ? v : DEFAULT_PAGE_TEXT[key];
+}
+
 export interface CustomizationSettings {
+  text?: PageTextSettings;
   branding: {
     logoUrl: string;
     primaryColor: string;

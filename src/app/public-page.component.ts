@@ -4,9 +4,9 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { Title, Meta, DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { MatIconModule } from '@angular/material/icon';
-import { SlicePipe, NgTemplateOutlet } from '@angular/common';
+import { NgTemplateOutlet } from '@angular/common';
 import { RouterLink } from '@angular/router';
-import { CustomizationSettings, SectionConfig, FormFieldConfig } from './types';
+import { CustomizationSettings, SectionConfig, FormFieldConfig, PageTextSettings, pageText } from './types';
 import { sectionRenderType } from './section-library';
 import { EditableTextDirective } from './editable-text.directive';
 import { AnalyticsService } from './analytics.service';
@@ -16,7 +16,7 @@ import { ToastService } from './toast.service';
 @Component({
   selector: 'app-public-page',
   standalone: true,
-  imports: [ReactiveFormsModule, MatIconModule, SlicePipe, NgTemplateOutlet, RouterLink, EditableTextDirective],
+  imports: [ReactiveFormsModule, MatIconModule, NgTemplateOutlet, RouterLink, EditableTextDirective],
   styles: [`
     :host { display: block; }
     .dark-mode {
@@ -85,9 +85,15 @@ import { ToastService } from './toast.service';
              </div>
           </div>
           <div class="hidden md:flex gap-8 text-sm font-semibold text-gray-500">
-             <a href="#services" (click)="scrollTo('services', $event)" class="hover:opacity-80 transition-colors cursor-pointer">Services</a>
-             <a href="#about" (click)="scrollTo('about', $event)" class="hover:opacity-80 transition-colors cursor-pointer">About</a>
-             <a href="#contact" (click)="scrollTo('contact', $event)" class="hover:opacity-80 transition-colors cursor-pointer">Contact</a>
+             @if (navSectionVisible('services')) {
+               <a href="#services" (click)="scrollTo('services', $event)" class="hover:opacity-80 transition-colors cursor-pointer">{{ t('navServices') }}</a>
+             }
+             @if (navSectionVisible('about')) {
+               <a href="#about" (click)="scrollTo('about', $event)" class="hover:opacity-80 transition-colors cursor-pointer">{{ t('navAbout') }}</a>
+             }
+             @if (navSectionVisible('contact')) {
+               <a href="#contact" (click)="scrollTo('contact', $event)" class="hover:opacity-80 transition-colors cursor-pointer">{{ t('navContact') }}</a>
+             }
           </div>
           <div class="flex items-center gap-2">
             <a href="#contact" (click)="scrollTo('contact', $event)" [style.backgroundColor]="customization().branding.primaryColor" [style.borderRadius]="buttonRadius" class="text-white px-3 py-2 md:px-5 md:py-2.5 text-xs md:text-sm font-bold shadow-md hover:opacity-90 transition-opacity whitespace-nowrap cursor-pointer">
@@ -101,9 +107,15 @@ import { ToastService } from './toast.service';
         @if (mobileMenuOpen()) {
           <div class="md:hidden border-t border-gray-100 shadow-lg" [style.backgroundColor]="customization().branding.backgroundColor">
             <div class="max-w-5xl mx-auto px-4 py-3 flex flex-col gap-1">
-              <a href="#services" (click)="scrollTo('services', $event); mobileMenuOpen.set(false)" class="px-4 py-3 rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer">Services</a>
-              <a href="#about" (click)="scrollTo('about', $event); mobileMenuOpen.set(false)" class="px-4 py-3 rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer">About</a>
-              <a href="#contact" (click)="scrollTo('contact', $event); mobileMenuOpen.set(false)" class="px-4 py-3 rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer">Contact</a>
+              @if (navSectionVisible('services')) {
+                <a href="#services" (click)="scrollTo('services', $event); mobileMenuOpen.set(false)" class="px-4 py-3 rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer">{{ t('navServices') }}</a>
+              }
+              @if (navSectionVisible('about')) {
+                <a href="#about" (click)="scrollTo('about', $event); mobileMenuOpen.set(false)" class="px-4 py-3 rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer">{{ t('navAbout') }}</a>
+              }
+              @if (navSectionVisible('contact')) {
+                <a href="#contact" (click)="scrollTo('contact', $event); mobileMenuOpen.set(false)" class="px-4 py-3 rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer">{{ t('navContact') }}</a>
+              }
             </div>
           </div>
         }
@@ -120,20 +132,20 @@ import { ToastService } from './toast.service';
                     <div [style.borderRadius]="cardRadius" class="glass-card p-8 sm:p-12 md:p-20 text-center relative overflow-hidden flex flex-col items-center animate-in">
                       <div class="absolute inset-0 bg-gradient-to-b from-gray-50/50 to-white/30 -z-10"></div>
                       <span class="inline-block py-1.5 px-4 rounded-full bg-blue-50/80 text-blue-600 text-[10px] font-semibold uppercase tracking-widest mb-6 md:mb-8 border border-blue-100/60">
-                        {{ profile().type }} &bull; {{ profile().serviceArea }}
+                        {{ heroBadgeText() }}
                       </span>
                       <h1 class="text-3xl sm:text-4xl md:text-6xl font-bold tracking-tight text-gray-900 mb-4 md:mb-6 max-w-3xl leading-[1.08]" [appEditableText]="editable()" (textChange)="onTextEdit('profile', 'tagline', $event)">
                         {{ profile().tagline || 'Professional services you can trust.' }}
                       </h1>
                       <p class="text-lg md:text-xl text-gray-500 max-w-2xl mb-10 font-normal leading-relaxed">
-                        {{ profile().description | slice:0:120 }}...
+                        {{ truncated(profile().description, 120) }}
                       </p>
                       <div class="flex gap-3">
                          <a href="#contact" (click)="scrollTo('contact', $event)" [style.backgroundColor]="customization().branding.primaryColor" [style.borderRadius]="buttonRadius" class="text-white px-8 py-3.5 text-sm font-semibold shadow-sm hover:shadow-md hover:scale-[1.02] transition-all duration-200 cursor-pointer">
                            {{ customization().branding.ctaText || profile().ctaText || 'Get a Quote' }}
                          </a>
                          <a href="#services" (click)="scrollTo('services', $event)" [style.borderRadius]="buttonRadius" class="bg-gray-100/80 text-gray-900 px-8 py-3.5 text-sm font-semibold hover:bg-gray-200/80 transition-all duration-200 cursor-pointer">
-                           View Services
+                           {{ t('secondaryCta') }}
                          </a>
                       </div>
                       @if(profile().trustBadges && profile().trustBadges.length) {
@@ -154,13 +166,13 @@ import { ToastService } from './toast.service';
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
                       <div>
                         <span class="inline-block py-1.5 px-3 rounded-full bg-blue-50 text-blue-600 text-[10px] font-bold uppercase tracking-widest mb-6 border border-blue-100">
-                          {{ profile().type }} &bull; {{ profile().serviceArea }}
+                          {{ heroBadgeText() }}
                         </span>
                         <h1 class="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black tracking-tight text-gray-900 mb-4 md:mb-6 leading-tight" [appEditableText]="editable()" (textChange)="onTextEdit('profile', 'tagline', $event)">
                           {{ profile().tagline || 'Professional services you can trust.' }}
                         </h1>
                         <p class="text-lg text-gray-500 mb-8 font-medium">
-                          {{ profile().description | slice:0:120 }}...
+                          {{ truncated(profile().description, 120) }}
                         </p>
                         <div class="flex flex-wrap gap-4">
                            <a href="#contact" (click)="scrollTo('contact', $event)" [style.backgroundColor]="customization().branding.primaryColor" [style.borderRadius]="buttonRadius" class="text-white px-8 py-4 text-sm font-bold shadow-lg hover:opacity-90 transition-opacity cursor-pointer">
@@ -195,7 +207,7 @@ import { ToastService } from './toast.service';
                         {{ profile().tagline || 'Professional services you can trust.' }}
                       </h1>
                       <p class="text-xl text-gray-500 mb-10 font-medium">
-                        {{ profile().description | slice:0:150 }}...
+                        {{ truncated(profile().description, 150) }}
                       </p>
                       <a href="#contact" (click)="scrollTo('contact', $event)" [style.color]="customization().branding.primaryColor" class="inline-flex items-center gap-2 text-lg font-bold hover:opacity-80 transition-opacity cursor-pointer">
                         <span>{{ customization().branding.ctaText || profile().ctaText || 'Get a Quote' }}</span>
@@ -209,20 +221,20 @@ import { ToastService } from './toast.service';
                     <div [style.borderRadius]="cardRadius" class="bg-gray-900 text-white p-6 sm:p-12 md:p-20 shadow-2xl border border-gray-800 text-center relative overflow-hidden flex flex-col items-center">
                       <div class="absolute inset-0 bg-gradient-to-tr from-gray-800/50 to-transparent -z-10"></div>
                       <span class="inline-block py-1.5 px-3 rounded-full bg-white/10 text-gray-200 text-[10px] font-bold uppercase tracking-widest mb-6 md:mb-8 border border-white/10">
-                        Premium &bull; {{ profile().serviceArea }}
+                        {{ heroBadgeText('Premium') }}
                       </span>
                       <h1 class="text-3xl sm:text-4xl md:text-6xl font-black tracking-tight mb-4 md:mb-6 max-w-3xl leading-tight" [appEditableText]="editable()" (textChange)="onTextEdit('profile', 'tagline', $event)">
                         {{ profile().tagline || 'Professional services you can trust.' }}
                       </h1>
                       <p class="text-lg md:text-xl text-gray-400 max-w-2xl mb-10 font-medium">
-                        {{ profile().description | slice:0:120 }}...
+                        {{ truncated(profile().description, 120) }}
                       </p>
                       <div class="flex flex-col sm:flex-row gap-4">
                          <a href="#contact" (click)="scrollTo('contact', $event)" [style.backgroundColor]="customization().branding.primaryColor" [style.borderRadius]="buttonRadius" class="text-white px-8 py-4 text-sm font-bold shadow-lg hover:opacity-90 transition-opacity cursor-pointer">
                            {{ customization().branding.ctaText || profile().ctaText || 'Get a Quote' }}
                          </a>
                          <a href="#services" (click)="scrollTo('services', $event)" [style.borderRadius]="buttonRadius" class="bg-white/10 text-white border border-white/20 px-8 py-4 text-sm font-bold hover:bg-white/20 transition-colors cursor-pointer">
-                           View Services
+                           {{ t('secondaryCta') }}
                          </a>
                       </div>
                     </div>
@@ -373,7 +385,7 @@ import { ToastService } from './toast.service';
                               <p class="text-gray-500 mb-6 text-sm flex-grow leading-relaxed" [appEditableText]="editable()" (textChange)="onTextEdit('service', 'description', $event, service.id)">{{ service.description }}</p>
                               <div class="pt-4 border-t border-gray-50 mt-auto">
                                 <p class="font-bold text-gray-900 flex items-center justify-between text-sm">
-                                  <span class="text-gray-400 text-[10px] uppercase tracking-wider">Starting at</span>
+                                  <span class="text-gray-400 text-[10px] uppercase tracking-wider">{{ t('priceLabel') }}</span>
                                   {{ service.price }}
                                 </p>
                                 @if (getPaymentLink(service.name); as payUrl) {
@@ -392,7 +404,7 @@ import { ToastService } from './toast.service';
                               <p class="text-gray-500 mb-6 text-sm flex-grow leading-relaxed" [appEditableText]="editable()" (textChange)="onTextEdit('service', 'description', $event, service.id)">{{ service.description }}</p>
                               <div class="pt-4 border-t border-gray-50 mt-auto">
                                 <p class="font-bold text-gray-900 flex items-center justify-between text-sm">
-                                  <span class="text-gray-400 text-[10px] uppercase tracking-wider">Starting at</span>
+                                  <span class="text-gray-400 text-[10px] uppercase tracking-wider">{{ t('priceLabel') }}</span>
                                   {{ service.price }}
                                 </p>
                                 @if (getPaymentLink(service.name); as payUrl) {
@@ -420,7 +432,7 @@ import { ToastService } from './toast.service';
                             <p class="text-gray-500 text-sm mt-1" [appEditableText]="editable()" (textChange)="onTextEdit('service', 'description', $event, service.id)">{{ service.description }}</p>
                           </div>
                           <div class="shrink-0 text-left md:text-right">
-                            <span class="text-gray-400 text-[10px] uppercase tracking-wider block">Starting at</span>
+                            <span class="text-gray-400 text-[10px] uppercase tracking-wider block">{{ t('priceLabel') }}</span>
                             <p class="font-bold text-gray-900 text-lg">{{ service.price }}</p>
                             @if (getPaymentLink(service.name); as payUrl) {
                               <a [href]="payUrl" target="_blank" rel="noopener" [style.backgroundColor]="customization().branding.primaryColor" [style.borderRadius]="buttonRadius" class="mt-2 inline-flex items-center gap-1.5 text-white px-4 py-2 text-xs font-bold shadow-sm hover:opacity-90 transition-opacity">
@@ -690,7 +702,7 @@ import { ToastService } from './toast.service';
                       <div [style.color]="customization().branding.primaryColor" [style.backgroundColor]="'color-mix(in srgb, ' + customization().branding.primaryColor + ' 10%, transparent)'" class="w-8 h-8 rounded-lg flex items-center justify-center">
                         <mat-icon class="text-[18px]">send</mat-icon>
                       </div>
-                      <h3 class="text-2xl font-black">Send an Enquiry</h3>
+                      <h3 class="text-2xl font-black">{{ t('contactFormTitle') }}</h3>
                     </div>
                     
                     @if(submitSuccess) {
@@ -698,9 +710,9 @@ import { ToastService } from './toast.service';
                         <div class="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-sm mb-4 text-green-500">
                           <mat-icon class="text-3xl">check_circle</mat-icon>
                         </div>
-                        <h4 class="text-xl font-black mb-2">Message Sent!</h4>
-                        <p class="text-green-700 mb-8 text-sm">Thanks for reaching out. We'll get back to you shortly.</p>
-                        <button (click)="submitSuccess = false" [style.backgroundColor]="customization().branding.primaryColor" [style.borderRadius]="buttonRadius" class="text-white px-6 py-2.5 font-bold text-sm shadow-md hover:opacity-90 transition-opacity">Send another message</button>
+                        <h4 class="text-xl font-black mb-2">{{ t('contactSuccessTitle') }}</h4>
+                        <p class="text-green-700 mb-8 text-sm">{{ t('contactSuccessMessage') }}</p>
+                        <button (click)="submitSuccess = false" [style.backgroundColor]="customization().branding.primaryColor" [style.borderRadius]="buttonRadius" class="text-white px-6 py-2.5 font-bold text-sm shadow-md hover:opacity-90 transition-opacity">{{ t('contactSendAnother') }}</button>
                       </div>
                     } @else {
                       <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-6">
@@ -792,7 +804,7 @@ import { ToastService } from './toast.service';
                         </div>
 
                         <button type="submit" [disabled]="form.invalid" [style.backgroundColor]="customization().branding.primaryColor" [style.borderRadius]="buttonRadius" class="w-full text-white px-6 py-4 text-sm font-bold shadow-md disabled:opacity-50 hover:opacity-90 transition-opacity mt-2">
-                          Send Message
+                          {{ t('contactSubmit') }}
                         </button>
                       </form>
                     }
@@ -1069,7 +1081,7 @@ import { ToastService } from './toast.service';
              <span class="text-gray-300">|</span>
              <a routerLink="/terms" class="hover:text-gray-600 transition-colors text-[12px] font-medium">Terms</a>
            </div>
-           <p class="text-[11px] text-gray-400">&copy; 2026 {{ profile().name }}. @if (!hideBranding()) {Powered by BusinessFlow Studio.}</p>
+           <p class="text-[11px] text-gray-400">&copy; {{ currentYear }} {{ profile().name }}. @if (!hideBranding()) {Powered by BusinessFlow Studio.}</p>
          </div>
       </footer>
     </div>
@@ -1113,6 +1125,35 @@ export class PublicPageComponent {
   renderType(section: SectionConfig): string {
     return sectionRenderType(section);
   }
+
+  // Customizable page text with defaults (see PageTextSettings in types.ts).
+  t(key: keyof PageTextSettings): string {
+    return pageText(this.customization(), key);
+  }
+
+  // Hero badge pill: user override wins; otherwise auto-compose from the
+  // profile ("cleaner • Bay of Plenty"), with a per-variant prefix fallback.
+  heroBadgeText(prefix?: string): string {
+    const override = this.customization().text?.heroBadge;
+    if (override && override.trim()) return override;
+    const parts = [prefix || this.profile().type, this.profile().serviceArea].filter(Boolean);
+    return parts.join(' • ');
+  }
+
+  // Only append an ellipsis when the text was actually cut.
+  truncated(text: string, max: number): string {
+    const v = text || '';
+    return v.length > max ? v.slice(0, max) + '…' : v;
+  }
+
+  // Nav links hide when their target section is explicitly hidden. A missing
+  // section (old configs) keeps the link, preserving previous behaviour.
+  navSectionVisible(id: string): boolean {
+    const section = this.getSection(id);
+    return section ? section.visible : true;
+  }
+
+  currentYear = new Date().getFullYear();
 
   getPaymentLink(serviceName: string): string | null {
     const ps = this.paymentSettings();

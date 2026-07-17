@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { DataService } from './data.service';
 import { ToastService } from './toast.service';
-import { CustomizationSettings } from './types';
+import { CustomizationSettings, DEFAULT_PAGE_TEXT, PageTextSettings } from './types';
 import { ImagePickerComponent } from './image-picker.component';
 
 @Component({
@@ -288,6 +288,85 @@ import { ImagePickerComponent } from './image-picker.component';
           </div>
         }
 
+        <!-- Text & Labels Tab -->
+        @if (currentTab === 'text') {
+          <div class="p-6 space-y-8">
+            <p class="text-sm text-gray-500">Change any fixed wording on your public page. Leave a field blank to use the default shown in grey.</p>
+
+            <div>
+              <h3 class="font-bold text-gray-900 border-b border-gray-100 pb-2 mb-4">Navigation Menu</h3>
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div>
+                  <span class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Services link</span>
+                  <input type="text" [(ngModel)]="textSettings.navServices" [placeholder]="defaults.navServices" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+                </div>
+                <div>
+                  <span class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">About link</span>
+                  <input type="text" [(ngModel)]="textSettings.navAbout" [placeholder]="defaults.navAbout" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+                </div>
+                <div>
+                  <span class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Contact link</span>
+                  <input type="text" [(ngModel)]="textSettings.navContact" [placeholder]="defaults.navContact" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+                </div>
+              </div>
+              <p class="text-xs text-gray-400 mt-2">Menu links automatically hide when you hide their section on the Page Sections tab.</p>
+            </div>
+
+            <div>
+              <h3 class="font-bold text-gray-900 border-b border-gray-100 pb-2 mb-4">Hero / Welcome</h3>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <span class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Badge above the headline</span>
+                  <input type="text" [(ngModel)]="textSettings.heroBadge" placeholder="Auto: business type • service area" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+                  <p class="text-xs text-gray-400 mt-1">e.g. "Welcome to {{ profile().name || 'your business' }}". Blank shows your business type and service area.</p>
+                </div>
+                <div>
+                  <span class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Second hero button</span>
+                  <input type="text" [(ngModel)]="textSettings.secondaryCta" [placeholder]="defaults.secondaryCta" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+                </div>
+              </div>
+              <p class="text-xs text-gray-400 mt-2">The main headline and welcome paragraph come from your Tagline and Description in Settings → Business Profile — you can also click them directly in the Page Builder preview to edit.</p>
+            </div>
+
+            <div>
+              <h3 class="font-bold text-gray-900 border-b border-gray-100 pb-2 mb-4">Services & Pricing</h3>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <span class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Price label</span>
+                  <input type="text" [(ngModel)]="textSettings.priceLabel" [placeholder]="defaults.priceLabel" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+                  <p class="text-xs text-gray-400 mt-1">Shown above each service price, e.g. "From" or "Only".</p>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <h3 class="font-bold text-gray-900 border-b border-gray-100 pb-2 mb-4">Contact Form</h3>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <span class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Form title</span>
+                  <input type="text" [(ngModel)]="textSettings.contactFormTitle" [placeholder]="defaults.contactFormTitle" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+                </div>
+                <div>
+                  <span class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Submit button</span>
+                  <input type="text" [(ngModel)]="textSettings.contactSubmit" [placeholder]="defaults.contactSubmit" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+                </div>
+                <div>
+                  <span class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Success title</span>
+                  <input type="text" [(ngModel)]="textSettings.contactSuccessTitle" [placeholder]="defaults.contactSuccessTitle" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+                </div>
+                <div>
+                  <span class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Success message</span>
+                  <input type="text" [(ngModel)]="textSettings.contactSuccessMessage" [placeholder]="defaults.contactSuccessMessage" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+                </div>
+                <div>
+                  <span class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">"Send another" button</span>
+                  <input type="text" [(ngModel)]="textSettings.contactSendAnother" [placeholder]="defaults.contactSendAnother" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+                </div>
+              </div>
+            </div>
+          </div>
+        }
+
         <!-- SEO Tab -->
         @if (currentTab === 'seo') {
           <div class="p-6 space-y-6">
@@ -441,6 +520,7 @@ export class AdminCustomisationComponent implements OnInit {
   tabs = [
     { id: 'branding', label: 'Branding', icon: 'palette' },
     { id: 'sections', label: 'Page Sections', icon: 'view_agenda' },
+    { id: 'text', label: 'Text & Labels', icon: 'edit_note' },
     { id: 'seo', label: 'SEO', icon: 'search' },
     { id: 'form', label: 'Contact Form', icon: 'list_alt' },
     { id: 'rules', label: 'Business Rules', icon: 'rule' }
@@ -502,7 +582,13 @@ export class AdminCustomisationComponent implements OnInit {
     // Create a deep copy of the customization settings
     this.localCust = JSON.parse(JSON.stringify(this.dataService.customization()));
     this.localCust.sections.sort((a, b) => a.order - b.order);
+    // Older saved configs have no text object — create it so the Text tab binds.
+    this.localCust.text = this.localCust.text || {};
+    this.textSettings = this.localCust.text;
   }
+
+  defaults = DEFAULT_PAGE_TEXT;
+  textSettings: PageTextSettings = {};
 
   getSectionName(section: { id: string; type?: string; heading?: string }): string {
     if (section.type) return section.heading || section.type;
@@ -547,6 +633,8 @@ export class AdminCustomisationComponent implements OnInit {
     if (confirm('This will reset all branding, section layouts, form fields, and business rules to their original defaults. Your business profile, services, enquiries, and other data will not be affected.\n\nAre you sure?')) {
       this.dataService.resetCustomization();
       this.localCust = JSON.parse(JSON.stringify(this.dataService.customization()));
+      this.localCust.text = this.localCust.text || {};
+      this.textSettings = this.localCust.text;
       this.toast.info('Customisation settings have been reset to defaults.');
     }
   }
@@ -585,6 +673,8 @@ export class AdminCustomisationComponent implements OnInit {
         const parsed = JSON.parse(e.target?.result as string);
         if (parsed.branding && parsed.sections) {
           this.localCust = parsed;
+          this.localCust.text = this.localCust.text || {};
+          this.textSettings = this.localCust.text;
           this.toast.success('Config imported successfully. Click Save to apply.');
         } else {
           this.toast.error('Invalid configuration file.');

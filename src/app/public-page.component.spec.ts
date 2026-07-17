@@ -56,7 +56,7 @@ describe('PublicPageComponent — section renderer completeness', () => {
     };
   }
 
-  function renderWithSections(sections: SectionConfig[]): HTMLElement {
+  function renderCustomization(cust: CustomizationSettings): HTMLElement {
     TestBed.configureTestingModule({
       imports: [PublicPageComponent],
       providers: [
@@ -66,9 +66,13 @@ describe('PublicPageComponent — section renderer completeness', () => {
       ],
     });
     const fixture = TestBed.createComponent(PublicPageComponent);
-    fixture.componentRef.setInput('previewCustomization', baseCustomization(sections));
+    fixture.componentRef.setInput('previewCustomization', cust);
     fixture.detectChanges();
     return fixture.nativeElement as HTMLElement;
+  }
+
+  function renderWithSections(sections: SectionConfig[]): HTMLElement {
+    return renderCustomization(baseCustomization(sections));
   }
 
   function seededSection(id: string, order: number): SectionConfig {
@@ -142,5 +146,74 @@ describe('PublicPageComponent — section renderer completeness', () => {
   it('hidden sections do not render', () => {
     const el = renderWithSections([{ ...seededSection('pricing', 1), visible: false }]);
     expect(el.querySelector('section[id="pricing"]')).toBeNull();
+  });
+
+  it('default page text renders when no overrides are set (old configs)', () => {
+    const el = renderWithSections([
+      seededSection('services', 1),
+      seededSection('contact', 2),
+    ]);
+    expect(el.textContent).toContain('Services'); // nav link default
+    expect(el.textContent).toContain('Starting at');
+    expect(el.textContent).toContain('Send an Enquiry');
+    expect(el.textContent).toContain('Send Message');
+  });
+
+  it('text overrides replace every fixed label they cover', () => {
+    const cust = baseCustomization([
+      seededSection('hero', 1),
+      seededSection('services', 2),
+      seededSection('contact', 3),
+    ]);
+    cust.text = {
+      navServices: 'Mahi',
+      navContact: 'Kōrero',
+      heroBadge: 'Welcome to Test Biz',
+      secondaryCta: 'See the mahi',
+      priceLabel: 'From',
+      contactFormTitle: 'Flick us a message',
+      contactSubmit: 'Send it',
+    };
+    const el = renderCustomization(cust);
+    const text = el.textContent!;
+    expect(text).toContain('Mahi');
+    expect(text).toContain('Kōrero');
+    expect(text).toContain('Welcome to Test Biz');
+    expect(text).not.toContain('cleaner • Bay of Plenty'); // auto badge replaced
+    expect(text).toContain('See the mahi');
+    expect(text).toContain('From');
+    expect(text).not.toContain('Starting at');
+    expect(text).toContain('Flick us a message');
+    expect(text).not.toContain('Send an Enquiry');
+    expect(text).toContain('Send it');
+  });
+
+  it('hero badge auto-composes from profile type and service area when blank', () => {
+    const el = renderWithSections([seededSection('hero', 1)]);
+    expect(el.textContent).toContain('cleaner • Bay of Plenty');
+  });
+
+  it('nav links hide when their target section is hidden', () => {
+    const el = renderWithSections([
+      { ...seededSection('services', 1), visible: false },
+      seededSection('about', 2),
+      seededSection('contact', 3),
+    ]);
+    const navLinks = Array.from(el.querySelectorAll('nav a[href^="#"]')).map(a => a.getAttribute('href'));
+    expect(navLinks).not.toContain('#services');
+    expect(navLinks).toContain('#about');
+  });
+
+  it('hero description only gets an ellipsis when actually truncated', () => {
+    const el = renderWithSections([seededSection('hero', 1)]);
+    // stub description "desc" is 4 chars — must NOT be followed by an ellipsis
+    expect(el.textContent).toContain('desc');
+    expect(el.textContent).not.toContain('desc…');
+    expect(el.textContent).not.toContain('desc...');
+  });
+
+  it('footer year is the current year, not hardcoded', () => {
+    const el = renderWithSections([seededSection('hero', 1)]);
+    expect(el.textContent).toContain(`© ${new Date().getFullYear()} Test Biz`);
   });
 });
