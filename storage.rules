@@ -2,9 +2,12 @@ rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
-    // Users can only upload/read files in their own folder
+    // Business branding/gallery/hero images live here. They render on the
+    // owner's *public* website (logo in the nav, gallery section, hero photo,
+    // etc.), so anonymous visitors must be able to read them — only the
+    // authenticated owner may upload/replace/delete their own files.
     match /users/{uid}/{allPaths=**} {
-      allow read: if request.auth != null;
+      allow read: if true;
       allow write: if request.auth != null
                    && request.auth.uid == uid
                    && request.resource.size < 5 * 1024 * 1024
