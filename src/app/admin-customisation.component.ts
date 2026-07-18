@@ -181,22 +181,15 @@ import { ImagePickerComponent } from './image-picker.component';
               
               <div>
                 <span class="block text-sm font-bold text-gray-700 mb-2">Header Layout</span>
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <button (click)="localCust.branding.headerStyle = 'centered'" [class.border-blue-500]="localCust.branding.headerStyle === 'centered'" [class.bg-blue-50]="localCust.branding.headerStyle === 'centered'" class="p-4 border rounded-xl flex flex-col items-center gap-2 transition-colors text-gray-700">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <button (click)="setHeroLayout('centered')" [class.border-blue-500]="heroLayoutVariant() === 'centered'" [class.bg-blue-50]="heroLayoutVariant() === 'centered'" class="p-4 border rounded-xl flex flex-col items-center gap-2 transition-colors text-gray-700">
                     <div class="w-16 h-12 bg-gray-200 rounded flex flex-col items-center justify-center gap-1 p-1">
                       <div class="w-8 h-2 bg-gray-400 rounded-full"></div>
                       <div class="w-12 h-1 bg-gray-300 rounded-full"></div>
                     </div>
                     <span class="text-xs font-bold">Centered</span>
                   </button>
-                  <button (click)="localCust.branding.headerStyle = 'left'" [class.border-blue-500]="localCust.branding.headerStyle === 'left'" [class.bg-blue-50]="localCust.branding.headerStyle === 'left'" class="p-4 border rounded-xl flex flex-col items-center gap-2 transition-colors text-gray-700">
-                    <div class="w-16 h-12 bg-gray-200 rounded flex flex-col items-start justify-center gap-1 p-2">
-                      <div class="w-8 h-2 bg-gray-400 rounded-full"></div>
-                      <div class="w-10 h-1 bg-gray-300 rounded-full"></div>
-                    </div>
-                    <span class="text-xs font-bold">Left Aligned</span>
-                  </button>
-                  <button (click)="localCust.branding.headerStyle = 'split'" [class.border-blue-500]="localCust.branding.headerStyle === 'split'" [class.bg-blue-50]="localCust.branding.headerStyle === 'split'" class="p-4 border rounded-xl flex flex-col items-center gap-2 transition-colors text-gray-700">
+                  <button (click)="setHeroLayout('split')" [class.border-blue-500]="heroLayoutVariant() === 'split'" [class.bg-blue-50]="heroLayoutVariant() === 'split'" class="p-4 border rounded-xl flex flex-col items-center gap-2 transition-colors text-gray-700">
                     <div class="w-16 h-12 bg-gray-200 rounded flex items-center justify-between p-1">
                       <div class="flex flex-col gap-1 w-1/2">
                         <div class="w-full h-2 bg-gray-400 rounded-full"></div>
@@ -207,6 +200,7 @@ import { ImagePickerComponent } from './image-picker.component';
                     <span class="text-xs font-bold">Split Hero</span>
                   </button>
                 </div>
+                <p class="text-xs text-gray-400 mt-2">Also editable per-section, with two more options (Minimal, Premium), from the Sections tab in the Page Builder.</p>
               </div>
               
               <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -568,6 +562,15 @@ export class AdminCustomisationComponent implements OnInit {
       servicesVariant: 'compact',
     },
   ];
+
+  heroLayoutVariant(): string {
+    return this.localCust.sections.find(s => s.id === 'hero')?.layoutVariant || 'centered';
+  }
+
+  setHeroLayout(variant: 'centered' | 'split') {
+    const heroSection = this.localCust.sections.find(s => s.id === 'hero');
+    if (heroSection) heroSection.layoutVariant = variant;
+  }
 
   applyLayoutPreset(preset: typeof this.layoutPresets[0]) {
     this.localCust.branding = { ...this.localCust.branding, ...preset.branding };

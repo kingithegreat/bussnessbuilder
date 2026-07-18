@@ -80,7 +80,6 @@ import { FormFieldConfig, CustomizationSettings } from './types';
                         <option value="radio">Radio Buttons</option>
                         <option value="date">Date</option>
                         <option value="time">Time</option>
-                        <option value="file">File Upload Placeholder</option>
                         <option value="address">Address</option>
                         <option value="budget">Budget Range</option>
                         <option value="contact-method">Preferred Contact Method</option>

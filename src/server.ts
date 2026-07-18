@@ -626,25 +626,58 @@ app.post('/api/admin/discounts', express.json(), async (req, res) => {
       res.status(400).json({ error: 'code, type, and value are required' });
       return;
     }
+    if (type !== 'percent' && type !== 'fixed') {
+      res.status(400).json({ error: 'type must be "percent" or "fixed"' });
+      return;
+    }
     const existing = await db.doc(`discounts/${code}`).get();
     if (existing.exists) {
       res.status(409).json({ error: 'Discount code already exists' });
       return;
     }
+
+    // Create the real Stripe objects FIRST. A discount code is only useful if
+    // it actually redeems at checkout (see allow_promotion_codes above), so we
+    // never want a Firestore doc that *looks* live but has no Stripe backing —
+    // if Stripe rejects it (bad amount, duplicate code, etc.) nothing is saved.
+    const stripe = await getStripe();
+    const numericValue = Number(value);
+    const coupon = await stripe.coupons.create({
+      name: code,
+      percent_off: type === 'percent' ? numericValue : undefined,
+      amount_off: type === 'fixed' ? Math.round(numericValue * 100) : undefined,
+      currency: type === 'fixed' ? 'usd' : undefined,
+      duration: 'once',
+      max_redemptions: maxUses ? Number(maxUses) : undefined,
+      redeem_by: expiresAt ? Math.floor(new Date(expiresAt).getTime() / 1000) : undefined,
+    });
+    const promotionCode = await stripe.promotionCodes.create({
+      promotion: { type: 'coupon', coupon: coupon.id },
+      code,
+    });
+
+    // Note (v1 scope): applicableTiers is stored for the admin UI's own
+    // display and isn't enforced by Stripe itself — a code scoped to
+    // "business" here can currently still be redeemed on a "pro" checkout,
+    // since that would require per-Price coupon restrictions. Fine for a
+    // small, low-volume launch; worth tightening if discount codes see heavy use.
     await db.doc(`discounts/${code}`).set({
       type,
-      value: Number(value),
+      value: numericValue,
       expiresAt: expiresAt || null,
       maxUses: maxUses ? Number(maxUses) : null,
       usedCount: 0,
       applicableTiers: applicableTiers || ['pro', 'business'],
       active: true,
       createdAt: new Date().toISOString(),
+      stripeCouponId: coupon.id,
+      stripePromotionCodeId: promotionCode.id,
     });
     res.json({ success: true });
   } catch (e) {
     console.error('Admin create discount error:', e); captureServerError(e);
-    res.status(500).json({ error: 'Server error' });
+    const message = e instanceof Error ? e.message : 'Server error';
+    res.status(500).json({ error: `Failed to create a working discount code in Stripe: ${message}` });
   }
 });
 
@@ -652,7 +685,19 @@ app.delete('/api/admin/discounts/:code', async (req, res) => {
   if (!await verifyAdmin(req)) { res.status(403).json({ error: 'Not authorized' }); return; }
   try {
     const db = await getDb();
-    await db.doc(`discounts/${req.params.code}`).delete();
+    const ref = db.doc(`discounts/${req.params.code}`);
+    const snap = await ref.get();
+    const promotionCodeId = snap.exists ? snap.data()?.['stripePromotionCodeId'] : null;
+    if (promotionCodeId) {
+      // Stripe has no hard-delete for promotion codes (they may have real
+      // redemption history) — deactivating is the correct equivalent, and
+      // stops it from working at checkout immediately.
+      const stripe = await getStripe();
+      await stripe.promotionCodes.update(promotionCodeId, { active: false }).catch(err => {
+        console.warn('Failed to deactivate Stripe promotion code:', err);
+      });
+    }
+    await ref.delete();
     res.json({ success: true });
   } catch (e) {
     console.error('Admin delete discount error:', e); captureServerError(e);
@@ -1106,6 +1151,11 @@ app.post('/api/stripe/create-checkout-session', express.json(), async (req, res)
       client_reference_id: uid,
       customer_email: email,
       metadata: { uid, tier },
+      // Lets Stripe's own hosted checkout show an "Add promotion code" field.
+      // Codes created via /api/admin/discounts are synced to real Stripe
+      // Promotion Codes (see below) so this actually redeems them — without
+      // this flag, discount codes are stored but never usable at checkout.
+      allow_promotion_codes: true,
     });
 
     res.json({ url: session.url });
