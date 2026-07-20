@@ -270,6 +270,19 @@ GitHub Actions (`deploy.yml`) exists but needs WIF secrets configured. Manual `g
   Coach "Insert as Section" (see the Growth recommendations bullet above) is
   built on this — done.
 - Deploy `firestore.rules` to enable analytics tracking: `firebase deploy --only firestore:rules`
+- **Security hardening (done):** a deployment-readiness audit drove three code fixes in
+  `src/server.ts`: (1) the global header middleware now also sets `X-Content-Type-Options: nosniff`,
+  `Referrer-Policy: strict-origin-when-cross-origin`, and HSTS (COOP unchanged); (2) the
+  `/api/domain/*` endpoints now run the pure `validateDomain()` (`src/app/domain-verification.ts`)
+  and pass the normalized domain downstream — closes an unencoded-path-injection path into the
+  `cloud-platform`-scoped GCP Domain Mappings calls; (3) the public enquiry write now caps the
+  inline `enquiries`/`activities` arrays at `MAX_STORED_ENQUIRIES = 500` to prevent a doc-size DoS
+  on the hot `main` doc. **Follow-up (not done — needs live testing):** a full
+  Content-Security-Policy / frame policy. It's deliberately NOT set because the public site embeds
+  a Google Maps iframe and the builder renders a preview iframe, and Firebase Auth uses popups, so a
+  wrong CSP would break sign-in/maps/previews on the live app. The two real launch blockers remain
+  Aden's: swap Stripe to live keys, and confirm the deployed `firestore.rules`/`storage.rules` match
+  this repo.
 
 ## Workforce auto-merge pipeline
 
