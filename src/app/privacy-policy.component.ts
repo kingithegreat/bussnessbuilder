@@ -16,12 +16,12 @@ import { RouterLink } from '@angular/router';
       <main class="max-w-4xl mx-auto px-4 sm:px-6 pb-20">
         <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 md:p-12">
           <h1 class="text-3xl md:text-4xl font-bold tracking-tight mb-2">Privacy Policy</h1>
-          <p class="text-gray-500 text-sm mb-10">Last updated: 25 June 2026</p>
+          <p class="text-gray-500 text-sm mb-10">Last updated: 22 July 2026</p>
 
           <div class="prose prose-gray max-w-none space-y-8 text-sm leading-relaxed text-gray-700">
             <section>
               <h2 class="text-lg font-bold text-gray-900 mb-3">1. Introduction</h2>
-              <p>BusinessFlow Studio ("we", "us", "our") operates the BusinessFlow Studio platform (the "Service"). This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our Service.</p>
+              <p>The BusinessFlow Studio platform (the "Service") is operated by Aden Kingi, a sole trader based in New Zealand, trading as BusinessFlow Studio ("we", "us", "our"). We are the data controller for the personal information described in this policy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our Service.</p>
               <p class="mt-2">By using the Service, you agree to the collection and use of information in accordance with this policy. If you do not agree, please do not use the Service.</p>
             </section>
 
@@ -145,7 +145,7 @@ import { RouterLink } from '@angular/router';
             <section>
               <h2 class="text-lg font-bold text-gray-900 mb-3">12. Contact Us</h2>
               <p>If you have questions about this Privacy Policy or your data, contact us at:</p>
-              <p class="mt-2 font-medium text-gray-900">BusinessFlow Studio<br>Email: adenkingi9&#64;gmail.com</p>
+              <p class="mt-2 font-medium text-gray-900">Aden Kingi, trading as BusinessFlow Studio<br>New Zealand<br>Email: adenkingi9&#64;gmail.com</p>
             </section>
           </div>
         </div>

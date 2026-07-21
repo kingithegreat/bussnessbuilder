@@ -16,12 +16,12 @@ import { RouterLink } from '@angular/router';
       <main class="max-w-4xl mx-auto px-4 sm:px-6 pb-20">
         <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 md:p-12">
           <h1 class="text-3xl md:text-4xl font-bold tracking-tight mb-2">Terms of Service</h1>
-          <p class="text-gray-500 text-sm mb-10">Last updated: 7 July 2026</p>
+          <p class="text-gray-500 text-sm mb-10">Last updated: 22 July 2026</p>
 
           <div class="prose prose-gray max-w-none space-y-8 text-sm leading-relaxed text-gray-700">
             <section>
               <h2 class="text-lg font-bold text-gray-900 mb-3">1. Agreement to Terms</h2>
-              <p>By accessing or using BusinessFlow Studio (the "Service"), you agree to be bound by these Terms of Service ("Terms"). If you do not agree to these Terms, do not use the Service.</p>
+              <p>BusinessFlow Studio (the "Service") is operated by Aden Kingi, a sole trader based in New Zealand, trading as BusinessFlow Studio ("we", "us", "our"). By accessing or using the Service, you agree to be bound by these Terms of Service ("Terms"). If you do not agree to these Terms, do not use the Service.</p>
               <p class="mt-2">These Terms apply to all users of the Service, including visitors, registered users, and anyone who accesses any part of the Service.</p>
             </section>
 
@@ -175,7 +175,7 @@ import { RouterLink } from '@angular/router';
             <section>
               <h2 class="text-lg font-bold text-gray-900 mb-3">16. Contact Us</h2>
               <p>If you have questions about these Terms, contact us at:</p>
-              <p class="mt-2 font-medium text-gray-900">BusinessFlow Studio<br>Email: adenkingi9&#64;gmail.com</p>
+              <p class="mt-2 font-medium text-gray-900">Aden Kingi, trading as BusinessFlow Studio<br>New Zealand<br>Email: adenkingi9&#64;gmail.com</p>
             </section>
           </div>
         </div>
