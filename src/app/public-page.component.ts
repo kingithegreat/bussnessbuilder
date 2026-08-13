@@ -98,7 +98,7 @@ import { ToastService } from './toast.service';
           </div>
           <div class="flex items-center gap-2">
             <a href="#contact" (click)="scrollTo('contact', $event)" [style.backgroundColor]="customization().branding.primaryColor" [style.borderRadius]="buttonRadius" class="text-white px-3 py-2 md:px-5 md:py-2.5 text-xs md:text-sm font-bold shadow-md hover:opacity-90 transition-opacity whitespace-nowrap cursor-pointer">
-              {{ customization().branding.ctaText || 'Book Now' }}
+              {{ ctaLabel() }}
             </a>
             <button (click)="mobileMenuOpen.set(!mobileMenuOpen())" class="md:hidden p-2 rounded-lg text-gray-500 hover:bg-gray-100 transition-colors">
               <mat-icon>{{ mobileMenuOpen() ? 'close' : 'menu' }}</mat-icon>
@@ -143,7 +143,7 @@ import { ToastService } from './toast.service';
                       </p>
                       <div class="flex gap-3">
                          <a href="#contact" (click)="scrollTo('contact', $event)" [style.backgroundColor]="customization().branding.primaryColor" [style.borderRadius]="buttonRadius" class="text-white px-8 py-3.5 text-sm font-semibold shadow-sm hover:shadow-md hover:scale-[1.02] transition-all duration-200 cursor-pointer">
-                           {{ customization().branding.ctaText || profile().ctaText || 'Get a Quote' }}
+                           {{ ctaLabel() }}
                          </a>
                          <a href="#services" (click)="scrollTo('services', $event)" [style.borderRadius]="buttonRadius" class="bg-gray-100/80 text-gray-900 px-8 py-3.5 text-sm font-semibold hover:bg-gray-200/80 transition-all duration-200 cursor-pointer">
                            {{ t('secondaryCta') }}
@@ -177,7 +177,7 @@ import { ToastService } from './toast.service';
                         </p>
                         <div class="flex flex-wrap gap-4">
                            <a href="#contact" (click)="scrollTo('contact', $event)" [style.backgroundColor]="customization().branding.primaryColor" [style.borderRadius]="buttonRadius" class="text-white px-8 py-4 text-sm font-bold shadow-lg hover:opacity-90 transition-opacity cursor-pointer">
-                             {{ customization().branding.ctaText || profile().ctaText || 'Get a Quote' }}
+                             {{ ctaLabel() }}
                            </a>
                         </div>
                         @if(profile().trustBadges && profile().trustBadges.length) {
@@ -211,7 +211,7 @@ import { ToastService } from './toast.service';
                         {{ truncated(profile().description, 150) }}
                       </p>
                       <a href="#contact" (click)="scrollTo('contact', $event)" [style.color]="customization().branding.primaryColor" class="inline-flex items-center gap-2 text-lg font-bold hover:opacity-80 transition-opacity cursor-pointer">
-                        <span>{{ customization().branding.ctaText || profile().ctaText || 'Get a Quote' }}</span>
+                        <span>{{ ctaLabel() }}</span>
                         <mat-icon>arrow_forward</mat-icon>
                       </a>
                     </div>
@@ -232,7 +232,7 @@ import { ToastService } from './toast.service';
                       </p>
                       <div class="flex flex-col sm:flex-row gap-4">
                          <a href="#contact" (click)="scrollTo('contact', $event)" [style.backgroundColor]="customization().branding.primaryColor" [style.borderRadius]="buttonRadius" class="text-white px-8 py-4 text-sm font-bold shadow-lg hover:opacity-90 transition-opacity cursor-pointer">
-                           {{ customization().branding.ctaText || profile().ctaText || 'Get a Quote' }}
+                           {{ ctaLabel() }}
                          </a>
                          <a href="#services" (click)="scrollTo('services', $event)" [style.borderRadius]="buttonRadius" class="bg-white/10 text-white border border-white/20 px-8 py-4 text-sm font-bold hover:bg-white/20 transition-colors cursor-pointer">
                            {{ t('secondaryCta') }}
@@ -1042,7 +1042,7 @@ import { ToastService } from './toast.service';
                     <h2 class="text-2xl md:text-4xl font-black text-white mb-3" [appEditableText]="editable()" (textChange)="onTextEdit('section', 'heading', $event, section.id)">{{ section.heading }}</h2>
                     <p class="text-white/80 font-medium mb-8 max-w-xl mx-auto" [appEditableText]="editable()" (textChange)="onTextEdit('section', 'subheading', $event, section.id)">{{ section.subheading }}</p>
                     <a href="#contact" (click)="scrollTo('contact', $event)" [style.color]="customization().branding.primaryColor" [style.borderRadius]="buttonRadius" class="inline-flex items-center gap-2 bg-white px-8 py-3.5 text-sm font-bold shadow-md hover:scale-[1.03] transition-transform cursor-pointer">
-                      {{ customization().branding.ctaText || 'Get in Touch' }}
+                      {{ ctaLabel() }}
                       <mat-icon class="text-[18px]">arrow_forward</mat-icon>
                     </a>
                   </div>
@@ -1130,6 +1130,23 @@ export class PublicPageComponent {
   // Customizable page text with defaults (see PageTextSettings in types.ts).
   t(key: keyof PageTextSettings): string {
     return pageText(this.customization(), key);
+  }
+
+  /**
+   * The primary call-to-action label, resolved in ONE place.
+   *
+   * This used to be inlined at six call sites with three different hard-coded
+   * defaults, and two of them skipped profile.ctaText entirely. A site straight
+   * out of the setup wizard therefore showed three different labels for the same
+   * action: "Book Now" in the sticky header, the preset's suggestion in the hero,
+   * and "Get in Touch" in the CTA band. Setting the Customisation field papered
+   * over it, so it only ever hurt people who hadn't touched anything yet.
+   */
+  ctaLabel(): string {
+    const branding = (this.customization().branding.ctaText || '').trim();
+    if (branding) return branding;
+    const fromProfile = (this.profile().ctaText || '').trim();
+    return fromProfile || 'Get a Quote';
   }
 
   // Hero badge pill: user override wins; otherwise auto-compose from the

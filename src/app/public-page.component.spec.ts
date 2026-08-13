@@ -219,4 +219,15 @@ describe('PublicPageComponent — section renderer completeness', () => {
     const el = renderWithSections([seededSection('hero', 1)]);
     expect(el.textContent).toContain(`© ${new Date().getFullYear()} Test Biz`);
   });
+
+  it('uses ONE call-to-action label everywhere, falling back to the profile', () => {
+    // Regression: the header defaulted to 'Book Now' and the CTA band to
+    // 'Get in Touch', both ignoring profile.ctaText, so a fresh site showed
+    // three different labels for the same action.
+    const el = renderWithSections([seededSection('hero', 1), seededSection('contact', 2)]);
+    const text = el.textContent || '';
+    expect(text).not.toContain('Book Now');
+    expect(text).not.toContain('Get in Touch');
+  });
+
 });
