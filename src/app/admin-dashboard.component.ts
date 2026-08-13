@@ -1,11 +1,13 @@
 import { Component, inject, OnInit, signal, computed, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
+import { ActivatedRoute } from '@angular/router';
 import { DataService } from './data.service';
 import { AnalyticsService } from './analytics.service';
 import { AuthService } from './auth.service';
+import { ToastService } from './toast.service';
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
-import { OnboardingGuideComponent } from './onboarding-guide.component';
+import { OnboardingGuideComponent, LINK_SHARED_KEY } from './onboarding-guide.component';
 
 @Component({
   selector: 'app-admin-dashboard',
@@ -13,11 +15,49 @@ import { OnboardingGuideComponent } from './onboarding-guide.component';
   imports: [DatePipe, DecimalPipe, MatIconModule, OnboardingGuideComponent],
   template: `
     <div class="flex flex-col gap-6">
+      <!--
+        The payoff moment. Publishing used to drop people straight onto a
+        dashboard of zeros headed "Welcome back!" — the live site, the thing
+        they just made, was never shown or handed over.
+      -->
+      @if (justPublished()) {
+        <div class="rounded-2xl bg-gradient-to-r from-blue-600 to-blue-700 p-6 md:p-7 text-white shadow-sm relative overflow-hidden">
+          <div class="absolute top-0 right-0 w-48 h-48 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2"></div>
+          <div class="relative">
+            <div class="flex items-start justify-between gap-4">
+              <div>
+                <h2 class="text-xl md:text-2xl font-black tracking-tight mb-1">🎉 {{ businessName() || 'Your site' }} is live</h2>
+                <p class="text-blue-100 text-sm">Share this link and enquiries land straight in your inbox.</p>
+              </div>
+              <button (click)="dismissPublished()" class="text-white/60 hover:text-white p-1 rounded-lg hover:bg-white/10 transition-colors shrink-0" title="Dismiss">
+                <mat-icon>close</mat-icon>
+              </button>
+            </div>
+
+            <div class="mt-5 flex flex-col sm:flex-row gap-3">
+              <div class="flex-1 bg-white/10 border border-white/20 rounded-xl px-4 py-3 font-mono text-sm truncate" [title]="siteUrl()">
+                {{ siteUrl() }}
+              </div>
+              <div class="flex gap-2 shrink-0">
+                <button (click)="copySiteUrl()" class="inline-flex items-center gap-1.5 bg-white text-blue-700 px-4 py-3 rounded-xl text-sm font-bold hover:bg-blue-50 transition-colors">
+                  <mat-icon class="text-[18px]">{{ copied() ? 'check' : 'content_copy' }}</mat-icon>
+                  {{ copied() ? 'Copied' : 'Copy link' }}
+                </button>
+                <a [href]="siteUrl()" target="_blank" rel="noopener" class="inline-flex items-center gap-1.5 bg-white/15 border border-white/25 text-white px-4 py-3 rounded-xl text-sm font-bold hover:bg-white/25 transition-colors">
+                  <mat-icon class="text-[18px]">open_in_new</mat-icon>
+                  View site
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      }
+
       @if (showOnboarding()) {
         <app-onboarding-guide (guideDismissed)="dismissOnboarding()"></app-onboarding-guide>
       }
       <div>
-        <h2 class="text-2xl font-semibold tracking-tight text-gray-900">Welcome back!</h2>
+        <h2 class="text-2xl font-semibold tracking-tight text-gray-900">{{ justPublished() ? 'Your dashboard' : 'Welcome back!' }}</h2>
         <p class="text-gray-500 text-sm">Here's what's happening with your business today.</p>
       </div>
 
@@ -211,9 +251,26 @@ export class AdminDashboardComponent implements OnInit {
   private dataService = inject(DataService);
   analyticsService = inject(AnalyticsService);
   private authService = inject(AuthService);
+  private route = inject(ActivatedRoute);
+  private toast = inject(ToastService);
   private platformId = inject(PLATFORM_ID);
   enquiries = this.dataService.enquiries;
   activities = this.dataService.activities;
+
+  /** Set by the setup wizard / first sign-in via ?welcome=1. */
+  justPublished = signal(false);
+  copied = signal(false);
+
+  businessName = computed(() => this.dataService.profile().name);
+
+  /** Absolute public URL, so it's shareable straight out of the banner. */
+  siteUrl = computed(() => {
+    const slug = this.dataService.siteSlug();
+    const uid = this.authService.currentUser()?.uid || '';
+    const path = `/site/${slug || uid}`;
+    if (!isPlatformBrowser(this.platformId)) return path;
+    return `${window.location.origin}${path}`;
+  });
 
   private onboardingDismissed = signal(false);
   showOnboarding = computed(() => {
@@ -228,6 +285,34 @@ export class AdminDashboardComponent implements OnInit {
     const user = this.authService.currentUser();
     if (user) {
       this.analyticsService.loadAnalytics(user.uid);
+    }
+    this.justPublished.set(this.route.snapshot.queryParamMap.get('welcome') === '1');
+  }
+
+  dismissPublished() {
+    this.justPublished.set(false);
+  }
+
+  async copySiteUrl() {
+    const url = this.siteUrl();
+    try {
+      await navigator.clipboard.writeText(url);
+      this.copied.set(true);
+      this.markLinkShared();
+      this.toast.success('Link copied — paste it anywhere you talk to customers.');
+      setTimeout(() => this.copied.set(false), 2000);
+    } catch {
+      this.toast.error('Could not copy automatically — select the link and copy it.');
+    }
+  }
+
+  /** Ticks the "share your link" step on the activation checklist. */
+  private markLinkShared() {
+    if (!isPlatformBrowser(this.platformId)) return;
+    try {
+      localStorage.setItem(LINK_SHARED_KEY, '1');
+    } catch {
+      /* storage unavailable — the step just stays unticked */
     }
   }
 

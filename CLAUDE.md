@@ -269,6 +269,43 @@ GitHub Actions (`deploy.yml`) exists but needs WIF secrets configured. Manual `g
   are deliberately not insertable (nav anchors + single enquiry form). Growth
   Coach "Insert as Section" (see the Growth recommendations bullet above) is
   built on this — done.
+- **New-user funnel — wizard before account (done)**: the first gate used to be a
+  sign-up form; landing CTAs went to `/signup` and `setupGuard` bounced anonymous
+  visitors to `/login`, so nobody saw the product before being asked for
+  credentials. Now: landing CTAs → `/setup`; `setupGuard` lets anonymous
+  visitors through (no `DataService.init()`, nothing persisted server-side); the
+  wizard persists every keystroke to `bf_setup_draft` and restores it on load;
+  on publish a logged-out visitor's finished site is stashed under
+  `businessflow_state` (the key `DataService.init()` already migrates into
+  Firestore on first login) plus a `bf_pending_publish` flag, and they're routed
+  to `/signup` with contextual copy. After auth, `navigateAfterAuth` claims the
+  slug and lands them on `/admin/dashboard?welcome=1`. Pure draft/progress
+  helpers + contract live in `src/app/setup-draft.ts` (unit-tested); slug
+  claiming moved to `src/app/slug.service.ts` (`claimIfMissing`, idempotent — it
+  also retries a claim that failed at publish time, which previously stranded a
+  site on its raw-UID URL forever).
+  - Wizard progress bar was hard-coded to "Step 1: Profile — 100%" on an empty
+    form; it now reports real completion (`draftProgress`, required fields
+    weighted double).
+  - Sign-up dead end fixed: `agreeTerms` had no validator, so its "you must
+    agree" message could never render and the submit button just sat disabled
+    with no explanation. It now takes `Validators.requiredTrue` while in sign-up
+    mode (cleared in sign-in mode, or sign-in would be permanently blocked), and
+    `onSubmit` names the blocking field instead of silently returning.
+  - Payoff moment: publishing used to drop people on a dashboard of zeros headed
+    "Welcome back!". `?welcome=1` now shows a "🎉 <name> is live" banner with the
+    absolute public URL, copy-link and view-site buttons.
+  - The dashboard onboarding tour was a six-slide feature carousel whose progress
+    bar measured *which slide you were on*. Replaced with a real activation
+    checklist (`src/app/activation.ts`, unit-tested): publish → brand it → list
+    real services → share your link → first enquiry, each derived from actual
+    state. Copying the link from the dashboard banner sets `bf_link_shared`,
+    which ticks the share step.
+  - **Not done — the funnel is still unmeasured.** `AnalyticsService` only counts
+    public-site page views; there are no events for wizard started/abandoned,
+    sign-up completed, or published, so drop-off between the steps above can't be
+    seen. That's the next piece of work if these changes are to be evaluated
+    rather than assumed.
 - Deploy `firestore.rules` to enable analytics tracking: `firebase deploy --only firestore:rules`
 - **Security hardening (done):** a deployment-readiness audit drove three code fixes in
   `src/server.ts`: (1) the global header middleware now also sets `X-Content-Type-Options: nosniff`,

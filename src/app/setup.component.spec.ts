@@ -6,10 +6,14 @@ import { SetupWizardComponent } from './setup.component';
 import { DataService } from './data.service';
 import { AiService } from './ai.service';
 import { AuthService } from './auth.service';
+import { SlugService } from './slug.service';
+import { SETUP_DRAFT_KEY, PENDING_PUBLISH_KEY } from './setup-draft';
 
 describe('SetupWizardComponent — preview-before-publish gate', () => {
   let completeSetupCalls: number;
   let navigated: unknown[] | null;
+  let loggedIn: boolean;
+  let claimCalls: number;
 
   const dataStub = {
     updateProfile: () => { /* noop */ },
@@ -17,15 +21,18 @@ describe('SetupWizardComponent — preview-before-publish gate', () => {
     setFaqs: () => { /* noop */ },
     setSiteSlug: () => { /* noop */ },
     completeSetup: () => { completeSetupCalls++; },
+    exportState: () => '{"profile":{"name":"Apex"}}',
   };
   const aiStub = {
     generateBusinessDescription: async () => 'desc',
     getPresetServices: () => [],
   };
   const authStub = {
-    currentUser: () => null,
-    getIdToken: async () => null,
+    isLoggedIn: () => loggedIn,
+    currentUser: () => (loggedIn ? { uid: 'u1' } : null),
+    getIdToken: async () => (loggedIn ? 'tok' : null),
   };
+  const slugStub = { claimIfMissing: async () => { claimCalls++; return 'apex'; } };
   const httpStub = { post: () => of({ slug: 'apex' }) };
   const routerStub = { navigate: async (cmds: unknown[]) => { navigated = cmds; return true; } };
 
@@ -35,6 +42,7 @@ describe('SetupWizardComponent — preview-before-publish gate', () => {
         { provide: DataService, useValue: dataStub },
         { provide: AiService, useValue: aiStub },
         { provide: AuthService, useValue: authStub },
+        { provide: SlugService, useValue: slugStub },
         { provide: HttpClient, useValue: httpStub },
         { provide: Router, useValue: routerStub },
       ],
@@ -44,7 +52,10 @@ describe('SetupWizardComponent — preview-before-publish gate', () => {
 
   beforeEach(() => {
     completeSetupCalls = 0;
+    claimCalls = 0;
     navigated = null;
+    loggedIn = true;
+    localStorage.clear();
     TestBed.resetTestingModule();
   });
 
@@ -84,5 +95,62 @@ describe('SetupWizardComponent — preview-before-publish gate', () => {
     const c = makeComponent();
     c.form.patchValue({ type: 'cleaner' });
     expect(c.selectedTypeLabel().length).toBeGreaterThan(0);
+  });
+
+  it('claims a slug when publishing while logged in', async () => {
+    const c = makeComponent();
+    c.form.setValue({ name: 'Apex', type: 'cleaner', tagline: '', email: 'a@b.com', phone: '', serviceArea: '' });
+    await c.onConfirmPublish();
+    expect(claimCalls).toBe(1);
+  });
+
+  describe('logged-out visitor (wizard before account)', () => {
+    beforeEach(() => { loggedIn = false; });
+
+    it('finishes the wizard, stashes the site and routes to sign-up', async () => {
+      const c = makeComponent();
+      c.form.setValue({ name: 'Apex', type: 'cleaner', tagline: '', email: 'a@b.com', phone: '', serviceArea: '' });
+      await c.onConfirmPublish();
+
+      expect(completeSetupCalls).toBe(1);
+      expect(navigated).toEqual(['/signup']);
+      // businessflow_state is the key DataService.init() migrates on first login.
+      expect(localStorage.getItem('businessflow_state')).toBe(dataStub.exportState());
+      expect(localStorage.getItem(PENDING_PUBLISH_KEY)).toBe('1');
+    });
+
+    it('does not try to claim a slug before an account exists', async () => {
+      const c = makeComponent();
+      c.form.setValue({ name: 'Apex', type: 'cleaner', tagline: '', email: 'a@b.com', phone: '', serviceArea: '' });
+      await c.onConfirmPublish();
+      expect(claimCalls).toBe(0);
+    });
+  });
+
+  describe('draft persistence', () => {
+    it('restores a saved draft into the form', () => {
+      localStorage.setItem(SETUP_DRAFT_KEY, JSON.stringify({
+        name: 'Restored Co', type: 'cleaner', tagline: 'Tag', email: 'r@c.com', phone: '', serviceArea: 'Akl',
+      }));
+      const c = makeComponent();
+      c.ngOnInit();
+      expect(c.form.value.name).toBe('Restored Co');
+      expect(c.form.value.serviceArea).toBe('Akl');
+    });
+
+    it('saves keystrokes so a refresh does not empty the wizard', () => {
+      const c = makeComponent();
+      c.ngOnInit();
+      c.form.patchValue({ name: 'Half Typed' });
+      expect(localStorage.getItem(SETUP_DRAFT_KEY)).toContain('Half Typed');
+    });
+
+    it('progress reflects what is filled in, starting at 0', () => {
+      const c = makeComponent();
+      c.ngOnInit();
+      expect(c.progress()).toBe(0);
+      c.form.patchValue({ name: 'Apex', type: 'cleaner', email: 'a@b.com' });
+      expect(c.progress()).toBeGreaterThan(0);
+    });
   });
 });

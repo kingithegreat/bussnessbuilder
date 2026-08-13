@@ -38,10 +38,16 @@ export const authGuard: CanActivateFn = async () => {
   return true;
 };
 
+/**
+ * The setup wizard is deliberately open to logged-out visitors: they build the
+ * site first and only need an account to publish it (the wizard stashes the
+ * result and `DataService.init()` migrates it in after sign-up). Gating this
+ * route behind /login put a credential wall in front of the product, which is
+ * where most first-time visitors were lost.
+ */
 export const setupGuard: CanActivateFn = async () => {
   const authService = inject(AuthService);
   const dataService = inject(DataService);
-  const router = inject(Router);
 
   if (authService.isLoading()) {
     await new Promise<void>(resolve => {
@@ -55,7 +61,9 @@ export const setupGuard: CanActivateFn = async () => {
   }
 
   if (!authService.isLoggedIn()) {
-    return router.parseUrl('/login');
+    // Anonymous: render the wizard against the in-memory DataService. Nothing
+    // is persisted server-side until they sign up.
+    return true;
   }
 
   const uid = authService.currentUser()!.uid;

@@ -12,6 +12,7 @@ describe('route guards', () => {
   let setupComplete: boolean;
   let token: string | null;
   let verifyFails: boolean;
+  let initCalls: number;
 
   const authStub = {
     isLoading: () => false,
@@ -20,7 +21,7 @@ describe('route guards', () => {
     getIdToken: async () => token,
   };
   const dataStub = {
-    init: async () => { /* noop */ },
+    init: async () => { initCalls++; },
     isSetupComplete: () => setupComplete,
   };
   const subStub = { loadSubscription: () => { /* noop */ } };
@@ -36,6 +37,7 @@ describe('route guards', () => {
     setupComplete = true;
     token = 'tok';
     verifyFails = false;
+    initCalls = 0;
     TestBed.configureTestingModule({
       providers: [
         { provide: AuthService, useValue: authStub },
@@ -72,9 +74,17 @@ describe('route guards', () => {
       setupComplete = false;
       expect(await run(setupGuard)).toBe(true);
     });
-    it('redirects to /login when not logged in', async () => {
+    // The wizard is open to anonymous visitors: they build first and only need
+    // an account to publish. It must NOT bounce them to /login.
+    it('allows an anonymous visitor through', async () => {
       loggedIn = false;
-      expect(urlOf(await run(setupGuard))).toBe('/login');
+      expect(await run(setupGuard)).toBe(true);
+    });
+    it('does not initialise DataService for an anonymous visitor', async () => {
+      loggedIn = false;
+      initCalls = 0;
+      await run(setupGuard);
+      expect(initCalls).toBe(0);
     });
   });
 

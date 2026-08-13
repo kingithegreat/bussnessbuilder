@@ -26,7 +26,7 @@ import { AuthService } from './auth.service';
             <a routerLink="/login" class="text-gray-600 hover:text-gray-900 px-3 md:px-4 py-2 text-sm font-medium transition-colors">
               Sign In
             </a>
-            <a routerLink="/signup" class="bg-blue-600 hover:bg-blue-700 text-white px-4 md:px-5 py-2 rounded-full text-sm font-medium transition-colors shadow-sm hover:shadow">
+            <a routerLink="/setup" class="bg-blue-600 hover:bg-blue-700 text-white px-4 md:px-5 py-2 rounded-full text-sm font-medium transition-colors shadow-sm hover:shadow">
               Get Started
             </a>
           }
@@ -48,11 +48,21 @@ import { AuthService } from './auth.service';
             <p class="text-base md:text-xl text-gray-500 max-w-2xl mb-8 md:mb-12">
               The ultimate all-in-one platform for small businesses. Answer a few questions and instantly get a beautifully designed public page, an enquiry inbox, and AI-powered management tools.
             </p>
-            <div class="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
-              <a [routerLink]="auth.isLoggedIn() ? '/admin/dashboard' : '/signup'" class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-full text-base md:text-lg font-medium transition-colors shadow-sm flex items-center justify-center gap-2">
+            <!--
+              Straight into the wizard, not into a sign-up form. The account is
+              only needed to publish, so the product does the selling first.
+            -->
+            <div class="flex flex-col items-center gap-3 w-full sm:w-auto">
+              <a [routerLink]="auth.isLoggedIn() ? '/admin/dashboard' : '/setup'" class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-full text-base md:text-lg font-medium transition-colors shadow-sm flex items-center justify-center gap-2 w-full sm:w-auto">
                 {{ auth.isLoggedIn() ? 'Go to Dashboard' : 'Start Building — Free' }}
                 <mat-icon>arrow_forward</mat-icon>
               </a>
+              @if (!auth.isLoggedIn()) {
+                <p class="text-sm text-gray-400 flex items-center gap-1.5">
+                  <mat-icon class="text-[16px] text-green-600">check_circle</mat-icon>
+                  No sign-up needed to start · no credit card
+                </p>
+              }
             </div>
           </div>
         </section>
@@ -162,8 +172,8 @@ import { AuthService } from './auth.service';
         <!-- Bottom CTA -->
         <section class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-20 text-center">
           <h2 class="text-2xl md:text-4xl font-bold tracking-tight text-gray-900 mb-4">Ready to build your site?</h2>
-          <p class="text-gray-500 mb-8 text-sm md:text-base max-w-xl mx-auto">Get started for free. No credit card required. Build your professional business page in minutes. <a routerLink="/pricing" class="text-blue-600 font-medium hover:underline">See pricing</a></p>
-          <a [routerLink]="auth.isLoggedIn() ? '/admin/dashboard' : '/signup'" class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-full text-base md:text-lg font-medium transition-colors shadow-sm">
+          <p class="text-gray-500 mb-8 text-sm md:text-base max-w-xl mx-auto">Build it first — you only need an account when you're ready to publish. No credit card required. <a routerLink="/pricing" class="text-blue-600 font-medium hover:underline">See pricing</a></p>
+          <a [routerLink]="auth.isLoggedIn() ? '/admin/dashboard' : '/setup'" class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-full text-base md:text-lg font-medium transition-colors shadow-sm">
             {{ auth.isLoggedIn() ? 'Go to Dashboard' : 'Get Started Free' }}
             <mat-icon>arrow_forward</mat-icon>
           </a>

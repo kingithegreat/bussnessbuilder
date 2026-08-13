@@ -1,10 +1,13 @@
-import { Component, inject, signal, OnInit } from '@angular/core';
-import { Router, RouterLink, ActivatedRoute } from '@angular/router';
+import { Component, inject, signal, OnInit, PLATFORM_ID } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
+import { Router, RouterLink } from '@angular/router';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { AuthService } from './auth.service';
 import { DataService } from './data.service';
+import { SlugService } from './slug.service';
 import { ToastService } from './toast.service';
+import { PENDING_PUBLISH_KEY } from './setup-draft';
 
 @Component({
   selector: 'app-login',
@@ -23,6 +26,15 @@ import { ToastService } from './toast.service';
           <h1 class="text-3xl font-bold text-gray-900">{{ isSignUp() ? 'Create your account' : 'Welcome back' }}</h1>
           <p class="text-gray-500 mt-2">{{ isSignUp() ? 'Start building your business site' : 'Sign in to your dashboard' }}</p>
         </div>
+
+        @if (isSignUp() && pendingPublish()) {
+          <div class="mb-4 flex items-start gap-3 rounded-2xl border border-blue-100 bg-blue-50 p-4">
+            <mat-icon class="text-[20px] text-blue-600 shrink-0">rocket_launch</mat-icon>
+            <p class="text-sm text-blue-900 leading-relaxed">
+              <strong>Your site is ready.</strong> Create a free account and it goes live straight away — everything you entered is saved.
+            </p>
+          </div>
+        }
 
         <div class="bg-white/80 backdrop-blur-xl rounded-2xl shadow-sm border border-gray-200/60 p-8">
           <button (click)="googleSignIn()" [disabled]="loading()" class="w-full flex items-center justify-center gap-3 bg-white border border-gray-200 text-gray-700 px-4 py-3 rounded-xl text-sm font-medium hover:bg-gray-50 transition-colors mb-2">
@@ -75,7 +87,7 @@ import { ToastService } from './toast.service';
               <div class="mb-4 p-3 bg-red-50 border border-red-100 rounded-xl text-red-600 text-sm">{{ error() }}</div>
             }
 
-            <button type="submit" [disabled]="form.invalid || loading() || (isSignUp() && !form.get('agreeTerms')?.value)" class="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-xl text-sm font-medium transition-colors disabled:opacity-50">
+            <button type="submit" [disabled]="loading()" class="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-xl text-sm font-medium transition-colors disabled:opacity-50">
               @if (loading()) {
                 <span class="flex items-center justify-center gap-2"><mat-icon class="animate-spin text-[18px]">autorenew</mat-icon> Please wait...</span>
               } @else {
@@ -103,16 +115,23 @@ import { ToastService } from './toast.service';
 export class LoginComponent implements OnInit {
   private auth = inject(AuthService);
   private data = inject(DataService);
+  private slug = inject(SlugService);
   private toast = inject(ToastService);
   private router = inject(Router);
-  private route = inject(ActivatedRoute);
   private fb = inject(FormBuilder);
+  private platformId = inject(PLATFORM_ID);
 
   isSignUp = signal(false);
+  /** True when the visitor finished the wizard logged-out and is here to publish. */
+  pendingPublish = signal(false);
 
   ngOnInit() {
     if (this.router.url.includes('signup')) {
       this.isSignUp.set(true);
+    }
+    this.applyModeValidators();
+    if (isPlatformBrowser(this.platformId)) {
+      this.pendingPublish.set(!!localStorage.getItem(PENDING_PUBLISH_KEY));
     }
   }
   loading = signal(false);
@@ -128,10 +147,41 @@ export class LoginComponent implements OnInit {
   toggleMode() {
     this.isSignUp.update(v => !v);
     this.error.set('');
+    this.applyModeValidators();
+  }
+
+  /**
+   * The terms checkbox is only required when signing up. Without a validator it
+   * had no `invalid` state, so its "you must agree" message could never render
+   * and the submit button just sat disabled with no explanation — a dead end
+   * right at the last step of the funnel.
+   */
+  private applyModeValidators() {
+    const agree = this.form.get('agreeTerms');
+    if (!agree) return;
+    if (this.isSignUp()) {
+      agree.setValidators(Validators.requiredTrue);
+    } else {
+      agree.clearValidators();
+    }
+    agree.updateValueAndValidity({ emitEvent: false });
   }
 
   async onSubmit() {
-    if (this.form.invalid) return;
+    if (this.form.invalid) {
+      // Say why instead of silently doing nothing.
+      this.form.markAllAsTouched();
+      if (this.form.get('agreeTerms')?.invalid) {
+        this.error.set('Please accept the Terms of Service and Privacy Policy to continue.');
+      } else if (this.form.get('email')?.invalid) {
+        this.error.set('Please enter a valid email address.');
+      } else if (this.form.get('password')?.invalid) {
+        this.error.set('Password must be at least 6 characters.');
+      } else {
+        this.error.set('Please complete the form to continue.');
+      }
+      return;
+    }
     this.loading.set(true);
     this.error.set('');
 
@@ -182,15 +232,39 @@ export class LoginComponent implements OnInit {
     }
   }
 
+  /**
+   * `data.init()` migrates any site built logged-out (stashed under
+   * `businessflow_state`) into Firestore, so a visitor who filled the wizard
+   * first lands on a finished, published site rather than an empty wizard.
+   */
   private async navigateAfterAuth() {
     const uid = this.auth.currentUser()?.uid;
-    if (uid) {
-      await this.data.init(uid);
-      if (this.data.isSetupComplete()) {
-        this.router.navigate(['/admin/dashboard']);
-      } else {
-        this.router.navigate(['/setup']);
-      }
+    if (!uid) return;
+
+    await this.data.init(uid);
+
+    const justPublished = this.consumePendingPublish();
+
+    if (this.data.isSetupComplete()) {
+      // Claim the friendly /site/<slug> URL — for wizard-first visitors this is
+      // the first moment a token exists, and it doubles as a retry for anyone
+      // whose claim failed at publish time.
+      await this.slug.claimIfMissing();
+      this.router.navigate(['/admin/dashboard'], justPublished ? { queryParams: { welcome: 1 } } : {});
+    } else {
+      this.router.navigate(['/setup']);
+    }
+  }
+
+  /** Read-and-clear the "came here to publish" flag. */
+  private consumePendingPublish(): boolean {
+    if (!isPlatformBrowser(this.platformId)) return false;
+    try {
+      const pending = !!localStorage.getItem(PENDING_PUBLISH_KEY);
+      localStorage.removeItem(PENDING_PUBLISH_KEY);
+      return pending;
+    } catch {
+      return false;
     }
   }
 

@@ -1,14 +1,25 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, inject, OnInit, signal, computed, PLATFORM_ID } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { Router } from '@angular/router';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { HttpClient } from '@angular/common/http';
-import { firstValueFrom } from 'rxjs';
 import { DataService } from './data.service';
 import { AiService } from './ai.service';
 import { AuthService } from './auth.service';
+import { SlugService } from './slug.service';
 import { BusinessType } from './types';
 import { MatIconModule } from '@angular/material/icon';
 import { BUSINESS_PRESETS, getPreset } from './presets';
+import {
+  SETUP_DRAFT_KEY,
+  PENDING_PUBLISH_KEY,
+  SetupDraft,
+  emptyDraft,
+  parseDraft,
+  serializeDraft,
+  hasContent,
+  draftProgress,
+  missingRequiredLabels,
+} from './setup-draft';
 
 @Component({
   selector: 'app-setup-wizard',
@@ -17,7 +28,7 @@ import { BUSINESS_PRESETS, getPreset } from './presets';
   template: `
     <div class="min-h-screen bg-[#F5F5F7] py-8 lg:py-12 px-4 sm:px-6 lg:px-8 font-sans flex justify-center">
       <div class="max-w-6xl w-full grid grid-cols-1 lg:grid-cols-12 gap-8">
-        
+
         <!-- Left Column: Form -->
         <div class="lg:col-span-5 bg-white/80 backdrop-blur-xl rounded-[2rem] shadow-sm border border-gray-200/60 overflow-hidden flex flex-col h-fit">
           <div class="bg-gray-50/50 px-8 py-6 border-b border-gray-100">
@@ -30,22 +41,29 @@ import { BUSINESS_PRESETS, getPreset } from './presets';
                </div>
                <span class="text-xs font-bold text-gray-400 uppercase tracking-wider">Setup Wizard</span>
              </div>
-             
-             <!-- Progress Indicator -->
+
+             <!-- Progress Indicator — reflects what's actually filled in -->
              <div>
                <div class="flex justify-between text-xs font-bold mb-2">
-                 <span class="text-blue-600">Step 1: Profile</span>
-                 <span class="text-gray-400">100%</span>
+                 <span class="text-blue-600">Your details</span>
+                 <span class="text-gray-400">{{ progress() }}%</span>
                </div>
                <div class="w-full bg-gray-200 rounded-full h-1.5">
-                 <div class="bg-blue-600 h-1.5 rounded-full" style="width: 100%"></div>
+                 <div class="bg-blue-600 h-1.5 rounded-full transition-all duration-300" [style.width.%]="progress()"></div>
                </div>
              </div>
+
+             @if (!isLoggedIn()) {
+               <p class="mt-3 text-[13px] text-gray-500 flex items-center gap-1.5">
+                 <mat-icon class="text-[16px] text-green-600">check_circle</mat-icon>
+                 No account needed yet — build it first, sign up when you publish.
+               </p>
+             }
           </div>
-          
+
           <form [formGroup]="form" (ngSubmit)="onReview()" class="p-8 space-y-8">
             <div class="space-y-6">
-              
+
               <div>
                 <span class="block text-sm font-bold text-gray-900 mb-1">Business Name *</span>
                 <p class="text-[13px] text-gray-500 mb-2">What's the official name of your business?</p>
@@ -54,7 +72,7 @@ import { BUSINESS_PRESETS, getPreset } from './presets';
                    <p class="text-red-500 text-xs mt-1">Business name is required</p>
                 }
               </div>
-              
+
               <div>
                 <span class="block text-sm font-bold text-gray-900 mb-1">Business Type *</span>
                 <p class="text-[13px] text-gray-500 mb-2">This helps us generate the right services and FAQs for you.</p>
@@ -75,7 +93,7 @@ import { BUSINESS_PRESETS, getPreset } from './presets';
                 <p class="text-[13px] text-gray-500 mb-2">A short, catchy phrase summarizing what you do.</p>
                 <input type="text" formControlName="tagline" class="w-full px-4 py-3 bg-[#F5F5F7] border border-transparent rounded-2xl focus:ring-2 focus:ring-blue-500 focus:bg-white focus:border-blue-500 outline-none transition-all" placeholder="e.g. Professional cleaning you can trust.">
               </div>
-              
+
               <div>
                 <span class="block text-sm font-bold text-gray-900 mb-1">Email Address *</span>
                 <p class="text-[13px] text-gray-500 mb-2">Where should we send new customer enquiries?</p>
@@ -84,7 +102,7 @@ import { BUSINESS_PRESETS, getPreset } from './presets';
                    <p class="text-red-500 text-xs mt-1">Please enter a valid email</p>
                 }
               </div>
-              
+
               <div>
                 <span class="block text-sm font-bold text-gray-900 mb-1">Phone Number</span>
                 <p class="text-[13px] text-gray-500 mb-2">Optional. Customers can use this to call you directly.</p>
@@ -97,7 +115,7 @@ import { BUSINESS_PRESETS, getPreset } from './presets';
                 <input type="text" formControlName="serviceArea" class="w-full px-4 py-3 bg-[#F5F5F7] border border-transparent rounded-2xl focus:ring-2 focus:ring-blue-500 focus:bg-white focus:border-blue-500 outline-none transition-all" placeholder="e.g. Greater Seattle Area">
               </div>
             </div>
-            
+
             <div class="pt-6 mt-4 flex flex-col sm:flex-row justify-between items-center gap-4 border-t border-gray-100">
               <div class="text-[13px] text-gray-500 flex items-center gap-1">
                  <mat-icon class="text-[16px]">auto_awesome</mat-icon> AI will generate the rest
@@ -126,7 +144,7 @@ import { BUSINESS_PRESETS, getPreset } from './presets';
           </div>
           <div class="flex-grow overflow-y-auto bg-white relative">
             <div class="absolute inset-0 pointer-events-none">
-               
+
                <!-- Preview Header -->
                <div class="px-8 py-6 flex justify-between items-center">
                  <div class="font-bold text-lg text-gray-900 tracking-tight">{{ form.value.name || 'Your Business Name' }}</div>
@@ -140,7 +158,7 @@ import { BUSINESS_PRESETS, getPreset } from './presets';
                    {{ form.value.serviceArea || 'Your City / Area' }}
                  </div>
                  <h1 class="text-4xl font-black text-gray-900 tracking-tight leading-tight mb-4">
-                   {{ getPreviewHeroCopy() || 'Spotless cleaning for a healthier, happier home.' }}
+                   {{ getPreviewHeroCopy() || 'Great work, done right — for customers who expect the best.' }}
                  </h1>
                  <p class="text-gray-500 text-sm mb-8 leading-relaxed">
                    {{ form.value.tagline || 'Professional, reliable, and high-quality solutions tailored for you.' }}
@@ -172,7 +190,11 @@ import { BUSINESS_PRESETS, getPreset } from './presets';
                 <mat-icon class="text-[20px] text-blue-600">rocket_launch</mat-icon>
                 <h2 class="font-bold text-lg text-gray-900">Ready to go live?</h2>
               </div>
-              <p class="text-sm text-gray-500 mb-5">Review the details below and check the live preview. Publishing makes your site <strong>publicly visible</strong> — you can change anything later from your dashboard.</p>
+              @if (isLoggedIn()) {
+                <p class="text-sm text-gray-500 mb-5">Review the details below and check the live preview. Publishing makes your site <strong>publicly visible</strong> — you can change anything later from your dashboard.</p>
+              } @else {
+                <p class="text-sm text-gray-500 mb-5">Everything below is saved. Create a free account on the next screen and your site goes live straight away — <strong>no credit card</strong>, and you can change anything later.</p>
+              }
               <dl class="space-y-2 text-sm bg-gray-50 rounded-2xl p-4 mb-6">
                 <div class="flex justify-between gap-4"><dt class="text-gray-500">Business</dt><dd class="font-medium text-gray-900 text-right">{{ form.value.name }}</dd></div>
                 <div class="flex justify-between gap-4"><dt class="text-gray-500">Type</dt><dd class="font-medium text-gray-900 text-right">{{ selectedTypeLabel() }}</dd></div>
@@ -192,9 +214,10 @@ import { BUSINESS_PRESETS, getPreset } from './presets';
                 <button type="button" (click)="onConfirmPublish()" [disabled]="isSubmitting()" class="flex-1 px-5 py-3 rounded-full font-medium text-white bg-blue-600 hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
                   @if (isSubmitting()) {
                     <span class="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full"></span>
-                    Publishing...
+                    {{ isLoggedIn() ? 'Publishing...' : 'Saving...' }}
                   } @else {
-                    <mat-icon class="text-[18px]">rocket_launch</mat-icon> Publish &amp; go live
+                    <mat-icon class="text-[18px]">rocket_launch</mat-icon>
+                    {{ isLoggedIn() ? 'Publish & go live' : 'Create account & publish' }}
                   }
                 </button>
               </div>
@@ -211,13 +234,18 @@ export class SetupWizardComponent implements OnInit {
   private dataService = inject(DataService);
   private aiService = inject(AiService);
   private authService = inject(AuthService);
-  private http = inject(HttpClient);
+  private slugService = inject(SlugService);
   private router = inject(Router);
+  private platformId = inject(PLATFORM_ID);
 
   isSubmitting = signal(false);
   reviewing = signal(false);
   formError = signal('');
   presets = BUSINESS_PRESETS;
+
+  /** Live draft mirror of the form, so the progress bar is a real signal. */
+  private draft = signal<SetupDraft>(emptyDraft());
+  progress = computed(() => draftProgress(this.draft()));
 
   form = this.fb.group({
     name: ['', Validators.required],
@@ -228,7 +256,22 @@ export class SetupWizardComponent implements OnInit {
     serviceArea: [''],
   });
 
+  /**
+   * Logged-out visitors can fill in the whole wizard; the account is only
+   * needed to publish. Drives the copy and the confirm-button label.
+   */
+  isLoggedIn = () => this.authService.isLoggedIn();
+
   ngOnInit() {
+    // Restore any half-finished draft *before* wiring valueChanges, so a saved
+    // type doesn't clobber the tagline the visitor had already written.
+    this.restoreDraft();
+
+    this.form.valueChanges.subscribe(() => {
+      this.draft.set(this.currentDraft());
+      this.saveDraft();
+    });
+
     this.form.get('type')?.valueChanges.subscribe(type => {
       if (type) {
         const preset = getPreset(type as BusinessType);
@@ -239,6 +282,53 @@ export class SetupWizardComponent implements OnInit {
         }
       }
     });
+  }
+
+  private currentDraft(): SetupDraft {
+    const v = this.form.value;
+    return {
+      name: v.name || '',
+      type: v.type || '',
+      tagline: v.tagline || '',
+      email: v.email || '',
+      phone: v.phone || '',
+      serviceArea: v.serviceArea || '',
+    };
+  }
+
+  /**
+   * Persist every keystroke. Before this, a refresh or a bounce out to the
+   * Terms page emptied the wizard and the visitor started over — or didn't.
+   */
+  private saveDraft() {
+    if (!isPlatformBrowser(this.platformId)) return;
+    try {
+      localStorage.setItem(SETUP_DRAFT_KEY, serializeDraft(this.currentDraft()));
+    } catch {
+      /* private mode / quota — the wizard still works, it just won't survive a reload */
+    }
+  }
+
+  private restoreDraft() {
+    if (!isPlatformBrowser(this.platformId)) return;
+    let stored: SetupDraft | null = null;
+    try {
+      stored = parseDraft(localStorage.getItem(SETUP_DRAFT_KEY));
+    } catch {
+      stored = null;
+    }
+    if (!stored || !hasContent(stored)) return;
+    this.form.patchValue(stored, { emitEvent: false });
+    this.draft.set(stored);
+  }
+
+  private clearDraft() {
+    if (!isPlatformBrowser(this.platformId)) return;
+    try {
+      localStorage.removeItem(SETUP_DRAFT_KEY);
+    } catch {
+      /* nothing to clean up */
+    }
   }
 
   getPreviewHeroCopy(): string {
@@ -284,10 +374,9 @@ export class SetupWizardComponent implements OnInit {
 
     if (this.form.invalid) {
       this.form.markAllAsTouched();
-      const missing: string[] = [];
-      if (this.form.get('name')?.invalid) missing.push('Business Name');
-      if (this.form.get('type')?.invalid) missing.push('Business Type');
-      if (this.form.get('email')?.invalid) missing.push('a valid Email');
+      const missing = missingRequiredLabels(this.currentDraft());
+      // An email that's present but malformed isn't "missing" — name it anyway.
+      if (!missing.length && this.form.get('email')?.invalid) missing.push('a valid Email');
       this.formError.set(`Please fill in: ${missing.join(', ')}`);
       return;
     }
@@ -304,7 +393,12 @@ export class SetupWizardComponent implements OnInit {
 
   /**
    * Step 2: the user confirmed in the review gate — generate the rest of the
-   * site, mark setup complete (publishes), claim a slug, and go to the dashboard.
+   * site and mark setup complete.
+   *
+   * Logged in: publish, claim a slug, land on the "your site is live" moment.
+   * Logged out: stash the finished site locally and send them to sign-up.
+   * `DataService.init()` migrates that stash into Firestore on first login, so
+   * the account and the finished site arrive together.
    */
   async onConfirmPublish() {
     this.formError.set('');
@@ -332,15 +426,19 @@ export class SetupWizardComponent implements OnInit {
         enquiryFields: preset?.suggestedEnquiryFields || []
       };
 
-      console.log('[Setup] Generating description...');
-      try {
-        const generatedDesc = await this.aiService.generateBusinessDescription(profile);
-        profile.description = generatedDesc;
-      } catch {
-        profile.description = `Welcome to ${profile.name}! ${profile.tagline}. Our goal is to make your life easier through professional, reliable, and high-quality solutions.`;
+      // Anonymous visitors have no token, so the AI endpoint would reject them;
+      // the template fallback is used instead and AI copy can be regenerated
+      // from the dashboard once they're in.
+      if (this.isLoggedIn()) {
+        try {
+          profile.description = await this.aiService.generateBusinessDescription(profile);
+        } catch {
+          profile.description = this.fallbackDescription(profile.name, profile.tagline);
+        }
+      } else {
+        profile.description = this.fallbackDescription(profile.name, profile.tagline);
       }
 
-      console.log('[Setup] Saving profile and data...');
       this.dataService.updateProfile(profile);
 
       if (preset) {
@@ -352,31 +450,43 @@ export class SetupWizardComponent implements OnInit {
         this.dataService.setFaqs([]);
       }
 
-      console.log('[Setup] Completing setup...');
       this.dataService.completeSetup();
 
-      const user = this.authService.currentUser();
-      if (user) {
-        const token = await this.authService.getIdToken();
-        if (token) {
-          const result = await firstValueFrom(
-            this.http.post<{ slug: string }>('/api/slugs/claim',
-              { uid: user.uid, name: val.name },
-              { headers: { Authorization: `Bearer ${token}` } }
-            )
-          ).catch(() => null);
-          if (result?.slug) {
-            this.dataService.setSiteSlug(result.slug);
-          }
-        }
+      if (!this.isLoggedIn()) {
+        this.stashForSignUp();
+        await this.router.navigate(['/signup']);
+        return;
       }
 
-      await this.router.navigate(['/admin/dashboard']);
+      await this.slugService.claimIfMissing();
+      this.clearDraft();
+      await this.router.navigate(['/admin/dashboard'], { queryParams: { welcome: 1 } });
     } catch (e) {
       console.error('[Setup] Failed:', e);
       this.formError.set('Something went wrong. Please try again.');
     } finally {
       this.isSubmitting.set(false);
+    }
+  }
+
+  private fallbackDescription(name: string, tagline: string): string {
+    return `Welcome to ${name}! ${tagline}. Our goal is to make your life easier through professional, reliable, and high-quality solutions.`;
+  }
+
+  /**
+   * Hand the finished site to the sign-up screen. `businessflow_state` is the
+   * key `DataService.init()` already migrates into Firestore on first login,
+   * so no new plumbing is needed — the visitor signs up and their site is
+   * simply there.
+   */
+  private stashForSignUp() {
+    if (!isPlatformBrowser(this.platformId)) return;
+    try {
+      localStorage.setItem('businessflow_state', this.dataService.exportState());
+      localStorage.setItem(PENDING_PUBLISH_KEY, '1');
+      localStorage.removeItem(SETUP_DRAFT_KEY);
+    } catch {
+      /* storage unavailable — fall through; they'll re-enter details after sign-up */
     }
   }
 }
