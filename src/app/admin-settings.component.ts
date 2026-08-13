@@ -6,6 +6,8 @@ import { RouterLink, Router } from '@angular/router';
 import { Firestore, doc, getDoc } from '@angular/fire/firestore';
 import { DataService } from './data.service';
 import { SubscriptionService } from './subscription.service';
+import { FunnelService } from './funnel.service';
+import { LINK_SHARED_KEY } from './onboarding-guide.component';
 import { AuthService } from './auth.service';
 import { ToastService } from './toast.service';
 import { NotificationPreferences, BusinessProfile, BusinessType, DomainMappingState } from './types';
@@ -449,6 +451,7 @@ export class AdminSettingsComponent implements OnInit {
   subService = inject(SubscriptionService);
   private authService = inject(AuthService);
   private toast = inject(ToastService);
+  private funnel = inject(FunnelService);
   private http = inject(HttpClient);
   private router = inject(Router);
   private firestore = inject(Firestore);
@@ -525,9 +528,21 @@ export class AdminSettingsComponent implements OnInit {
     const url = this.friendlyUrl || this.siteUrl;
     try {
       await navigator.clipboard.writeText(url);
+      // Same activation step as the dashboard banner's copy button. Without
+      // this, sharing from Settings left the checklist permanently unticked.
+      this.markLinkShared();
+      this.funnel.step('link_shared');
       this.toast.success('Site link copied!');
     } catch {
       this.toast.info(url);
+    }
+  }
+
+  private markLinkShared() {
+    try {
+      localStorage.setItem(LINK_SHARED_KEY, '1');
+    } catch {
+      /* storage unavailable — the step just stays unticked */
     }
   }
 

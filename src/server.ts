@@ -341,18 +341,37 @@ app.post('/api/site/:uid/enquiry', express.json(), async (req, res) => {
       date: new Date().toISOString(),
     };
 
+    let wasFirstEnquiry = false;
     await db.runTransaction(async transaction => {
       const mainSnap = await transaction.get(mainRef);
       if (!mainSnap.exists) throw new Error('SITE_NOT_FOUND');
 
       const data = mainSnap.data() || {};
+      const existing = Array.isArray(data['enquiries']) ? data['enquiries'] : [];
+      wasFirstEnquiry = existing.length === 0;
       transaction.set(mainRef, {
         ...data,
-        enquiries: [enquiry, ...(Array.isArray(data['enquiries']) ? data['enquiries'] : [])].slice(0, MAX_STORED_ENQUIRIES),
+        enquiries: [enquiry, ...existing].slice(0, MAX_STORED_ENQUIRIES),
         activities: [activity, ...(Array.isArray(data['activities']) ? data['activities'] : [])].slice(0, MAX_STORED_ENQUIRIES),
       });
     });
     res.json({ success: true });
+
+    // Closes the funnel's last step from the server. The owner isn't in the
+    // browser when this happens, so it can't come from the client beacon. Read
+    // inside the transaction so two simultaneous first enquiries can't both
+    // claim it. Fire-and-forget: never let measurement fail an enquiry.
+    if (wasFirstEnquiry) {
+      (async () => {
+        const { FieldValue } = await import('firebase-admin/firestore');
+        const day = new Date().toISOString().slice(0, 10);
+        await db.doc(`funnelDaily/${day}`).set({
+          date: day,
+          updatedAt: new Date().toISOString(),
+          flags: { first_enquiry: FieldValue.increment(1) },
+        }, { merge: true });
+      })().catch(e => console.warn('first_enquiry counter failed:', e));
+    }
 
     // Fire-and-forget email notification
     (async () => {
