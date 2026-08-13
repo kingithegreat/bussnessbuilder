@@ -154,6 +154,9 @@ export class LoginComponent implements OnInit {
     this.isSignUp.update(v => !v);
     this.error.set('');
     this.applyModeValidators();
+    // Arriving at /login and switching to "Create one" reaches the same step as
+    // landing on /signup directly; without this, those sessions were invisible.
+    if (this.isSignUp()) this.funnel.step('signup_shown');
   }
 
   /**
@@ -221,9 +224,10 @@ export class LoginComponent implements OnInit {
     // anything still sitting in the debounce would be lost.
     this.funnel.flushNow();
     try {
-      const isNew = this.isSignUp();
-      await this.auth.signInWithGoogle();
-      if (isNew) this.funnel.step('account_created');
+      // Ask Firebase whether this actually created an account, rather than
+      // inferring it from which tab was open.
+      const createdAccount = await this.auth.signInWithGoogle();
+      if (createdAccount) this.funnel.step('account_created');
       await this.navigateAfterAuth();
     } catch (e: unknown) {
       const code = this.errorCode(e);

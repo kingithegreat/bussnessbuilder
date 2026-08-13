@@ -9,6 +9,7 @@ import {
   GoogleAuthProvider,
   signInWithPopup,
   signInWithRedirect,
+  getAdditionalUserInfo,
   sendPasswordResetEmail,
   updateProfile,
   onAuthStateChanged,
@@ -90,14 +91,22 @@ export class AuthService {
     return signInWithEmailAndPassword(this.auth, email, password);
   }
 
-  async signInWithGoogle() {
+  /**
+   * @returns true only when Google auth created a brand-new account. Callers
+   * previously had to guess from which tab the user was on, which counted a
+   * returning user signing in from the sign-up screen as a new account.
+   */
+  async signInWithGoogle(): Promise<boolean> {
     const provider = new GoogleAuthProvider();
     try {
-      return await signInWithPopup(this.auth, provider);
+      const credential = await signInWithPopup(this.auth, provider);
+      return getAdditionalUserInfo(credential)?.isNewUser === true;
     } catch (e: unknown) {
       const code = e && typeof e === 'object' && 'code' in e ? e.code : undefined;
       if (code === 'auth/popup-blocked' || code === 'auth/cancelled-popup-request') {
-        return signInWithRedirect(this.auth, provider);
+        // Navigates away; nothing after this runs in the current page.
+        await signInWithRedirect(this.auth, provider);
+        return false;
       }
       throw e;
     }
