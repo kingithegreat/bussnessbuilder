@@ -188,9 +188,12 @@ describe('PublicPageComponent — section renderer completeness', () => {
     expect(text).toContain('Send it');
   });
 
-  it('hero badge auto-composes from profile type and service area when blank', () => {
+  it('hero badge auto-composes from the type LABEL and service area when blank', () => {
+    // Was asserting the raw id ('cleaner'). The badge is customer-facing, and
+    // the raw id rendered as "OTHER" for type 'other' on the live site.
     const el = renderWithSections([seededSection('hero', 1)]);
-    expect(el.textContent).toContain('cleaner • Bay of Plenty');
+    expect(el.textContent).toContain('Cleaning Service • Bay of Plenty');
+    expect(el.textContent).not.toContain('cleaner • Bay of Plenty');
   });
 
   it('nav links hide when their target section is hidden', () => {

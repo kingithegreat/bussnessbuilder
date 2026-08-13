@@ -1,4 +1,4 @@
-import { BUSINESS_PRESETS, getPreset } from './presets';
+import { BUSINESS_PRESETS, getPreset, businessTypeLabel } from './presets';
 import { BusinessType } from './types';
 
 describe('business presets', () => {
@@ -52,5 +52,30 @@ describe('business presets', () => {
     it('returns undefined for a type with no preset', () => {
       expect(getPreset('other')).toBeUndefined();
     });
+  });
+});
+
+describe('businessTypeLabel', () => {
+  it('returns the human label for a known type', () => {
+    expect(businessTypeLabel('cleaner')).toBe('Cleaning Service');
+  });
+
+  it("returns '' for 'other' — it must never reach customer-facing copy", () => {
+    // The live site rendered "OTHER • QLD/BRISBANE" and "a top-tier other".
+    expect(businessTypeLabel('other')).toBe('');
+  });
+
+  it("returns '' for unset, empty or unrecognised types", () => {
+    expect(businessTypeLabel('')).toBe('');
+    expect(businessTypeLabel(null)).toBe('');
+    expect(businessTypeLabel(undefined)).toBe('');
+    expect(businessTypeLabel('not-a-real-type')).toBe('');
+  });
+
+  it('never returns a raw machine id', () => {
+    for (const preset of BUSINESS_PRESETS) {
+      expect(businessTypeLabel(preset.id)).not.toBe(preset.id);
+      expect(businessTypeLabel(preset.id).length).toBeGreaterThan(0);
+    }
   });
 });

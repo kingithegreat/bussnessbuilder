@@ -114,3 +114,17 @@ export const BUSINESS_PRESETS: BusinessPreset[] = [
 export function getPreset(type: BusinessType): BusinessPreset | undefined {
   return BUSINESS_PRESETS.find(p => p.id === type);
 }
+
+/**
+ * Human-readable label for a business type, or '' when there isn't one — which
+ * covers 'other', an unset type, and anything unrecognised.
+ *
+ * Never interpolate the raw type id into customer-facing copy. The ids are
+ * machine values: 'other' renders as "a top-tier other", and 'lawn mowing' /
+ * 'personal trainer' read as lowercase fragments mid-sentence. Callers should
+ * treat '' as "say nothing about the type" rather than substituting a default.
+ */
+export function businessTypeLabel(type: string | null | undefined): string {
+  if (!type) return '';
+  return getPreset(type as BusinessType)?.label || '';
+}

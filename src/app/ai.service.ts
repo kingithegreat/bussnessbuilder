@@ -94,11 +94,17 @@ Return only the description text — no headings, labels, or surrounding quotes.
     );
     if (ai) return ai;
 
+    // This is not a rare path: it runs whenever the AI returns nothing, which
+    // includes every site created while no GEMINI_API_KEY is configured.
     const preset = getPreset(profile.type as BusinessType);
+    const area = profile.serviceArea ? ` in the ${profile.serviceArea} area` : '';
     const desc = preset
       ? preset.description
-      : `We are a top-tier ${profile.type} dedicated to providing excellent service in the ${profile.serviceArea} area.`;
-    return `Welcome to ${profile.name}! ${desc} ${profile.tagline}. Our goal is to make your life easier through professional, reliable, and high-quality solutions.`;
+      // No preset means the type is 'other' or unset — say nothing about it
+      // rather than interpolating the raw id ("a top-tier other").
+      : `We are dedicated to providing excellent service${area}.`;
+    const tagline = profile.tagline ? ` ${profile.tagline}.` : '';
+    return `Welcome to ${profile.name}! ${desc}${tagline} Our goal is to make your life easier through professional, reliable, and high-quality solutions.`;
   }
 
   async generateDraftReply(enquiry: Enquiry, profile: BusinessProfile): Promise<string> {

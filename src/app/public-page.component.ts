@@ -7,6 +7,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { NgTemplateOutlet } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { CustomizationSettings, SectionConfig, FormFieldConfig, PageTextSettings, pageText } from './types';
+import { businessTypeLabel } from './presets';
 import { sectionRenderType } from './section-library';
 import { EditableTextDirective } from './editable-text.directive';
 import { AnalyticsService } from './analytics.service';
@@ -1136,7 +1137,9 @@ export class PublicPageComponent {
   heroBadgeText(prefix?: string): string {
     const override = this.customization().text?.heroBadge;
     if (override && override.trim()) return override;
-    const parts = [prefix || this.profile().type, this.profile().serviceArea].filter(Boolean);
+    // businessTypeLabel, never the raw id — the badge is the first thing a
+    // visitor reads and 'other' rendered literally as "OTHER".
+    const parts = [prefix || businessTypeLabel(this.profile().type), this.profile().serviceArea].filter(Boolean);
     return parts.join(' • ');
   }
 
