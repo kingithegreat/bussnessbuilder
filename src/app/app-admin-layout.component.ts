@@ -26,6 +26,9 @@ import { MatIconModule } from '@angular/material/icon';
           <a routerLink="/app-admin/dashboard" routerLinkActive="bg-red-50 text-red-600" class="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors">
             <mat-icon class="text-[18px]">dashboard</mat-icon> Dashboard
           </a>
+          <a routerLink="/app-admin/funnel" routerLinkActive="bg-red-50 text-red-600" class="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors">
+            <mat-icon class="text-[18px]">filter_alt</mat-icon> Funnel
+          </a>
           <a routerLink="/app-admin/users" routerLinkActive="bg-red-50 text-red-600" class="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors">
             <mat-icon class="text-[18px]">people</mat-icon> Users
           </a>

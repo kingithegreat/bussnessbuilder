@@ -5,6 +5,7 @@ import { DataService } from './data.service';
 import { AnalyticsService } from './analytics.service';
 import { AuthService } from './auth.service';
 import { ToastService } from './toast.service';
+import { FunnelService } from './funnel.service';
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { OnboardingGuideComponent, LINK_SHARED_KEY } from './onboarding-guide.component';
@@ -253,6 +254,7 @@ export class AdminDashboardComponent implements OnInit {
   private authService = inject(AuthService);
   private route = inject(ActivatedRoute);
   private toast = inject(ToastService);
+  private funnel = inject(FunnelService);
   private platformId = inject(PLATFORM_ID);
   enquiries = this.dataService.enquiries;
   activities = this.dataService.activities;
@@ -290,6 +292,7 @@ export class AdminDashboardComponent implements OnInit {
   }
 
   dismissPublished() {
+    this.funnel.flag('welcome_dismissed');
     this.justPublished.set(false);
   }
 
@@ -299,6 +302,7 @@ export class AdminDashboardComponent implements OnInit {
       await navigator.clipboard.writeText(url);
       this.copied.set(true);
       this.markLinkShared();
+      this.funnel.step('link_shared');
       this.toast.success('Link copied — paste it anywhere you talk to customers.');
       setTimeout(() => this.copied.set(false), 2000);
     } catch {

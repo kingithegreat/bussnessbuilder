@@ -1,7 +1,8 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, afterNextRender } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { AuthService } from './auth.service';
+import { FunnelService } from './funnel.service';
 
 @Component({
   selector: 'app-landing',
@@ -26,7 +27,7 @@ import { AuthService } from './auth.service';
             <a routerLink="/login" class="text-gray-600 hover:text-gray-900 px-3 md:px-4 py-2 text-sm font-medium transition-colors">
               Sign In
             </a>
-            <a routerLink="/setup" class="bg-blue-600 hover:bg-blue-700 text-white px-4 md:px-5 py-2 rounded-full text-sm font-medium transition-colors shadow-sm hover:shadow">
+            <a routerLink="/setup" (click)="onCtaClick()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 md:px-5 py-2 rounded-full text-sm font-medium transition-colors shadow-sm hover:shadow">
               Get Started
             </a>
           }
@@ -53,7 +54,7 @@ import { AuthService } from './auth.service';
               only needed to publish, so the product does the selling first.
             -->
             <div class="flex flex-col items-center gap-3 w-full sm:w-auto">
-              <a [routerLink]="auth.isLoggedIn() ? '/admin/dashboard' : '/setup'" class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-full text-base md:text-lg font-medium transition-colors shadow-sm flex items-center justify-center gap-2 w-full sm:w-auto">
+              <a [routerLink]="auth.isLoggedIn() ? '/admin/dashboard' : '/setup'" (click)="onCtaClick()" class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-full text-base md:text-lg font-medium transition-colors shadow-sm flex items-center justify-center gap-2 w-full sm:w-auto">
                 {{ auth.isLoggedIn() ? 'Go to Dashboard' : 'Start Building — Free' }}
                 <mat-icon>arrow_forward</mat-icon>
               </a>
@@ -173,7 +174,7 @@ import { AuthService } from './auth.service';
         <section class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-20 text-center">
           <h2 class="text-2xl md:text-4xl font-bold tracking-tight text-gray-900 mb-4">Ready to build your site?</h2>
           <p class="text-gray-500 mb-8 text-sm md:text-base max-w-xl mx-auto">Build it first — you only need an account when you're ready to publish. No credit card required. <a routerLink="/pricing" class="text-blue-600 font-medium hover:underline">See pricing</a></p>
-          <a [routerLink]="auth.isLoggedIn() ? '/admin/dashboard' : '/setup'" class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-full text-base md:text-lg font-medium transition-colors shadow-sm">
+          <a [routerLink]="auth.isLoggedIn() ? '/admin/dashboard' : '/setup'" (click)="onCtaClick()" class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-full text-base md:text-lg font-medium transition-colors shadow-sm">
             {{ auth.isLoggedIn() ? 'Go to Dashboard' : 'Get Started Free' }}
             <mat-icon>arrow_forward</mat-icon>
           </a>
@@ -193,4 +194,17 @@ import { AuthService } from './auth.service';
 })
 export class LandingComponent {
   auth = inject(AuthService);
+  private funnel = inject(FunnelService);
+
+  constructor() {
+    afterNextRender(() => this.funnel.step('landing_viewed'));
+  }
+
+  /** A CTA click is the first act of intent — the top of the measurable funnel. */
+  onCtaClick() {
+    this.funnel.step('cta_clicked');
+    // The router navigates immediately after this handler, so the debounce
+    // would lose the event.
+    this.funnel.flushNow();
+  }
 }

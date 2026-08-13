@@ -16,9 +16,15 @@ export class AnalyticsService {
     const today = new Date().toISOString().slice(0, 10);
     try {
       const ref = doc(this.firestore, 'analytics', uid);
+      // The per-day counter MUST be a nested object, not a dotted key. Unlike
+      // updateDoc, setDoc does not interpret dots as field paths, so
+      // `{ ['viewsByDate.2026-08-14']: ... }` created a top-level field whose
+      // name literally contained a dot. `data['viewsByDate']` was therefore
+      // always undefined and every per-day metric — the 14-day chart, "views
+      // this week", "this month" — read 0 for every user since launch.
       await setDoc(ref, {
         totalViews: increment(1),
-        [`viewsByDate.${today}`]: increment(1),
+        viewsByDate: { [today]: increment(1) },
       }, { merge: true });
     } catch (e) {
       console.error('Failed to track page view', e);

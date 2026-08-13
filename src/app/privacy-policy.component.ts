@@ -16,7 +16,7 @@ import { RouterLink } from '@angular/router';
       <main class="max-w-4xl mx-auto px-4 sm:px-6 pb-20">
         <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 md:p-12">
           <h1 class="text-3xl md:text-4xl font-bold tracking-tight mb-2">Privacy Policy</h1>
-          <p class="text-gray-500 text-sm mb-10">Last updated: 22 July 2026</p>
+          <p class="text-gray-500 text-sm mb-10">Last updated: 14 August 2026</p>
 
           <div class="prose prose-gray max-w-none space-y-8 text-sm leading-relaxed text-gray-700">
             <section>
@@ -93,8 +93,19 @@ import { RouterLink } from '@angular/router';
               <ul class="list-disc pl-5 mt-2 space-y-1">
                 <li><strong>Authentication</strong> — Firebase uses cookies to maintain your login session</li>
                 <li><strong>Preferences</strong> — We store your cookie consent preference locally</li>
+                <li><strong>Your work in progress</strong> — If you start building a site before creating an account, the details you enter are saved in your own browser so you don't lose them. They stay on your device until you publish, and are then moved into your account.</li>
+                <li><strong>Interface state</strong> — Small flags remembering things like whether you've dismissed a guide or copied your site link</li>
+                <li><strong>Anonymous usage counting</strong> — See Section 5a</li>
               </ul>
               <p class="mt-2">We do not use advertising or tracking cookies. You can manage cookies through your browser settings, but disabling them may affect the Service's functionality.</p>
+            </section>
+
+            <section>
+              <h2 class="text-lg font-bold text-gray-900 mb-3">5a. Anonymous Usage Counting</h2>
+              <p>To understand where people get stuck when setting up a site, we count how many visitors reach each step of the process — for example, how many opened the setup wizard, and how many published a site.</p>
+              <p class="mt-2">These are <strong>counts only</strong>. We do not create a visitor profile, assign you an identifier, or record your IP address, device, browser or location. Nothing links these counts to you, to an account, or to another visit, and nothing you type into the setup wizard is included. What is stored is a daily total per step, and nothing else.</p>
+              <p class="mt-2">To avoid counting the same visit twice, your browser remembers which steps it has already counted for the current tab. That record is deleted when you close the tab and is never sent to us.</p>
+              <p class="mt-2">If you decline in the cookie banner, this counting is switched off.</p>
             </section>
 
             <section>

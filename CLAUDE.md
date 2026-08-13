@@ -301,11 +301,55 @@ GitHub Actions (`deploy.yml`) exists but needs WIF secrets configured. Manual `g
     real services → share your link → first enquiry, each derived from actual
     state. Copying the link from the dashboard banner sets `bf_link_shared`,
     which ticks the share step.
-  - **Not done — the funnel is still unmeasured.** `AnalyticsService` only counts
-    public-site page views; there are no events for wizard started/abandoned,
-    sign-up completed, or published, so drop-off between the steps above can't be
-    seen. That's the next piece of work if these changes are to be evaluated
-    rather than assumed.
+- **Funnel instrumentation (done)** — the funnel above is now measured, including
+  the visitors who never sign up.
+  - **Shape.** Two counter families per UTC day in `funnelDaily/{YYYY-MM-DD}`:
+    `steps` (sessions that REACHED each step → step-to-step conversion) and
+    `furthest` (sessions whose furthest step was EXACTLY this one → a
+    non-overlapping abandon histogram, so a landing bounce is distinguishable
+    from a wizard abandon from a signup abandon). Plus `flags` (friction) and
+    `authErrors` (bounded to the 12 codes `LoginComponent` maps). Every counter
+    is de-duplicated per session, so all numbers share one unit and
+    `sum(furthest)` is the true session count.
+  - **Privacy is structural, not a policy promise.** No identifier is ever
+    transmitted or stored — no visitor id, UUID, session id, uid, IP, user
+    agent, referrer, or timestamp finer than the day. De-duplication and the
+    furthest marker live in `sessionStorage` (`bf_funnel_session`) and die with
+    the tab. `req.ip` is used for the rate-limit key and immediately discarded.
+    46 possible numeric fields per doc, forever.
+  - **Files.** Shared vocabulary + pure session logic in `src/app/funnel.ts`
+    (imported by both sides so client and server can't drift); transport in
+    `src/app/funnel.service.ts` (`sendBeacon` with a Blob typed
+    `application/json` — a `text/plain` beacon is skipped by `express.json()`;
+    `fetch(keepalive)` fallback; flush hooks installed once from `App`);
+    validation + report assembly in `src/server-funnel.ts`. All three have
+    colocated specs.
+  - **Endpoints.** `POST /api/funnel` (public, `express.json({limit:'4kb'})`,
+    rate-limited 60/min/IP, unknown names dropped silently so old clients
+    degrade rather than error, `normalizeFunnelDay` restricts writable doc ids
+    to a 3-day UTC window so cardinality is bounded) and
+    `GET /api/admin/funnel?days=7|30|90` (admin-only, own 60s cache, batched
+    `getAllDocs`). Surface: `/app-admin/funnel`.
+  - ⚠️ **`firestore.rules` gained `funnelDaily/{day}` as `read, write: if false`**
+    (server-only, like `slugs`/`domainMappings`). Needs
+    `firebase deploy --only firestore:rules` — Aden's to run. Ingestion works
+    without it (admin SDK bypasses rules); deploying it is what stops a client
+    reaching the collection directly.
+  - **Consent now means something.** Nothing read the `cookie-consent` value
+    before — Decline was identical to Accept. `hasAnalyticsConsent()` in
+    `funnel.ts` is the single gate; an explicit decline switches counting off.
+    Privacy policy §5 was extended to cover the browser storage the app already
+    used (`bf_setup_draft`, `businessflow_state`, `bf_pending_publish`,
+    `bf_onboarding_dismissed`, `bf_link_shared`) and gained §5a for the
+    counters.
+- **Fixed: per-day analytics never worked.** `AnalyticsService.trackPageView`
+  wrote `` { [`viewsByDate.${today}`]: increment(1) } `` through `setDoc(…, {merge:true})`.
+  Unlike `updateDoc`, `setDoc` does NOT treat dots as field paths, so that
+  created a top-level field whose *name* contained a dot; `data['viewsByDate']`
+  was always `undefined`. Every per-day view metric — the dashboard's 14-day
+  chart, "views this week", "this month" — read 0 for every user since launch.
+  Now written as a nested object. Historic data was never recorded and cannot be
+  recovered; counts start from deploy. (`totalViews` was always correct.)
 - Deploy `firestore.rules` to enable analytics tracking: `firebase deploy --only firestore:rules`
 - **Security hardening (done):** a deployment-readiness audit drove three code fixes in
   `src/server.ts`: (1) the global header middleware now also sets `X-Content-Type-Options: nosniff`,

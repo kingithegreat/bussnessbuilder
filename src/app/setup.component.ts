@@ -6,6 +6,7 @@ import { DataService } from './data.service';
 import { AiService } from './ai.service';
 import { AuthService } from './auth.service';
 import { SlugService } from './slug.service';
+import { FunnelService } from './funnel.service';
 import { BusinessType } from './types';
 import { MatIconModule } from '@angular/material/icon';
 import { BUSINESS_PRESETS, getPreset } from './presets';
@@ -235,6 +236,7 @@ export class SetupWizardComponent implements OnInit {
   private aiService = inject(AiService);
   private authService = inject(AuthService);
   private slugService = inject(SlugService);
+  private funnel = inject(FunnelService);
   private router = inject(Router);
   private platformId = inject(PLATFORM_ID);
 
@@ -265,9 +267,17 @@ export class SetupWizardComponent implements OnInit {
   ngOnInit() {
     // Restore any half-finished draft *before* wiring valueChanges, so a saved
     // type doesn't clobber the tagline the visitor had already written.
-    this.restoreDraft();
+    const resumed = this.restoreDraft();
+
+    // FunnelService is a no-op outside the browser, so this is SSR-safe as-is.
+    // (afterNextRender cannot be used here — ngOnInit is not an injection context.)
+    this.funnel.step('wizard_started');
+    if (resumed) this.funnel.flag('wizard_resumed');
 
     this.form.valueChanges.subscribe(() => {
+      // De-duplicated per session, so the tagline auto-patch on type selection
+      // can't inflate this.
+      this.funnel.step('wizard_engaged');
       this.draft.set(this.currentDraft());
       this.saveDraft();
     });
@@ -309,17 +319,19 @@ export class SetupWizardComponent implements OnInit {
     }
   }
 
-  private restoreDraft() {
-    if (!isPlatformBrowser(this.platformId)) return;
+  /** @returns true when a saved draft was restored (i.e. this is a continuation). */
+  private restoreDraft(): boolean {
+    if (!isPlatformBrowser(this.platformId)) return false;
     let stored: SetupDraft | null = null;
     try {
       stored = parseDraft(localStorage.getItem(SETUP_DRAFT_KEY));
     } catch {
       stored = null;
     }
-    if (!stored || !hasContent(stored)) return;
+    if (!stored || !hasContent(stored)) return false;
     this.form.patchValue(stored, { emitEvent: false });
     this.draft.set(stored);
+    return true;
   }
 
   private clearDraft() {
@@ -378,9 +390,11 @@ export class SetupWizardComponent implements OnInit {
       // An email that's present but malformed isn't "missing" — name it anyway.
       if (!missing.length && this.form.get('email')?.invalid) missing.push('a valid Email');
       this.formError.set(`Please fill in: ${missing.join(', ')}`);
+      this.funnel.flag('wizard_review_blocked');
       return;
     }
 
+    this.funnel.step('wizard_review_opened');
     this.reviewing.set(true);
   }
 
@@ -403,6 +417,7 @@ export class SetupWizardComponent implements OnInit {
   async onConfirmPublish() {
     this.formError.set('');
     this.isSubmitting.set(true);
+    this.funnel.step('publish_clicked');
 
     try {
       const val = this.form.value;
@@ -454,15 +469,19 @@ export class SetupWizardComponent implements OnInit {
 
       if (!this.isLoggedIn()) {
         this.stashForSignUp();
+        this.funnel.flushNow();
         await this.router.navigate(['/signup']);
         return;
       }
 
       await this.slugService.claimIfMissing();
       this.clearDraft();
+      this.funnel.step('site_live');
+      this.funnel.flushNow();
       await this.router.navigate(['/admin/dashboard'], { queryParams: { welcome: 1 } });
     } catch (e) {
       console.error('[Setup] Failed:', e);
+      this.funnel.flag('publish_failed');
       this.formError.set('Something went wrong. Please try again.');
     } finally {
       this.isSubmitting.set(false);

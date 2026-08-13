@@ -6,8 +6,10 @@ import { MatIconModule } from '@angular/material/icon';
 import { AuthService } from './auth.service';
 import { DataService } from './data.service';
 import { SlugService } from './slug.service';
+import { FunnelService } from './funnel.service';
 import { ToastService } from './toast.service';
 import { PENDING_PUBLISH_KEY } from './setup-draft';
+import { isAuthErrorCode } from './funnel';
 
 @Component({
   selector: 'app-login',
@@ -116,6 +118,7 @@ export class LoginComponent implements OnInit {
   private auth = inject(AuthService);
   private data = inject(DataService);
   private slug = inject(SlugService);
+  private funnel = inject(FunnelService);
   private toast = inject(ToastService);
   private router = inject(Router);
   private fb = inject(FormBuilder);
@@ -133,6 +136,9 @@ export class LoginComponent implements OnInit {
     if (isPlatformBrowser(this.platformId)) {
       this.pendingPublish.set(!!localStorage.getItem(PENDING_PUBLISH_KEY));
     }
+    // FunnelService no-ops outside the browser; ngOnInit is not an injection
+    // context, so afterNextRender cannot be used here.
+    if (this.isSignUp()) this.funnel.step('signup_shown');
   }
   loading = signal(false);
   error = signal('');
@@ -173,12 +179,16 @@ export class LoginComponent implements OnInit {
       this.form.markAllAsTouched();
       if (this.form.get('agreeTerms')?.invalid) {
         this.error.set('Please accept the Terms of Service and Privacy Policy to continue.');
+        this.funnel.flag('signup_blocked_terms');
       } else if (this.form.get('email')?.invalid) {
         this.error.set('Please enter a valid email address.');
+        this.funnel.flag('signup_blocked_email');
       } else if (this.form.get('password')?.invalid) {
         this.error.set('Password must be at least 6 characters.');
+        this.funnel.flag('signup_blocked_password');
       } else {
         this.error.set('Please complete the form to continue.');
+        this.funnel.flag('signup_blocked_other');
       }
       return;
     }
@@ -190,12 +200,15 @@ export class LoginComponent implements OnInit {
     try {
       if (this.isSignUp()) {
         await this.auth.signUpWithEmail(email!, password!, displayName || '');
+        this.funnel.step('account_created');
       } else {
         await this.auth.signInWithEmail(email!, password!);
       }
       await this.navigateAfterAuth();
     } catch (e: unknown) {
-      this.error.set(this.friendlyError(this.errorCode(e)));
+      const code = this.errorCode(e);
+      if (this.isSignUp()) this.recordAuthFailure(code);
+      this.error.set(this.friendlyError(code));
     } finally {
       this.loading.set(false);
     }
@@ -204,12 +217,20 @@ export class LoginComponent implements OnInit {
   async googleSignIn() {
     this.loading.set(true);
     this.error.set('');
+    // signInWithGoogle can fall back to a redirect, which unloads the page —
+    // anything still sitting in the debounce would be lost.
+    this.funnel.flushNow();
     try {
+      const isNew = this.isSignUp();
       await this.auth.signInWithGoogle();
+      if (isNew) this.funnel.step('account_created');
       await this.navigateAfterAuth();
     } catch (e: unknown) {
       const code = this.errorCode(e);
-      if (code !== 'auth/popup-closed-by-user') {
+      if (code === 'auth/popup-closed-by-user') {
+        this.funnel.flag('google_popup_closed');
+      } else {
+        if (this.isSignUp()) this.recordAuthFailure(code);
         this.error.set(this.friendlyError(code));
       }
     } finally {
@@ -250,10 +271,23 @@ export class LoginComponent implements OnInit {
       // the first moment a token exists, and it doubles as a retry for anyone
       // whose claim failed at publish time.
       await this.slug.claimIfMissing();
+      if (justPublished) this.funnel.step('site_live');
+      this.funnel.flushNow();
       this.router.navigate(['/admin/dashboard'], justPublished ? { queryParams: { welcome: 1 } } : {});
     } else {
+      // Came here to publish but arrived with setup incomplete: the localStorage
+      // hand-off from the logged-out wizard died. They did all the work and lost
+      // it, and until now that was completely invisible.
+      if (justPublished) this.funnel.flag('stash_lost');
+      this.funnel.flushNow();
       this.router.navigate(['/setup']);
     }
+  }
+
+  /** Record why a sign-up attempt was rejected, from a bounded code list. */
+  private recordAuthFailure(code: string) {
+    this.funnel.flag('signup_auth_failed');
+    this.funnel.authError(isAuthErrorCode(code) ? code : 'other');
   }
 
   /** Read-and-clear the "came here to publish" flag. */

@@ -25,6 +25,7 @@ import { PreviewFrameComponent } from './preview-frame.component';
 import { AppAdminLayoutComponent } from './app-admin-layout.component';
 import { AppAdminDashboardComponent } from './app-admin-dashboard.component';
 import { AppAdminUsersComponent } from './app-admin-users.component';
+import { AppAdminFunnelComponent } from './app-admin-funnel.component';
 import { AppAdminDiscountsComponent } from './app-admin-discounts.component';
 import { authGuard, setupGuard, publicGuard, appAdminGuard, previewFrameGuard } from './auth.guard';
 
@@ -70,6 +71,7 @@ export const routes: Routes = [
     children: [
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
       { path: 'dashboard', component: AppAdminDashboardComponent },
+      { path: 'funnel', component: AppAdminFunnelComponent },
       { path: 'users', component: AppAdminUsersComponent },
       { path: 'discounts', component: AppAdminDiscountsComponent },
     ]

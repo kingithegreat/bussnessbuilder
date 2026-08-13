@@ -24,6 +24,13 @@ import type Stripe from 'stripe';
 import type { Firestore } from 'firebase-admin/firestore';
 import { getAllDocs } from './server-firestore';
 import { validateDomain } from './app/domain-verification';
+import {
+  buildFunnelDeltas,
+  buildFunnelReport,
+  funnelDayKeys,
+  clampFunnelDays,
+  FunnelDayDoc,
+} from './server-funnel';
 
 // The Firebase Admin default app must be initialized before ANY firebase-admin/*
 // submodule is used (Firestore, Auth, ...). getDb() used to be the only place that
@@ -406,6 +413,55 @@ app.post('/api/site/:uid/enquiry', express.json(), async (req, res) => {
 });
 
 /**
+ * Public API: funnel counter deltas (no auth required).
+ *
+ * The visitors worth measuring are the ones who leave, and they never
+ * authenticate — so this has to be reachable without a token. What keeps that
+ * safe is that the payload cannot carry anything but counter names from a fixed
+ * allowlist: no identifier, no free text, no PII. See `src/app/funnel.ts`.
+ *
+ * Growth is bounded structurally rather than by policy: 46 possible numeric
+ * fields per document, and `normalizeFunnelDay` limits the writable document ids
+ * to a three-day window, so a hostile caller cannot mint documents either.
+ */
+app.post('/api/funnel', express.json({ limit: '4kb' }), async (req, res) => {
+  try {
+    const ip = req.ip || req.socket.remoteAddress || 'unknown';
+    if (rateLimiter.isLimited(`funnel:${ip}`, 60, 60_000)) {
+      res.status(429).json({ error: 'Too many events' });
+      return;
+    }
+
+    const plan = buildFunnelDeltas(req.body, new Date());
+    if (!plan) {
+      // Nothing recordable — a stale client or a probe. Not an error worth
+      // surfacing, and answering 204 gives a scanner nothing to work with.
+      res.status(204).end();
+      return;
+    }
+
+    const db = await getDb();
+    const { FieldValue } = await import('firebase-admin/firestore');
+
+    const payload: Record<string, unknown> = { date: plan.day, updatedAt: new Date().toISOString() };
+    for (const [group, entries] of Object.entries(plan.deltas)) {
+      if (Object.keys(entries).length === 0) continue;
+      // Nested object literals, NOT dotted keys: with set({merge:true}) a key
+      // containing a dot becomes a literal field name rather than a path.
+      payload[group] = Object.fromEntries(
+        Object.entries(entries).map(([key, delta]) => [key, FieldValue.increment(delta)])
+      );
+    }
+
+    await db.doc(`funnelDaily/${plan.day}`).set(payload, { merge: true });
+    res.status(204).end();
+  } catch (e) {
+    console.error('Funnel event error:', e); captureServerError(e);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+/**
  * Authenticated API: claim a URL slug for a user's site.
  */
 app.post('/api/slugs/claim', express.json(), async (req, res) => {
@@ -614,6 +670,39 @@ app.get('/api/admin/metrics', async (req, res) => {
     res.json(result);
   } catch (e) {
     console.error('Admin metrics error:', e); captureServerError(e);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+/**
+ * Admin API: the acquisition funnel over the last 7/30/90 days.
+ *
+ * Its own short cache rather than sharing `metricsCache`, which is keyed on
+ * nothing and sits behind a full user scan.
+ */
+const funnelCache = new Map<number, { data: unknown; expiresAt: number }>();
+
+app.get('/api/admin/funnel', async (req, res) => {
+  if (!await verifyAdmin(req)) { res.status(403).json({ error: 'Not authorized' }); return; }
+  try {
+    const days = clampFunnelDays(req.query['days']);
+    const cached = funnelCache.get(days);
+    if (cached && cached.expiresAt > Date.now()) {
+      res.json(cached.data);
+      return;
+    }
+
+    const now = new Date();
+    const db = await getDb();
+    const refs = funnelDayKeys(days, now).map(day => db.doc(`funnelDaily/${day}`));
+    const snaps = await getAllDocs(db, refs);
+    const docs = snaps.map(snap => (snap.exists ? (snap.data() as FunnelDayDoc) : null));
+
+    const report = buildFunnelReport(docs, days, now);
+    funnelCache.set(days, { data: report, expiresAt: Date.now() + 60_000 });
+    res.json(report);
+  } catch (e) {
+    console.error('Admin funnel error:', e); captureServerError(e);
     res.status(500).json({ error: 'Server error' });
   }
 });
