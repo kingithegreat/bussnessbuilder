@@ -6,6 +6,7 @@ import { switchMap, catchError } from 'rxjs/operators';
 import { of } from 'rxjs';
 import { MatIconModule } from '@angular/material/icon';
 import { DataService } from './data.service';
+import { resolveFaviconHref, applyFavicon } from './site-favicon';
 import { PublicPageComponent } from './public-page.component';
 import { PublicSiteData } from './types';
 import { PUBLIC_SITE_STATE_KEY, readPublicSiteContext } from './public-site-context';
@@ -58,6 +59,7 @@ export class SiteViewComponent implements OnInit {
       if (ctx) {
         this.transferState.set(PUBLIC_SITE_STATE_KEY, ctx);
         this.dataService.loadPublicSite(ctx.uid, ctx.data);
+        this.setSiteFavicon(ctx.data);
         this.loading.set(false);
       }
       return;
@@ -101,7 +103,18 @@ export class SiteViewComponent implements OnInit {
           return;
         }
         this.dataService.loadPublicSite(result.uid, result.data);
+        this.setSiteFavicon(result.data);
         this.loading.set(false);
       });
+  }
+
+  /**
+   * Give the tab the site's own logo. Without this every generated site — a
+   * paying Business-tier customer's included — showed BusinessFlow's favicon
+   * from src/index.html in the tab, bookmarks and history.
+   */
+  private setSiteFavicon(data: { customization?: { branding?: { logoUrl?: string } } } | null) {
+    if (!isPlatformBrowser(this.platformId) || !data) return;
+    applyFavicon(document, resolveFaviconHref(data.customization?.branding));
   }
 }
