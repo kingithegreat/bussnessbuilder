@@ -217,6 +217,18 @@ import { ImagePickerComponent } from './image-picker.component';
                    <span class="block text-sm font-bold text-gray-700 mb-2">Main CTA Text</span>
                    <input type="text" [(ngModel)]="localCust.branding.ctaText" placeholder="Get a Quote" class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm">
                  </div>
+                 <div class="md:col-span-2">
+                   <span class="block text-sm font-bold text-gray-700 mb-2">Trust badges</span>
+                   <input type="text" [ngModel]="trustBadgesInput" (ngModelChange)="trustBadgesInput = $event" placeholder="e.g. Fully Insured, 5-Star Rated, Locally Owned" class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+                   <p class="text-xs text-gray-400 mt-1">Comma separated. These are the small reassurance pills under your hero — not the location pill (that's in Text &amp; Labels).</p>
+                   @if (parsedTrustBadges().length) {
+                     <div class="flex flex-wrap gap-2 mt-2">
+                       @for (badge of parsedTrustBadges(); track badge) {
+                         <span class="px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-xs font-bold">{{ badge }}</span>
+                       }
+                     </div>
+                   }
+                 </div>
               </div>
 
               <div class="pt-6 border-t border-gray-100">
@@ -310,9 +322,9 @@ import { ImagePickerComponent } from './image-picker.component';
               <h3 class="font-bold text-gray-900 border-b border-gray-100 pb-2 mb-4">Hero / Welcome</h3>
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <span class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Badge above the headline</span>
+                  <span class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Location pill (above the headline)</span>
                   <input type="text" [(ngModel)]="textSettings.heroBadge" placeholder="Auto: business type • service area" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
-                  <p class="text-xs text-gray-400 mt-1">e.g. "Welcome to {{ profile().name || 'your business' }}". Blank shows your business type and service area.</p>
+                  <p class="text-xs text-gray-400 mt-1">e.g. "Welcome to {{ profile().name || 'your business' }}". Blank shows your business type and service area. Not the trust badges &mdash; those are in Branding.</p>
                 </div>
                 <div>
                   <span class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Second hero button</span>
@@ -523,6 +535,8 @@ export class AdminCustomisationComponent implements OnInit {
 
   localCust!: CustomizationSettings;
   profile = this.dataService.profile;
+  /** Comma-separated mirror of profile.trustBadges, applied on Save. */
+  trustBadgesInput = '';
 
   layoutPresets = [
     {
@@ -588,6 +602,13 @@ export class AdminCustomisationComponent implements OnInit {
     // Older saved configs have no text object — create it so the Text tab binds.
     this.localCust.text = this.localCust.text || {};
     this.textSettings = this.localCust.text;
+    this.trustBadgesInput = (this.dataService.profile().trustBadges || []).join(', ');
+  }
+
+  /** Trust badges live on the profile, but they are a visual element, so the
+   *  control belongs here next to the logo rather than buried in Settings. */
+  parsedTrustBadges(): string[] {
+    return this.trustBadgesInput.split(',').map(b => b.trim()).filter(Boolean);
   }
 
   defaults = DEFAULT_PAGE_TEXT;
@@ -629,6 +650,7 @@ export class AdminCustomisationComponent implements OnInit {
 
   saveCustomisation() {
     this.dataService.updateCustomization(this.localCust);
+    this.dataService.updateProfile({ trustBadges: this.parsedTrustBadges() });
     this.toast.success('Customisation settings saved successfully!');
   }
 

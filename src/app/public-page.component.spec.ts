@@ -230,4 +230,13 @@ describe('PublicPageComponent — section renderer completeness', () => {
     expect(text).not.toContain('Get in Touch');
   });
 
+
+  it('visitors never see the editor-only "add your logo" affordance', () => {
+    // The dashed prompt is for the owner in the builder preview. A published
+    // site with no logo must still render the plain brand mark.
+    const el = renderWithSections([seededSection('hero', 1)]);
+    expect(el.querySelector('[title*="Add your logo"]')).toBeNull();
+    expect(el.textContent || '').not.toContain('add_photo_alternate');
+  });
+
 });

@@ -76,6 +76,14 @@ import { ToastService } from './toast.service';
           <div class="flex items-center gap-2 md:gap-3 min-w-0">
              @if (customization().branding.logoUrl) {
                <img [src]="customization().branding.logoUrl" alt="Logo" class="w-8 h-8 rounded-lg object-cover shrink-0" referrerpolicy="no-referrer">
+             } @else if (editable()) {
+               <!-- Editor only. The filled square below looks deliberate, so an
+                    owner with no logo had no idea the slot was theirs to fill. -->
+               <div title="Add your logo in Customisation → Branding"
+                    class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border-2 border-dashed opacity-70"
+                    [style.borderColor]="customization().branding.primaryColor">
+                 <mat-icon class="text-[14px] leading-none" [style.color]="customization().branding.primaryColor">add_photo_alternate</mat-icon>
+               </div>
              } @else {
                <div class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" [style.backgroundColor]="customization().branding.primaryColor">
                  <div class="w-4 h-4 border-2 border-white rounded-sm"></div>
