@@ -8,6 +8,7 @@ import { NgTemplateOutlet } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { CustomizationSettings, SectionConfig, FormFieldConfig, PageTextSettings, pageText } from './types';
 import { businessTypeLabel } from './presets';
+import { resolveFieldOptions } from './service-options';
 import { sectionRenderType } from './section-library';
 import { EditableTextDirective } from './editable-text.directive';
 import { AnalyticsService } from './analytics.service';
@@ -737,10 +738,8 @@ import { ToastService } from './toast.service';
                               <select [id]="field.id" [formControlName]="field.id" class="w-full px-4 py-3 bg-gray-50 border border-transparent rounded-xl focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none text-sm font-medium text-gray-700 transition-all">
                                 <option value="" disabled selected>{{ field.placeholder || 'Select...' }}</option>
                                 @if (field.type === 'dropdown') {
-                                  @for (opt of field.options.split(','); track opt) {
-                                    @if (opt.trim()) {
-                                      <option [value]="opt.trim()">{{ opt.trim() }}</option>
-                                    }
+                                  @for (opt of fieldOptions(field); track opt) {
+                                    <option [value]="opt">{{ opt }}</option>
                                   }
                                 } @else if (field.type === 'budget') {
                                   <option value="under500">Under $500</option>
@@ -760,13 +759,11 @@ import { ToastService } from './toast.service';
                               </label>
                             } @else if (field.type === 'radio') {
                               <div class="space-y-2">
-                                @for (opt of field.options.split(','); track opt) {
-                                  @if (opt.trim()) {
-                                    <label class="flex items-center gap-3 cursor-pointer">
-                                      <input type="radio" [value]="opt.trim()" [formControlName]="field.id" class="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500">
-                                      <span class="text-sm text-gray-700">{{ opt.trim() }}</span>
-                                    </label>
-                                  }
+                                @for (opt of fieldOptions(field); track opt) {
+                                  <label class="flex items-center gap-3 cursor-pointer">
+                                    <input type="radio" [value]="opt" [formControlName]="field.id" class="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500">
+                                    <span class="text-sm text-gray-700">{{ opt }}</span>
+                                  </label>
                                 }
                               </div>
                             } @else if (field.type === 'file') {
@@ -777,13 +774,11 @@ import { ToastService } from './toast.service';
                             } @else if (field.type === 'multi-select') {
                               <div class="space-y-2">
                                  <p class="text-xs text-gray-500 mb-1">Select all that apply:</p>
-                                 @for (opt of field.options.split(','); track opt) {
-                                   @if (opt.trim()) {
-                                     <label class="flex items-center gap-3 cursor-pointer">
-                                       <input type="checkbox" [value]="opt.trim()" [formControlName]="field.id" class="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500">
-                                       <span class="text-sm text-gray-700">{{ opt.trim() }}</span>
-                                     </label>
-                                   }
+                                 @for (opt of fieldOptions(field); track opt) {
+                                   <label class="flex items-center gap-3 cursor-pointer">
+                                     <input type="checkbox" [value]="opt" [formControlName]="field.id" class="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500">
+                                     <span class="text-sm text-gray-700">{{ opt }}</span>
+                                   </label>
                                  }
                               </div>
                             } @else {
@@ -1138,6 +1133,16 @@ export class PublicPageComponent {
   // Customizable page text with defaults (see PageTextSettings in types.ts).
   t(key: keyof PageTextSettings): string {
     return pageText(this.customization(), key);
+  }
+
+  /**
+   * Options for a form field. The seeded "Service Interest" dropdown derives
+   * from the business's real services — it shipped with a hardcoded cleaning
+   * list that the setup wizard never rewrote, so every site asked visitors to
+   * choose a kind of house clean.
+   */
+  fieldOptions(field: { id: string; type: string; options?: string }): string[] {
+    return resolveFieldOptions(field, this.services());
   }
 
   /**
