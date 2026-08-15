@@ -343,11 +343,15 @@ app.post('/api/site/:uid/enquiry', express.json(), async (req, res) => {
     };
 
     let wasFirstEnquiry = false;
+    // Captured here so the notification below needs no extra read.
+    let ownerEmail = '';
     await db.runTransaction(async transaction => {
       const mainSnap = await transaction.get(mainRef);
       if (!mainSnap.exists) throw new Error('SITE_NOT_FOUND');
 
       const data = mainSnap.data() || {};
+      const ownerProfile = (data['profile'] || {}) as Record<string, unknown>;
+      ownerEmail = asTrimmedString(ownerProfile['email'], 320);
       const existing = Array.isArray(data['enquiries']) ? data['enquiries'] : [];
       wasFirstEnquiry = existing.length === 0;
       transaction.set(mainRef, {
@@ -376,10 +380,21 @@ app.post('/api/site/:uid/enquiry', express.json(), async (req, res) => {
 
     // Fire-and-forget email notification
     (async () => {
+      // Default ON, to the address the owner gave the setup wizard.
+      //
+      // Previously this returned early unless a `notifications` document
+      // existed AND had the flag set — but nothing creates that document until
+      // the owner finds Settings and toggles it, and the default is false. So
+      // the product's core promise ("enquiries land in your inbox") silently
+      // did nothing for every account ever created, even with SMTP configured.
+      // Opting out is still honoured; only the absence of a choice changed.
       const notifSnap = await db.doc(`users/${uid}/businessData/notifications`).get();
-      if (!notifSnap.exists) return;
-      const prefs = notifSnap.data()!;
-      if (!prefs['emailOnNewEnquiry'] || !prefs['notificationEmail']) return;
+      const prefs = notifSnap.exists ? notifSnap.data()! : {};
+      const optedOut = notifSnap.exists && prefs['emailOnNewEnquiry'] === false;
+      if (optedOut) return;
+
+      const notifyTo = asTrimmedString(prefs['notificationEmail'], 320) || ownerEmail;
+      if (!notifyTo) return;
 
       const smtpHost = process.env['SMTP_HOST'];
       const smtpPort = process.env['SMTP_PORT'];
@@ -398,7 +413,7 @@ app.post('/api/site/:uid/enquiry', express.json(), async (req, res) => {
 
       await transporter.sendMail({
         from: smtpFrom,
-        to: prefs['notificationEmail'],
+        to: notifyTo,
         subject: `New Enquiry from ${enquiry.name}`,
         text: [
           `Name: ${enquiry.name}`,

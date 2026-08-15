@@ -296,12 +296,28 @@ export class DataService {
       };
     });
 
+    let activity: Activity | undefined;
     if (statusChanged) {
-      this.addActivity({
+      activity = {
         type: 'status_changed',
         title: 'Enquiry Updated',
-        description: `${name}'s enquiry moved from ${oldStatus} to ${updates.status}`
-      });
+        description: `${name}'s enquiry moved from ${oldStatus} to ${updates.status}`,
+        id: crypto.randomUUID(),
+        date: new Date().toISOString(),
+      };
+      this.state.update(s => ({ ...s, activities: [activity!, ...s.activities] }));
+    }
+
+    // Persisted here, transactionally, rather than by the debounced whole-state
+    // autosave — which no longer writes enquiries at all, because doing so
+    // destroyed leads that arrived while the owner had the admin open.
+    if (isPlatformBrowser(this.platformId) && this.uid()) {
+      this.firestoreService.updateEnquiryFields(
+        this.uid()!,
+        id,
+        JSON.parse(JSON.stringify(updates)),
+        activity ? JSON.parse(JSON.stringify(activity)) : undefined,
+      );
     }
   }
 
