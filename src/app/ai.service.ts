@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { BusinessProfile, Enquiry, Service, FAQ, BusinessType, ReplyIntent, MarketingContentType, GrowthReport, DraftRecommendationResponse } from './types';
 import { getPreset } from './presets';
+import { businessTypeNoun, hashtagLine, aboutDescription } from './business-copy';
 import { DataService } from './data.service';
 import { AuthService } from './auth.service';
 
@@ -96,15 +97,11 @@ Return only the description text — no headings, labels, or surrounding quotes.
 
     // This is not a rare path: it runs whenever the AI returns nothing, which
     // includes every site created while no GEMINI_API_KEY is configured.
-    const preset = getPreset(profile.type as BusinessType);
-    const area = profile.serviceArea ? ` in the ${profile.serviceArea} area` : '';
-    const desc = preset
-      ? preset.description
-      // No preset means the type is 'other' or unset — say nothing about it
-      // rather than interpolating the raw id ("a top-tier other").
-      : `We are dedicated to providing excellent service${area}.`;
-    const tagline = profile.tagline ? ` ${profile.tagline}.` : '';
-    return `Welcome to ${profile.name}! ${desc}${tagline} Our goal is to make your life easier through professional, reliable, and high-quality solutions.`;
+    return aboutDescription({
+      name: profile.name,
+      tagline: profile.tagline,
+      serviceArea: profile.serviceArea,
+    });
   }
 
   async generateDraftReply(enquiry: Enquiry, profile: BusinessProfile): Promise<string> {
@@ -139,7 +136,7 @@ Include a clear call to action${profile.phone ? ` and the phone number ${profile
     );
     if (ai) return ai;
 
-    return `Update from ${profile.name}! 🌟\n\n${topic}\n\nWe are proud to serve the ${profile.serviceArea} area. Call us today at ${profile.phone} or visit our website to learn more!\n\n#${profile.type.replace(/\s+/g, '')} #${profile.serviceArea.replace(/\s+/g, '')} #LocalBusiness`;
+    return `Update from ${profile.name}! 🌟\n\n${topic}\n\nWe are proud to serve the ${profile.serviceArea} area. ${profile.phone ? `Call us today at ${profile.phone}` : 'Get in touch'} or visit our website to learn more!\n\n${hashtagLine([businessTypeNoun(profile.type), profile.serviceArea, 'LocalBusiness'])}`;
   }
 
   async generateSocialCaption(profile: BusinessProfile, topic: string): Promise<string> {
@@ -152,7 +149,7 @@ Keep it upbeat, encourage comments or DMs to book, and include 3-4 relevant hash
     );
     if (ai) return ai;
 
-    return `Hey everyone! 👋 ${topic}\n\nAt ${profile.name}, we believe in providing the best ${profile.type} services in town. Drop a comment below if you have any questions, or DM us to book! ✨👇\n\n#${profile.type.replace(/\s+/g, '')} #SmallBusiness #LocalServices`;
+    return `Hey everyone! 👋 ${topic}\n\nAt ${profile.name}, we believe in providing ${businessTypeNoun(profile.type) ? `the best ${businessTypeNoun(profile.type)} in town` : 'the best service in town'}. Drop a comment below if you have any questions, or DM us to book! ✨👇\n\n${hashtagLine([businessTypeNoun(profile.type), 'SmallBusiness', 'LocalServices'])}`;
   }
 
   async generateLeadReply(enquiry: Enquiry, profile: BusinessProfile, intent: ReplyIntent): Promise<string> {
@@ -201,17 +198,17 @@ Sign off as "The team at ${profile.name}". Return only the email body.`,
       'facebook': {
         prompt: `Write an engaging Facebook post for ${profile.name}, a ${profile.type} serving ${profile.serviceArea}.\nServices: ${serviceList}\n${topic ? `Topic: ${topic}` : 'Write about what makes the business special.'}\nTone: ${profile.toneOfVoice}\nInclude a call-to-action, 2-3 emojis, and 3 hashtags. Keep under 300 words.`,
         system: 'You are a social media marketing expert for small businesses.',
-        fallback: `🌟 Looking for a trusted ${profile.type} in ${profile.serviceArea}?\n\n${profile.name} is here to help! We offer ${serviceList}.\n\n${topic || 'Contact us today for a free quote!'}\n\n📞 ${profile.phone || 'Call us'}\n\n#${(profile.type || '').replace(/\s+/g, '')} #${(profile.serviceArea || '').replace(/\s+/g, '')} #SmallBusiness`,
+        fallback: `🌟 ${businessTypeNoun(profile.type) ? `Looking for a trusted ${businessTypeNoun(profile.type)} in ${profile.serviceArea}?` : `Looking for help in ${profile.serviceArea}?`}\n\n${profile.name} is here to help! We offer ${serviceList}.\n\n${topic || 'Contact us today for a free quote!'}\n\n📞 ${profile.phone || 'Call us'}\n\n${hashtagLine([businessTypeNoun(profile.type), profile.serviceArea, 'SmallBusiness'])}`,
       },
       'instagram': {
         prompt: `Write an Instagram caption for ${profile.name}, a ${profile.type}.\nServices: ${serviceList}\n${topic ? `Topic: ${topic}` : 'Showcase the business.'}\nTone: ${profile.toneOfVoice}\nMake it visual and engaging, use emojis, include 5-8 hashtags. Keep under 200 words.`,
         system: 'You are an Instagram content creator for small businesses.',
-        fallback: `✨ ${profile.name} — your local ${profile.type} ✨\n\n${topic || `We specialise in ${serviceList}.`}\n\nDM us or visit the link in bio to book! 📩\n\n#${(profile.type || '').replace(/\s+/g, '')} #SmallBusiness #LocalServices #BookNow`,
+        fallback: `✨ ${profile.name}${businessTypeNoun(profile.type) ? ` — your local ${businessTypeNoun(profile.type)}` : ''} ✨\n\n${topic || `We specialise in ${serviceList}.`}\n\nDM us or visit the link in bio to book! 📩\n\n${hashtagLine([businessTypeNoun(profile.type), 'SmallBusiness', 'LocalServices', 'BookNow'])}`,
       },
       'google-business': {
         prompt: `Write a Google Business Profile update post for ${profile.name}, a ${profile.type} in ${profile.serviceArea}.\nServices: ${serviceList}\n${topic ? `Topic: ${topic}` : 'General business update.'}\nTone: ${profile.toneOfVoice}\nKeep under 1500 characters. Include a call to action${profile.phone ? ` with phone number ${profile.phone}` : ''}.`,
         system: 'You are a local SEO expert writing Google Business Profile posts.',
-        fallback: `Update from ${profile.name}!\n\n${topic || `We're proud to serve ${profile.serviceArea} with quality ${profile.type} services.`}\n\nServices: ${serviceList}\n\n${profile.phone ? `Call us at ${profile.phone}` : 'Contact us today!'}\n\n#LocalBusiness`,
+        fallback: `Update from ${profile.name}!\n\n${topic || `We're proud to serve ${profile.serviceArea}${businessTypeNoun(profile.type) ? ` with quality ${businessTypeNoun(profile.type)} services` : ' with quality service'}.`}\n\nServices: ${serviceList}\n\n${profile.phone ? `Call us at ${profile.phone}` : 'Contact us today!'}\n\n#LocalBusiness`,
       },
       'review-request': {
         prompt: `Write a friendly message asking a satisfied customer to leave a review for ${profile.name}, a ${profile.type}.\nTone: ${profile.toneOfVoice}\nMake it personal, not automated. Explain how reviews help small businesses. Keep it short (under 100 words). Suggest Google or Facebook as review platforms.`,

@@ -275,12 +275,12 @@ const SECTION_INSERT_TYPES: RecommendationType[] = ['pricing', 'marketing', 'seo
                         <div class="flex items-center justify-between mb-2">
                           <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Draft Preview</span>
                           <div class="flex gap-1">
-                            @if (rec.type === 'faq' && rec.status !== 'applied') {
+                            @if (rec.type === 'faq' && rec.status !== 'applied' && !hasPlaceholder(rec.draftContent)) {
                               <button (click)="addAsFaq(rec)" class="bg-blue-50 hover:bg-blue-100 text-blue-600 px-2 py-1 rounded text-[10px] font-bold transition-colors flex items-center gap-1">
                                 <mat-icon class="text-[12px]">add</mat-icon> Add as FAQ
                               </button>
                             }
-                            @if (rec.type === 'service' && rec.status !== 'applied') {
+                            @if (rec.type === 'service' && rec.status !== 'applied' && !hasPlaceholder(rec.draftContent)) {
                               <button (click)="addAsService(rec)" class="bg-blue-50 hover:bg-blue-100 text-blue-600 px-2 py-1 rounded text-[10px] font-bold transition-colors flex items-center gap-1">
                                 <mat-icon class="text-[12px]">add</mat-icon> Add as Service
                               </button>
@@ -295,11 +295,13 @@ const SECTION_INSERT_TYPES: RecommendationType[] = ['pricing', 'marketing', 'seo
                                 <mat-icon class="text-[12px]">add</mat-icon> Apply CTA
                               </button>
                             }
-                            @if (rec.type === 'trust' && rec.status !== 'applied') {
-                              <button (click)="addAsTestimonial(rec)" class="bg-blue-50 hover:bg-blue-100 text-blue-600 px-2 py-1 rounded text-[10px] font-bold transition-colors flex items-center gap-1">
-                                <mat-icon class="text-[12px]">add</mat-icon> Add as Testimonial
-                              </button>
-                            }
+                            <!--
+                              No "Add as Testimonial". A 'trust' draft is a message
+                              asking a real customer for a review — on both the AI and
+                              template paths — so it is never that customer's words.
+                              Publishing it as a testimonial fabricated a review on a
+                              real business's site. Copy (below) is the correct action.
+                            -->
                             @if (canInsertAsSection(rec)) {
                               <button (click)="insertAsSection(rec)" class="bg-blue-50 hover:bg-blue-100 text-blue-600 px-2 py-1 rounded text-[10px] font-bold transition-colors flex items-center gap-1">
                                 <mat-icon class="text-[12px]">add</mat-icon> Insert as Section
@@ -691,6 +693,17 @@ export class AdminGrowthComponent implements OnInit {
       appliedAt: new Date().toISOString(),
     });
     this.toast.success('Call-to-action updated!');
+  }
+
+  /**
+   * True when a draft still contains bracket placeholders like "[Service Name]"
+   * or "$[price]". Applies to AI output as much as templates — the 'service'
+   * prompt itself asks for "Starting from $[price]" — and addAsService strips
+   * the brackets, so a site could publish a service literally named
+   * "Service Name".
+   */
+  hasPlaceholder(draft?: string): boolean {
+    return !!draft && /\[[^\]]+\]/.test(draft);
   }
 
   addAsTestimonial(rec: SavedRecommendation) {

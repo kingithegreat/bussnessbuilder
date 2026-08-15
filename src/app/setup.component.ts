@@ -432,7 +432,11 @@ export class SetupWizardComponent implements OnInit {
         serviceArea: val.serviceArea || '',
         description: '',
         address: '',
-        openingHours: 'Mon-Fri: 9am - 5pm',
+        // Never invented. The wizard does not ask for hours, and asserting
+        // "Mon-Fri: 9am - 5pm" told every cafe, salon and weekend trader's
+        // customers in writing that it was shut on Saturday. All three render
+        // sites already guard on a non-empty value.
+        openingHours: '',
         toneOfVoice: preset?.suggestedTone || 'Professional yet friendly',
         brandColor: '#2563eb',
         heroCopy: preset?.suggestedHeroCopy || val.tagline || '',

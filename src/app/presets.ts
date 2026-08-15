@@ -3,6 +3,15 @@ import { BusinessType, Service, FAQ } from './types';
 export interface BusinessPreset {
   id: BusinessType;
   label: string;
+  /**
+   * Lowercase trade noun that reads naturally mid-sentence: "a trusted
+   * {tradeNoun}", "your local {tradeNoun}", "the best {tradeNoun} in town".
+   *
+   * Deliberately NOT derived from `label` — "Cleaning Service" would produce
+   * "the best cleaning service service in town", and "Barbershop / Salon" is
+   * not a noun phrase at all. See `businessTypeNoun` in `business-copy.ts`.
+   */
+  tradeNoun: string;
   description: string;
   suggestedServices: Service[];
   suggestedFaqs: FAQ[];
@@ -17,6 +26,7 @@ export const BUSINESS_PRESETS: BusinessPreset[] = [
   {
     id: 'cleaner',
     label: 'Cleaning Service',
+    tradeNoun: 'cleaning service',
     description: 'Residential and commercial cleaning businesses.',
     suggestedServices: [
       { id: 'c1', name: 'Standard Clean', description: 'Regular maintenance cleaning for your home.', price: '$120' },
@@ -36,6 +46,7 @@ export const BUSINESS_PRESETS: BusinessPreset[] = [
   {
     id: 'barber',
     label: 'Barbershop / Salon',
+    tradeNoun: 'barbershop',
     description: 'Haircuts, styling, and grooming services.',
     suggestedServices: [
       { id: 'b1', name: 'Classic Haircut', description: 'Tailored haircut with a straight razor neck shave.', price: '$40' },
@@ -55,6 +66,7 @@ export const BUSINESS_PRESETS: BusinessPreset[] = [
   {
     id: 'personal trainer',
     label: 'Personal Trainer',
+    tradeNoun: 'personal trainer',
     description: 'Fitness coaching, workout plans, and nutrition advice.',
     suggestedServices: [
       { id: 'pt1', name: '1-on-1 Training Session', description: '60 minutes of personalized fitness coaching.', price: '$80' },
@@ -74,6 +86,7 @@ export const BUSINESS_PRESETS: BusinessPreset[] = [
   {
     id: 'tutor',
     label: 'Tutor / Instructor',
+    tradeNoun: 'tutor',
     description: 'Academic tutoring, music lessons, or skill instruction.',
     suggestedServices: [
       { id: 't1', name: 'Online Tutoring (1 Hour)', description: 'One-on-one virtual session via Zoom.', price: '$50' },
@@ -93,6 +106,7 @@ export const BUSINESS_PRESETS: BusinessPreset[] = [
   {
     id: 'lawn mowing',
     label: 'Lawn Care & Landscaping',
+    tradeNoun: 'lawn care service',
     description: 'Mowing, trimming, and garden maintenance.',
     suggestedServices: [
       { id: 'l1', name: 'Weekly Mowing', description: 'Mowing, edging, and blowing driveways/walkways clear.', price: '$45/visit' },

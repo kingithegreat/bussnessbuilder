@@ -24,6 +24,7 @@ import type Stripe from 'stripe';
 import type { Firestore } from 'firebase-admin/firestore';
 import { getAllDocs } from './server-firestore';
 import { validateDomain } from './app/domain-verification';
+import { businessTypeLabel } from './app/presets';
 import {
   buildFunnelDeltas,
   buildFunnelReport,
@@ -1096,9 +1097,13 @@ const VALID_REC_TYPES = ['hero', 'service', 'faq', 'pricing', 'trust', 'cta', 'l
 function getTemplateDraft(type: string, title: string, suggestion: string, profile: Record<string, unknown>, services: { name: string }[]): string {
   const name = (profile['name'] as string) || 'Your Business';
   const area = (profile['serviceArea'] as string) || 'your area';
-  const bizType = (profile['type'] as string) || 'service business';
+  // Human label, or '' for 'other'/unset. Never the raw id, and never a
+  // substituted filler — clauses are dropped instead. See businessTypeLabel.
+  const bizType = businessTypeLabel(profile['type'] as string);
   switch (type) {
-    case 'hero': return `Welcome to ${name} — trusted ${bizType} serving ${area}. We're here to help.`;
+    case 'hero': return bizType
+      ? `Welcome to ${name} — trusted ${bizType.toLowerCase()} serving ${area}. We're here to help.`
+      : `Welcome to ${name}, serving ${area}. We're here to help.`;
     case 'service': return `[Service Name]\n\nA compelling description of what this service includes and why customers choose it.\n\nStarting from $[price]`;
     case 'faq': return `Q: [Common question about your ${bizType}?]\n\nA: [Clear, helpful answer that builds confidence.]`;
     case 'pricing': return `Our pricing is transparent and competitive. ${services.length > 0 ? `We offer ${services.length} services` : 'Contact us for a free quote'}.`;
@@ -1106,14 +1111,16 @@ function getTemplateDraft(type: string, title: string, suggestion: string, profi
     case 'cta': return `Ready to get started? Contact ${name} today for a free consultation. We serve ${area} and surrounding areas.`;
     case 'lead-follow-up': return `Hi [Customer Name],\n\nThank you for your interest in ${name}. I wanted to follow up on your enquiry.\n\nWould you like to schedule a time to discuss your needs?\n\nBest regards,\nThe team at ${name}`;
     case 'marketing': return `Looking for a trusted ${bizType} in ${area}? ${name} is here to help!\n\nContact us today for a free quote.\n\n#${bizType.replace(/\s+/g, '')} #${area.replace(/\s+/g, '')} #LocalBusiness`;
-    case 'seo': return `${name} — Professional ${bizType} in ${area}. Quality service, competitive pricing, and satisfied customers.`;
-    default: return suggestion || `Improve your ${bizType} website to attract more customers.`;
+    case 'seo': return `${name}${bizType ? ` — Professional ${bizType.toLowerCase()}` : ''} in ${area}. Quality service and competitive pricing.`;
+    default: return suggestion || `Improve your website to attract more customers.`;
   }
 }
 
 function buildDraftPrompt(type: string, suggestion: string, profile: Record<string, unknown>, services: { name: string; price?: string }[], faqCount: number, testimonialCount: number): string {
   const name = (profile['name'] as string) || 'Unknown Business';
-  const bizType = (profile['type'] as string) || 'service business';
+  // Human label, or '' for 'other'/unset. Never the raw id, and never a
+  // substituted filler — clauses are dropped instead. See businessTypeLabel.
+  const bizType = businessTypeLabel(profile['type'] as string);
   const area = (profile['serviceArea'] as string) || 'Not specified';
   const tone = (profile['toneOfVoice'] as string) || 'Professional yet friendly';
   const ctx = `Business: ${name} (${bizType})\nLocation: ${area}\nTone: ${tone}\nServices: ${services.map(s => s.name).join(', ') || 'Not listed'}`;
