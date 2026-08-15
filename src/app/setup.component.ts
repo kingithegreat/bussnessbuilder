@@ -283,14 +283,15 @@ export class SetupWizardComponent implements OnInit {
     });
 
     this.form.get('type')?.valueChanges.subscribe(type => {
-      if (type) {
-        const preset = getPreset(type as BusinessType);
-        if (preset && !this.form.get('tagline')?.value) {
-          this.form.patchValue({
-            tagline: preset.suggestedHeroCopy,
-          });
-        }
-      }
+      // Re-fill the tagline whenever it is still OUR auto-fill, and clear it
+      // when the new type has no preset. Previously it only ever filled a blank
+      // field, so changing type after the first pick left the previous trade's
+      // line in place — a barber's site headlined with the cleaning copy.
+      const current = this.form.get('tagline')?.value || '';
+      const isAutofill = BUSINESS_PRESETS.some(p => p.suggestedHeroCopy === current);
+      if (current && !isAutofill) return; // the owner wrote this — never touch it
+      const preset = type ? getPreset(type as BusinessType) : undefined;
+      this.form.patchValue({ tagline: preset?.suggestedHeroCopy || '' });
     });
   }
 
@@ -493,7 +494,11 @@ export class SetupWizardComponent implements OnInit {
   }
 
   private fallbackDescription(name: string, tagline: string): string {
-    return `Welcome to ${name}! ${tagline}. Our goal is to make your life easier through professional, reliable, and high-quality solutions.`;
+    // A blank tagline used to leave a floating " . " mid-paragraph, and one
+    // that already ended in '.' got a second one.
+    const t = (tagline || '').trim().replace(/[.!?]+$/, '');
+    const sentence = t ? ` ${t}.` : '';
+    return `Welcome to ${name}!${sentence} Our goal is to make your life easier through professional, reliable, and high-quality solutions.`;
   }
 
   /**

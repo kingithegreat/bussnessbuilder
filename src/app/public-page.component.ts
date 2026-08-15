@@ -394,10 +394,12 @@ import { ToastService } from './toast.service';
                               <h3 class="text-lg font-bold text-gray-900 mb-3" [appEditableText]="editable()" (textChange)="onTextEdit('service', 'name', $event, service.id)">{{ service.name }}</h3>
                               <p class="text-gray-500 mb-6 text-sm flex-grow leading-relaxed" [appEditableText]="editable()" (textChange)="onTextEdit('service', 'description', $event, service.id)">{{ service.description }}</p>
                               <div class="pt-4 border-t border-gray-50 mt-auto">
-                                <p class="font-bold text-gray-900 flex items-center justify-between text-sm">
+                                @if (service.price) {
+                          <p class="font-bold text-gray-900 flex items-center justify-between text-sm">
                                   <span class="text-gray-400 text-[10px] uppercase tracking-wider">{{ t('priceLabel') }}</span>
                                   {{ service.price }}
                                 </p>
+                        }
                                 @if (getPaymentLink(service.name); as payUrl) {
                                   <a [href]="payUrl" target="_blank" rel="noopener" [style.backgroundColor]="customization().branding.primaryColor" [style.borderRadius]="buttonRadius" class="mt-3 inline-flex items-center justify-center gap-1.5 text-white px-4 py-2 text-xs font-bold shadow-sm hover:opacity-90 transition-opacity">
                                     <mat-icon class="text-[16px]">payment</mat-icon> Pay Now
@@ -413,10 +415,12 @@ import { ToastService } from './toast.service';
                               <h3 class="text-lg font-bold text-gray-900 mb-3" [appEditableText]="editable()" (textChange)="onTextEdit('service', 'name', $event, service.id)">{{ service.name }}</h3>
                               <p class="text-gray-500 mb-6 text-sm flex-grow leading-relaxed" [appEditableText]="editable()" (textChange)="onTextEdit('service', 'description', $event, service.id)">{{ service.description }}</p>
                               <div class="pt-4 border-t border-gray-50 mt-auto">
-                                <p class="font-bold text-gray-900 flex items-center justify-between text-sm">
+                                @if (service.price) {
+                          <p class="font-bold text-gray-900 flex items-center justify-between text-sm">
                                   <span class="text-gray-400 text-[10px] uppercase tracking-wider">{{ t('priceLabel') }}</span>
                                   {{ service.price }}
                                 </p>
+                        }
                                 @if (getPaymentLink(service.name); as payUrl) {
                                   <a [href]="payUrl" target="_blank" rel="noopener" [style.backgroundColor]="customization().branding.primaryColor" [style.borderRadius]="buttonRadius" class="mt-3 inline-flex items-center justify-center gap-1.5 text-white px-4 py-2 text-xs font-bold shadow-sm hover:opacity-90 transition-opacity">
                                     <mat-icon class="text-[16px]">payment</mat-icon> Pay Now
@@ -442,8 +446,10 @@ import { ToastService } from './toast.service';
                             <p class="text-gray-500 text-sm mt-1" [appEditableText]="editable()" (textChange)="onTextEdit('service', 'description', $event, service.id)">{{ service.description }}</p>
                           </div>
                           <div class="shrink-0 text-left md:text-right">
-                            <span class="text-gray-400 text-[10px] uppercase tracking-wider block">{{ t('priceLabel') }}</span>
-                            <p class="font-bold text-gray-900 text-lg">{{ service.price }}</p>
+                            @if (service.price) {
+                              <span class="text-gray-400 text-[10px] uppercase tracking-wider block">{{ t('priceLabel') }}</span>
+                              <p class="font-bold text-gray-900 text-lg">{{ service.price }}</p>
+                            }
                             @if (getPaymentLink(service.name); as payUrl) {
                               <a [href]="payUrl" target="_blank" rel="noopener" [style.backgroundColor]="customization().branding.primaryColor" [style.borderRadius]="buttonRadius" class="mt-2 inline-flex items-center gap-1.5 text-white px-4 py-2 text-xs font-bold shadow-sm hover:opacity-90 transition-opacity">
                                 <mat-icon class="text-[16px]">payment</mat-icon> Pay Now

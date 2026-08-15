@@ -153,4 +153,36 @@ describe('SetupWizardComponent — preview-before-publish gate', () => {
       expect(c.progress()).toBeGreaterThan(0);
     });
   });
+
+  describe('tagline auto-fill follows the chosen type', () => {
+    it('replaces a previous preset tagline when the type changes', () => {
+      const c = makeComponent();
+      c.ngOnInit();
+      c.form.patchValue({ type: 'cleaner' });
+      const cleanerTagline = c.form.value.tagline;
+      expect(cleanerTagline).toBeTruthy();
+
+      c.form.patchValue({ type: 'barber' });
+      expect(c.form.value.tagline).not.toBe(cleanerTagline);
+      expect(c.form.value.tagline).toBeTruthy();
+    });
+
+    it("never overwrites a tagline the owner typed", () => {
+      const c = makeComponent();
+      c.ngOnInit();
+      c.form.patchValue({ tagline: 'Golf tours of the North Island' });
+      c.form.patchValue({ type: 'cleaner' });
+      expect(c.form.value.tagline).toBe('Golf tours of the North Island');
+    });
+
+    it("clears the auto-fill for a type with no preset, rather than inheriting the last trade's line", () => {
+      const c = makeComponent();
+      c.ngOnInit();
+      c.form.patchValue({ type: 'cleaner' });
+      expect(c.form.value.tagline).toBeTruthy();
+      c.form.patchValue({ type: 'other' });
+      expect(c.form.value.tagline).toBe('');
+    });
+  });
+
 });

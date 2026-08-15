@@ -1710,7 +1710,10 @@ app.get(['/site/:uid', '/site/:uid/pages/:slug'], async (req, res, next) => {
     const meta = resolveSiteMeta(
       {
         name: typeof profile['name'] === 'string' ? profile['name'] as string : undefined,
-        type: typeof profile['type'] === 'string' ? profile['type'] as string : undefined,
+        // Human label or undefined — never the raw id. This feeds the meta
+        // description and og:description, i.e. the Google/Slack/WhatsApp
+        // snippet, where "other" would have been read by actual customers.
+        type: businessTypeLabel(typeof profile['type'] === 'string' ? profile['type'] as string : undefined) || undefined,
         tagline: typeof profile['tagline'] === 'string' ? profile['tagline'] as string : undefined,
         description: typeof profile['description'] === 'string' ? profile['description'] as string : undefined,
         logoUrl: typeof branding['logoUrl'] === 'string' ? branding['logoUrl'] as string : undefined,

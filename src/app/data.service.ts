@@ -41,7 +41,10 @@ const defaultState: AppState = {
       fontStyle: 'modern',
       themeMode: 'light',
       headerStyle: 'centered',
-      ctaText: 'Get a Quote',
+      // Unset, so ctaLabel() falls through to profile.ctaText — which the
+      // wizard fills from the business-type preset. Seeding it here made that
+      // preset value unreachable and every site's buttons say the same thing.
+      ctaText: '',
       gradientEnabled: false,
       gradientStartColor: '#2563eb',
       gradientEndColor: '#7c3aed',
