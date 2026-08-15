@@ -368,6 +368,30 @@ import { ImagePickerComponent } from './image-picker.component';
                   <span class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">"Send another" button</span>
                   <input type="text" [(ngModel)]="textSettings.contactSendAnother" [placeholder]="defaults.contactSendAnother" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
                 </div>
+                <div>
+                  <span class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">"Service Area" heading</span>
+                  <input type="text" [(ngModel)]="textSettings.aboutServiceArea" [placeholder]="defaults.aboutServiceArea" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+                </div>
+                <div>
+                  <span class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">"Business Hours" heading</span>
+                  <input type="text" [(ngModel)]="textSettings.aboutHours" [placeholder]="defaults.aboutHours" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+                </div>
+                <div>
+                  <span class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">"Why Choose Us" heading</span>
+                  <input type="text" [(ngModel)]="textSettings.aboutWhyChoose" [placeholder]="defaults.aboutWhyChoose" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+                </div>
+                <div>
+                  <span class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">"Email Us" label</span>
+                  <input type="text" [(ngModel)]="textSettings.contactEmailLabel" [placeholder]="defaults.contactEmailLabel" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+                </div>
+                <div>
+                  <span class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">"Call Us" label</span>
+                  <input type="text" [(ngModel)]="textSettings.contactPhoneLabel" [placeholder]="defaults.contactPhoneLabel" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+                </div>
+                <div>
+                  <span class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">"Featured Service" tag</span>
+                  <input type="text" [(ngModel)]="textSettings.servicesFeatured" [placeholder]="defaults.servicesFeatured" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+                </div>
               </div>
             </div>
           </div>

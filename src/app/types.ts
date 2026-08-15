@@ -124,6 +124,13 @@ export interface PageTextSettings {
   contactSuccessTitle?: string;
   contactSuccessMessage?: string;
   contactSendAnother?: string;
+  // Labels a VISITOR reads that the owner previously could not change at all.
+  aboutServiceArea?: string;
+  aboutHours?: string;
+  aboutWhyChoose?: string;
+  contactEmailLabel?: string;
+  contactPhoneLabel?: string;
+  servicesFeatured?: string;
 }
 
 export const DEFAULT_PAGE_TEXT: Required<PageTextSettings> = {
@@ -138,6 +145,12 @@ export const DEFAULT_PAGE_TEXT: Required<PageTextSettings> = {
   contactSuccessTitle: 'Message Sent!',
   contactSuccessMessage: "Thanks for reaching out. We'll get back to you shortly.",
   contactSendAnother: 'Send another message',
+  aboutServiceArea: 'Service Area',
+  aboutHours: 'Business Hours',
+  aboutWhyChoose: 'Why Choose Us',
+  contactEmailLabel: 'Email Us',
+  contactPhoneLabel: 'Call Us',
+  servicesFeatured: 'Featured Service',
 };
 
 export function pageText(

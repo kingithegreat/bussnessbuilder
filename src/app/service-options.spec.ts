@@ -62,11 +62,19 @@ describe('resolveFieldOptions', () => {
       .toEqual(['Green Fees', 'Tour Package', 'Other']);
   });
 
-  it('keeps the existing options when there are no services yet', () => {
-    // Better a stale required dropdown than an empty one no visitor can satisfy.
-    expect(resolveFieldOptions(serviceField(), [])).toEqual(['Standard Clean', 'Deep Clean', 'Other']);
-    expect(resolveFieldOptions(serviceField(), null)).toEqual(['Standard Clean', 'Deep Clean', 'Other']);
-    expect(resolveFieldOptions(serviceField(), [{ name: '   ' }])).toEqual(['Standard Clean', 'Deep Clean', 'Other']);
+  it('offers only the catch-all when there are no services to derive from', () => {
+    // Previously fell back to the seeded cleaning list, so a business with no
+    // services (a type with no preset, or mid-setup) asked its visitors to
+    // choose between Standard Clean and Deep Clean. One satisfiable option is
+    // better than three wrong ones on a required field.
+    expect(resolveFieldOptions(serviceField(), [])).toEqual(['Other']);
+    expect(resolveFieldOptions(serviceField(), null)).toEqual(['Other']);
+    expect(resolveFieldOptions(serviceField(), [{ name: '   ' }])).toEqual(['Other']);
+  });
+
+  it('never shows cleaning defaults to a business that has services of its own', () => {
+    const opts = resolveFieldOptions(serviceField(), [{ name: 'Green Fees' }]);
+    expect(opts).toEqual(['Green Fees', 'Other']);
   });
 
   it('de-duplicates service names case-insensitively', () => {

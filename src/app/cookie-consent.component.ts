@@ -7,8 +7,11 @@ import { RouterLink } from '@angular/router';
   imports: [RouterLink],
   template: `
     @if (visible()) {
-      <div class="fixed bottom-0 left-0 right-0 z-[9999] p-4 sm:p-6">
-        <div class="max-w-4xl mx-auto bg-white rounded-2xl shadow-2xl border border-gray-200 p-4 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center gap-4">
+      <!-- pointer-events-none on the shell so the banner never blocks the form
+           beneath it; the card itself re-enables them. Measured: it covered two
+           inputs on the setup wizard at a laptop viewport. -->
+      <div class="fixed bottom-0 left-0 right-0 z-[9999] p-4 sm:p-6 pointer-events-none">
+        <div class="max-w-4xl mx-auto bg-white rounded-2xl shadow-2xl border border-gray-200 p-4 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center gap-4 pointer-events-auto">
           <div class="flex-grow text-sm text-gray-600 leading-relaxed">
             We use essential cookies to keep you signed in and store your preferences. We don't use advertising or tracking cookies.
             <a routerLink="/privacy" class="text-blue-600 hover:underline font-medium ml-1">Privacy Policy</a>

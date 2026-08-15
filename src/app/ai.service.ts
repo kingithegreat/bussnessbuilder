@@ -121,9 +121,22 @@ Acknowledge their request, address their preferred time, and offer a clear next 
     return `Hi ${enquiry.name},\n\nThank you for reaching out to ${profile.name} regarding "${enquiry.serviceInterest}". We have received your message and would love to help you out.\n\nRegarding your preferred time of ${enquiry.preferredDateTime}, we will check our schedule and get back to you shortly to confirm.\n\nBest regards,\nThe team at ${profile.name}`;
   }
 
+  /**
+   * Starter services for a business type, or NONE when we do not know the trade.
+   *
+   * This used to fall back to a single invented service called "Standard
+   * Service". Six of the eleven declared BusinessTypes have no preset
+   * ('other', mechanic, rental, cafe, consultant, shop), so those sites were
+   * published advertising one fake offering — which is exactly what happened to
+   * the first real customer, a golf tour operator whose entire services list
+   * read "Standard Service / Our flagship offering tailored to your needs."
+   *
+   * An empty list is honest and the activation checklist then correctly asks
+   * the owner to add their real services. The public page hides the section
+   * while it is empty.
+   */
   getPresetServices(type: string): Service[] {
-    const preset = getPreset(type as BusinessType);
-    return preset?.suggestedServices || [{ id: '1', name: 'Standard Service', description: 'Our flagship offering tailored to your needs.' }];
+    return getPreset(type as BusinessType)?.suggestedServices || [];
   }
 
   async generateGooglePost(profile: BusinessProfile, topic: string): Promise<string> {

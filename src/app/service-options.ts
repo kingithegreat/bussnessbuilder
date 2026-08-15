@@ -78,10 +78,12 @@ export function resolveFieldOptions(
     }
   }
 
-  // No services yet (mid-setup, or the owner deleted them all) — keep whatever
-  // the field had rather than rendering an empty required dropdown that no
-  // visitor could satisfy.
-  if (names.length === 0) return own;
+  // No services to derive from — mid-setup, a business type with no preset, or
+  // the owner cleared them. Offer only the catch-all rather than falling back
+  // to `own`, which is the seeded cleaning list: a golf tour operator must
+  // never ask visitors to choose between Standard Clean and Deep Clean. A
+  // one-option dropdown is still satisfiable, so the required field is fine.
+  if (names.length === 0) return [OTHER_OPTION];
 
   if (!names.some(n => n.toLowerCase() === OTHER_OPTION.toLowerCase())) {
     names.push(OTHER_OPTION);

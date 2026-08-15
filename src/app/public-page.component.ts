@@ -275,7 +275,7 @@ import { ToastService } from './toast.service';
                               <mat-icon>location_on</mat-icon>
                             </div>
                             <div>
-                              <h4 class="font-bold text-gray-900 text-sm">Service Area</h4>
+                              <h4 class="font-bold text-gray-900 text-sm">{{ t('aboutServiceArea') }}</h4>
                               <p class="text-gray-500 text-sm mt-1">{{ profile().serviceArea }}</p>
                             </div>
                           </div>
@@ -297,14 +297,14 @@ import { ToastService } from './toast.service';
                               <mat-icon>schedule</mat-icon>
                             </div>
                             <div>
-                              <h4 class="font-bold text-gray-900 text-sm">Business Hours</h4>
+                              <h4 class="font-bold text-gray-900 text-sm">{{ t('aboutHours') }}</h4>
                               <p class="text-gray-500 text-sm mt-1 whitespace-pre-wrap">{{ profile().openingHours }}</p>
                             </div>
                           </div>
                         }
                         @if (profile().trustBadges && profile().trustBadges.length) {
                           <div [style.borderRadius]="cardRadius" class="bg-white p-6 border border-gray-100 shadow-sm">
-                            <h4 class="font-bold text-gray-900 text-sm mb-3">Why Choose Us</h4>
+                            <h4 class="font-bold text-gray-900 text-sm mb-3">{{ t('aboutWhyChoose') }}</h4>
                             <div class="space-y-2">
                               @for (badge of profile().trustBadges; track badge) {
                                 <div class="flex items-center gap-2 text-sm text-gray-600">
@@ -374,7 +374,9 @@ import { ToastService } from './toast.service';
             }
 
             @case ('services') {
-              <!-- Services -->
+              <!-- Services — hidden while empty, as testimonials already is.
+                   An empty grid under a "Our Services" heading looks broken. -->
+              @if (services().length) {
               <section [id]="section.id" class="py-20 md:py-28">
                 <div class="max-w-5xl mx-auto px-6">
                   <div class="mb-10 md:mb-14 flex justify-between items-end">
@@ -467,7 +469,7 @@ import { ToastService } from './toast.service';
                         @if (i === 0) {
                           <div [style.borderRadius]="cardRadius" class="bg-gray-900 text-white p-10 md:col-span-2 flex flex-col md:flex-row gap-8 items-center shadow-lg">
                             <div class="flex-grow">
-                              <span class="inline-block py-1 px-3 rounded-full bg-white/10 text-white text-[10px] font-bold uppercase tracking-widest mb-4">Featured Service</span>
+                              <span class="inline-block py-1 px-3 rounded-full bg-white/10 text-white text-[10px] font-bold uppercase tracking-widest mb-4">{{ t('servicesFeatured') }}</span>
                               <h3 class="text-2xl md:text-3xl font-black mb-4" [appEditableText]="editable()" (textChange)="onTextEdit('service', 'name', $event, service.id)">{{ service.name }}</h3>
                               <p class="text-gray-400 mb-6 leading-relaxed" [appEditableText]="editable()" (textChange)="onTextEdit('service', 'description', $event, service.id)">{{ service.description }}</p>
                               <p class="font-bold text-xl">{{ service.price }}</p>
@@ -502,6 +504,7 @@ import { ToastService } from './toast.service';
                   }
                 </div>
               </section>
+              }
             }
 
             @case ('testimonials') {
@@ -637,7 +640,7 @@ import { ToastService } from './toast.service';
                               <mat-icon class="text-[20px]">email</mat-icon>
                             </div>
                             <div class="min-w-0">
-                              <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Email Us</p>
+                              <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">{{ t('contactEmailLabel') }}</p>
                               <p class="font-medium text-sm truncate">{{ profile().email }}</p>
                             </div>
                           </div>
@@ -647,7 +650,7 @@ import { ToastService } from './toast.service';
                                 <mat-icon class="text-[20px]">phone</mat-icon>
                               </div>
                               <div class="min-w-0">
-                                <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Call Us</p>
+                                <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">{{ t('contactPhoneLabel') }}</p>
                                 <p class="font-medium text-sm">{{ profile().phone }}</p>
                               </div>
                             </div>
@@ -658,7 +661,7 @@ import { ToastService } from './toast.service';
                                 <mat-icon class="text-[20px]">schedule</mat-icon>
                               </div>
                               <div class="min-w-0">
-                                <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Business Hours</p>
+                                <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">{{ t('aboutHours') }}</p>
                                 <p class="font-medium text-sm break-words">{{ profile().openingHours }}</p>
                               </div>
                             </div>
@@ -944,7 +947,7 @@ import { ToastService } from './toast.service';
                             <mat-icon class="text-[20px]">map</mat-icon>
                           </div>
                           <div>
-                            <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Service Area</p>
+                            <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">{{ t('aboutServiceArea') }}</p>
                             <p class="text-gray-900 font-semibold text-sm">{{ profile().serviceArea }}</p>
                           </div>
                         </div>
@@ -1189,7 +1192,12 @@ export class PublicPageComponent {
   // section (old configs) keeps the link, preserving previous behaviour.
   navSectionVisible(id: string): boolean {
     const section = this.getSection(id);
-    return section ? section.visible : true;
+    if (!section || !section.visible) return section ? false : true;
+    // A section can be "visible" and still render nothing. Linking the nav to
+    // an empty anchor scrolls the visitor to a blank strip of page.
+    if (id === 'services') return this.services().length > 0;
+    if (id === 'testimonials') return this.testimonials().length > 0;
+    return true;
   }
 
   currentYear = new Date().getFullYear();
