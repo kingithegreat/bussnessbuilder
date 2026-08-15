@@ -81,7 +81,6 @@ import { ToastService } from './toast.service';
               <li class="flex items-start gap-2"><mat-icon class="text-green-500 text-[18px] shrink-0 mt-0.5">check_circle</mat-icon> Unlimited enquiries</li>
               <li class="flex items-start gap-2"><mat-icon class="text-green-500 text-[18px] shrink-0 mt-0.5">check_circle</mat-icon> Data export &amp; import</li>
               <li class="flex items-start gap-2"><mat-icon class="text-green-500 text-[18px] shrink-0 mt-0.5">check_circle</mat-icon> Email notifications</li>
-              <li class="flex items-start gap-2"><mat-icon class="text-green-500 text-[18px] shrink-0 mt-0.5">check_circle</mat-icon> 3 site templates</li>
             </ul>
             @if (subService.tier() === 'pro') {
               <div class="bg-blue-50 text-blue-600 text-center py-3 rounded-xl text-sm font-bold">Current Plan</div>
@@ -104,12 +103,9 @@ import { ToastService } from './toast.service';
             </div>
             <ul class="space-y-3 mb-8 flex-grow text-sm text-gray-600">
               <li class="flex items-start gap-2"><mat-icon class="text-green-500 text-[18px] shrink-0 mt-0.5">check_circle</mat-icon> Everything in Pro</li>
-              <li class="flex items-start gap-2"><mat-icon class="text-purple-500 text-[18px] shrink-0 mt-0.5">bolt</mat-icon> <strong>Priority AI generation</strong></li>
               <li class="flex items-start gap-2"><mat-icon class="text-green-500 text-[18px] shrink-0 mt-0.5">check_circle</mat-icon> Custom domain support</li>
               <li class="flex items-start gap-2"><mat-icon class="text-green-500 text-[18px] shrink-0 mt-0.5">check_circle</mat-icon> Analytics dashboard</li>
-              <li class="flex items-start gap-2"><mat-icon class="text-green-500 text-[18px] shrink-0 mt-0.5">check_circle</mat-icon> Priority support</li>
               <li class="flex items-start gap-2"><mat-icon class="text-green-500 text-[18px] shrink-0 mt-0.5">check_circle</mat-icon> Remove branding</li>
-              <li class="flex items-start gap-2"><mat-icon class="text-green-500 text-[18px] shrink-0 mt-0.5">check_circle</mat-icon> SEO tools</li>
             </ul>
             @if (subService.tier() === 'business') {
               <div class="bg-purple-50 text-purple-600 text-center py-3 rounded-xl text-sm font-bold">Current Plan</div>

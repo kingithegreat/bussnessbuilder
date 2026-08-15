@@ -174,6 +174,13 @@ export class AdminLayoutComponent implements OnInit {
   }
 
   exportData() {
+    // The pricing page sells export as a Pro feature and SubscriptionService
+    // has canExport(), but nothing ever called it — every free user already had
+    // it. Enforce the entitlement that was being advertised.
+    if (!this.subService.canExport()) {
+      this.toast.info('Data export is available on the Pro plan.');
+      return;
+    }
     // Full GDPR-style export of all the user's data (profile + pages,
     // recommendations, payments, templates). The profile portion re-imports.
     const data = this.dataService.exportAll();
