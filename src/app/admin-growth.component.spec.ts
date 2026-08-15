@@ -1,4 +1,4 @@
-import { parseHeroDraft, parseCtaLabel, parseTestimonialDraft, parseSectionDraft } from './admin-growth.component';
+import { parseHeroDraft, parseCtaLabel, parseSectionDraft } from './admin-growth.component';
 
 describe('admin-growth recommendation parsers', () => {
   describe('parseHeroDraft', () => {
@@ -61,31 +61,6 @@ describe('admin-growth recommendation parsers', () => {
     });
   });
 
-  describe('parseTestimonialDraft', () => {
-    it('separates the quote text from an em-dash attribution line', () => {
-      const result = parseTestimonialDraft('"Excellent service, highly recommended!"\n\n— Jane D., Springfield');
-      expect(result.text).toBe('Excellent service, highly recommended!');
-      expect(result.author).toBe('Jane D., Springfield');
-    });
-
-    it('handles a plain hyphen attribution', () => {
-      const result = parseTestimonialDraft('They were fantastic.\n- Bob');
-      expect(result.text).toBe('They were fantastic.');
-      expect(result.author).toBe('Bob');
-    });
-
-    it('returns an empty author when there is no attribution', () => {
-      const result = parseTestimonialDraft('Great work all around.');
-      expect(result.text).toBe('Great work all around.');
-      expect(result.author).toBe('');
-    });
-
-    it('does not treat a leading dash as attribution when no text precedes it', () => {
-      const result = parseTestimonialDraft('- Not an author, this is the quote');
-      expect(result.text).toBe('- Not an author, this is the quote');
-      expect(result.author).toBe('');
-    });
-  });
 
   describe('parseSectionDraft', () => {
     it('uses the recommendation title as heading and the draft as body', () => {

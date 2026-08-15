@@ -1105,12 +1105,32 @@ function getTemplateDraft(type: string, title: string, suggestion: string, profi
       ? `Welcome to ${name} — trusted ${bizType.toLowerCase()} serving ${area}. We're here to help.`
       : `Welcome to ${name}, serving ${area}. We're here to help.`;
     case 'service': return `[Service Name]\n\nA compelling description of what this service includes and why customers choose it.\n\nStarting from $[price]`;
-    case 'faq': return `Q: [Common question about your ${bizType}?]\n\nA: [Clear, helpful answer that builds confidence.]`;
+    case 'faq': return bizType
+      ? `Q: How do I book with a ${bizType.toLowerCase()}?
+
+A: Call or use the enquiry form and we'll confirm within one business day.`
+      : `Q: How do I book?
+
+A: Call or use the enquiry form and we'll confirm within one business day.`;
     case 'pricing': return `Our pricing is transparent and competitive. ${services.length > 0 ? `We offer ${services.length} services` : 'Contact us for a free quote'}.`;
-    case 'trust': return `"${name} provided excellent service. Highly recommended!"\n\n— Satisfied customer, ${area}`;
-    case 'cta': return `Ready to get started? Contact ${name} today for a free consultation. We serve ${area} and surrounding areas.`;
+    // NOT a testimonial. Inventing a customer review and publishing or pasting
+    // it as genuine is unlawful in NZ/AU/US (FTC 16 CFR 465 covers AI-generated
+    // testimonials) and the liability lands on the business owner, who did not
+    // choose it. buildDraftPrompt's 'trust' prompt already asks the real AI for
+    // a review REQUEST to send a customer; the template now matches it.
+    case 'trust': return `Hi [Customer Name],
+
+Thanks for choosing ${name}. If you were happy with how it went, would you mind leaving us a short review? A couple of sentences is plenty, and it helps other people in ${area} find us.
+
+Thank you,
+The team at ${name}`;
+        case 'cta': return `Ready to get started? Contact ${name} today for a free consultation. We serve ${area} and surrounding areas.`;
     case 'lead-follow-up': return `Hi [Customer Name],\n\nThank you for your interest in ${name}. I wanted to follow up on your enquiry.\n\nWould you like to schedule a time to discuss your needs?\n\nBest regards,\nThe team at ${name}`;
-    case 'marketing': return `Looking for a trusted ${bizType} in ${area}? ${name} is here to help!\n\nContact us today for a free quote.\n\n#${bizType.replace(/\s+/g, '')} #${area.replace(/\s+/g, '')} #LocalBusiness`;
+    case 'marketing': return `${bizType ? `Looking for a trusted ${bizType.toLowerCase()} in ${area}?` : `Looking for help in ${area}?`} ${name} is here to help!
+
+Contact us today for a free quote.
+
+${bizType ? `#${bizType.replace(/[^A-Za-z0-9]/g, '')} ` : ''}#${area.replace(/[^A-Za-z0-9]/g, '')} #LocalBusiness`;
     case 'seo': return `${name}${bizType ? ` — Professional ${bizType.toLowerCase()}` : ''} in ${area}. Quality service and competitive pricing.`;
     default: return suggestion || `Improve your website to attract more customers.`;
   }

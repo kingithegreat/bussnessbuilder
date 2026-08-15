@@ -47,24 +47,6 @@ export function parseCtaLabel(draft: string): string {
   return label.replace(/[.!?]+$/, '').trim();
 }
 
-/**
- * Parse a `trust` recommendation draft (a testimonial: quote text plus an
- * optional "— Author" attribution line) into author + text.
- */
-export function parseTestimonialDraft(draft: string): { author: string; text: string } {
-  const lines = draft.split('\n').map(l => l.trim()).filter(Boolean);
-  let author = '';
-  const textLines: string[] = [];
-  for (const line of lines) {
-    const attribution = line.match(/^(?:—|–|--|-|by)\s+(.+)$/i);
-    if (attribution && textLines.length > 0) {
-      author = stripQuotes(attribution[1]);
-    } else {
-      textLines.push(line);
-    }
-  }
-  return { author, text: stripQuotes(textLines.join(' ')) };
-}
 
 /**
  * Parse a free-form recommendation draft into a custom page section. The
@@ -706,20 +688,6 @@ export class AdminGrowthComponent implements OnInit {
     return !!draft && /\[[^\]]+\]/.test(draft);
   }
 
-  addAsTestimonial(rec: SavedRecommendation) {
-    if (!rec.draftContent) return;
-    const { author, text } = parseTestimonialDraft(rec.draftContent);
-    if (!text) return;
-    this.dataService.setTestimonials([
-      ...this.dataService.testimonials(),
-      { id: `tst_${Date.now()}`, author: author || 'Happy customer', rating: 5, text },
-    ]);
-    this.dataService.updateRecommendation(rec.id, {
-      status: 'applied',
-      appliedAt: new Date().toISOString(),
-    });
-    this.toast.success('Testimonial added to your site!');
-  }
 
   canInsertAsSection(rec: SavedRecommendation): boolean {
     return SECTION_INSERT_TYPES.includes(rec.type) && rec.status !== 'applied';
