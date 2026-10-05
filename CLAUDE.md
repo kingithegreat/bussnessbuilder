@@ -192,6 +192,15 @@ GitHub Actions (`deploy.yml`) uses configured WIF and deploys code pushes to mai
 
 ## Finishing release prepared 2026-10-05
 
+The source release landed on main as `e9c4cba` via workforce run `37299985948`.
+Deployment `37300326830` passed lint/tests but failed fetching Google Fonts CSS
+during build. The 2026-10-06 NZDT follow-up disables build-time font inlining
+in `angular.json`; browser font links remain and scripts/styles stay optimized.
+This removes an external network requirement from production builds. The
+follow-up passed all 422 tests, lint and production build locally; its initial
+bundle is 855.98 kB (226.42 kB estimated transfer), and emitted CSS preserves the
+runtime font imports. Verify its deployment before reporting the release live.
+
 - Home derives the next action from saved setup, enquiries, due follow-ups,
   draft pages and recommendations. Navigation is Home, Website, Leads,
   Marketing, Growth, Analytics and Settings; Website links the existing editors.
