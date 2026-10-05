@@ -30,6 +30,10 @@ on:
   push:
     branches:
       - main
+    # Brain snapshots and documentation do not change the running application.
+    paths-ignore:
+      - 'docs/**'
+      - '**/*.md'
   workflow_dispatch:
 
 # One deploy at a time; a newer run supersedes an in-progress one.

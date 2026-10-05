@@ -1,79 +1,55 @@
 import { Routes } from '@angular/router';
 import { LandingComponent } from './landing.component';
-import { LoginComponent } from './login.component';
-import { SetupWizardComponent } from './setup.component';
-import { PublicPageComponent } from './public-page.component';
-import { AdminLayoutComponent } from './admin-layout.component';
-import { AdminDashboardComponent } from './admin-dashboard.component';
-import { AdminInboxComponent } from './admin-inbox.component';
-import { AdminContentComponent } from './admin-content.component';
-import { AdminAiToolsComponent } from './admin-ai.component';
-import { AdminCustomisationComponent } from './admin-customisation.component';
-import { AdminBuilderComponent } from './admin-builder.component';
-import { AdminFormBuilderComponent } from './admin-form-builder.component';
-import { PrivacyPolicyComponent } from './privacy-policy.component';
-import { TermsComponent } from './terms.component';
-import { PricingComponent } from './pricing.component';
-import { AdminSettingsComponent } from './admin-settings.component';
-import { AdminPagesComponent } from './admin-pages.component';
-import { AdminPaymentsComponent } from './admin-payments.component';
-import { AdminGrowthComponent } from './admin-growth.component';
-import { ContentPageViewComponent } from './content-page-view.component';
-import { PublicContentPageComponent } from './public-content-page.component';
-import { SiteViewComponent } from './site-view.component';
-import { PreviewFrameComponent } from './preview-frame.component';
-import { AppAdminLayoutComponent } from './app-admin-layout.component';
-import { AppAdminDashboardComponent } from './app-admin-dashboard.component';
-import { AppAdminUsersComponent } from './app-admin-users.component';
-import { AppAdminFunnelComponent } from './app-admin-funnel.component';
-import { AppAdminDiscountsComponent } from './app-admin-discounts.component';
 import { authGuard, setupGuard, publicGuard, appAdminGuard, previewFrameGuard } from './auth.guard';
 
 export const routes: Routes = [
+  // Keep the landing page immediate; load each workflow only when it is opened.
   { path: '', component: LandingComponent },
-  { path: 'login', component: LoginComponent },
-  { path: 'signup', component: LoginComponent },
-  { path: 'privacy', component: PrivacyPolicyComponent },
-  { path: 'terms', component: TermsComponent },
-  { path: 'pricing', component: PricingComponent },
-  { path: 'site/:uid', component: SiteViewComponent },
-  { path: 'site/:uid/pages/:slug', component: PublicContentPageComponent },
-  { path: 'pages/:slug', component: ContentPageViewComponent },
-  { path: 'setup', component: SetupWizardComponent, canActivate: [setupGuard] },
-  { path: 'public', component: PublicPageComponent, canActivate: [publicGuard] },
+  { path: 'login', loadComponent: () => import('./login.component').then(m => m.LoginComponent) },
+  { path: 'signup', loadComponent: () => import('./login.component').then(m => m.LoginComponent) },
+  { path: 'privacy', loadComponent: () => import('./privacy-policy.component').then(m => m.PrivacyPolicyComponent) },
+  { path: 'terms', loadComponent: () => import('./terms.component').then(m => m.TermsComponent) },
+  { path: 'pricing', loadComponent: () => import('./pricing.component').then(m => m.PricingComponent) },
+  { path: 'site/:uid', loadComponent: () => import('./site-view.component').then(m => m.SiteViewComponent) },
+  { path: 'site/:uid/pages/:slug', loadComponent: () => import('./public-content-page.component').then(m => m.PublicContentPageComponent) },
+  { path: 'pages/:slug', loadComponent: () => import('./content-page-view.component').then(m => m.ContentPageViewComponent) },
+  { path: 'setup', loadComponent: () => import('./setup.component').then(m => m.SetupWizardComponent), canActivate: [setupGuard] },
+  { path: 'public', loadComponent: () => import('./public-page.component').then(m => m.PublicPageComponent), canActivate: [publicGuard] },
   // Content of the page builder's live-preview iframe. Rendered with zero
   // admin chrome; guarded auth-only (previewFrameGuard deliberately skips
   // dataService.init() so the iframe's DataService never autosaves).
-  { path: 'preview-frame', component: PreviewFrameComponent, canActivate: [previewFrameGuard] },
+  { path: 'preview-frame', loadComponent: () => import('./preview-frame.component').then(m => m.PreviewFrameComponent), canActivate: [previewFrameGuard] },
   {
     path: 'admin',
-    component: AdminLayoutComponent,
+    loadComponent: () => import('./admin-layout.component').then(m => m.AdminLayoutComponent),
     canActivate: [authGuard],
     children: [
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
-      { path: 'dashboard', component: AdminDashboardComponent },
-      { path: 'inbox', component: AdminInboxComponent },
-      { path: 'content', component: AdminContentComponent },
-      { path: 'ai', component: AdminAiToolsComponent },
-      { path: 'customisation', component: AdminCustomisationComponent },
-      { path: 'builder', component: AdminBuilderComponent },
-      { path: 'form-builder', component: AdminFormBuilderComponent },
-      { path: 'pages', component: AdminPagesComponent },
-      { path: 'payments', component: AdminPaymentsComponent },
-      { path: 'growth', component: AdminGrowthComponent },
-      { path: 'settings', component: AdminSettingsComponent }
+      { path: 'dashboard', loadComponent: () => import('./admin-dashboard.component').then(m => m.AdminDashboardComponent) },
+      { path: 'website', loadComponent: () => import('./admin-website.component').then(m => m.AdminWebsiteComponent) },
+      { path: 'analytics', loadComponent: () => import('./admin-dashboard.component').then(m => m.AdminDashboardComponent), data: { view: 'analytics' } },
+      { path: 'inbox', loadComponent: () => import('./admin-inbox.component').then(m => m.AdminInboxComponent) },
+      { path: 'content', loadComponent: () => import('./admin-content.component').then(m => m.AdminContentComponent) },
+      { path: 'ai', loadComponent: () => import('./admin-ai.component').then(m => m.AdminAiToolsComponent) },
+      { path: 'customisation', loadComponent: () => import('./admin-customisation.component').then(m => m.AdminCustomisationComponent) },
+      { path: 'builder', loadComponent: () => import('./admin-builder.component').then(m => m.AdminBuilderComponent) },
+      { path: 'form-builder', loadComponent: () => import('./admin-form-builder.component').then(m => m.AdminFormBuilderComponent) },
+      { path: 'pages', loadComponent: () => import('./admin-pages.component').then(m => m.AdminPagesComponent) },
+      { path: 'payments', loadComponent: () => import('./admin-payments.component').then(m => m.AdminPaymentsComponent) },
+      { path: 'growth', loadComponent: () => import('./admin-growth.component').then(m => m.AdminGrowthComponent) },
+      { path: 'settings', loadComponent: () => import('./admin-settings.component').then(m => m.AdminSettingsComponent) }
     ]
   },
   {
     path: 'app-admin',
-    component: AppAdminLayoutComponent,
+    loadComponent: () => import('./app-admin-layout.component').then(m => m.AppAdminLayoutComponent),
     canActivate: [appAdminGuard],
     children: [
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
-      { path: 'dashboard', component: AppAdminDashboardComponent },
-      { path: 'funnel', component: AppAdminFunnelComponent },
-      { path: 'users', component: AppAdminUsersComponent },
-      { path: 'discounts', component: AppAdminDiscountsComponent },
+      { path: 'dashboard', loadComponent: () => import('./app-admin-dashboard.component').then(m => m.AppAdminDashboardComponent) },
+      { path: 'funnel', loadComponent: () => import('./app-admin-funnel.component').then(m => m.AppAdminFunnelComponent) },
+      { path: 'users', loadComponent: () => import('./app-admin-users.component').then(m => m.AppAdminUsersComponent) },
+      { path: 'discounts', loadComponent: () => import('./app-admin-discounts.component').then(m => m.AppAdminDiscountsComponent) },
     ]
   },
   { path: '**', redirectTo: '' }

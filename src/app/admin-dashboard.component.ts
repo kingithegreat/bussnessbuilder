@@ -1,6 +1,6 @@
 import { Component, inject, OnInit, signal, computed, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { DataService } from './data.service';
 import { AnalyticsService } from './analytics.service';
 import { AuthService } from './auth.service';
@@ -9,11 +9,13 @@ import { FunnelService } from './funnel.service';
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { OnboardingGuideComponent, LINK_SHARED_KEY } from './onboarding-guide.component';
+import { businessActions } from './action-center';
+import { localDateKey } from './inbox-workflow';
 
 @Component({
   selector: 'app-admin-dashboard',
   standalone: true,
-  imports: [DatePipe, DecimalPipe, MatIconModule, OnboardingGuideComponent],
+  imports: [DatePipe, DecimalPipe, MatIconModule, OnboardingGuideComponent, RouterLink],
   template: `
     <div class="flex flex-col gap-6">
       <!--
@@ -54,11 +56,40 @@ import { OnboardingGuideComponent, LINK_SHARED_KEY } from './onboarding-guide.co
         </div>
       }
 
-      @if (showOnboarding()) {
+      @if (!analyticsOnly) {
+        <section class="space-y-4" aria-label="Home action center">
+          <div>
+            <h1 class="text-2xl font-semibold tracking-tight text-gray-900">What should you do next?</h1>
+            <p class="mt-1 text-sm text-gray-500">Start with the work that needs attention. Open its workspace to review and make the change.</p>
+          </div>
+          @if (nextAction(); as action) {
+            <article class="rounded-2xl border border-blue-200 bg-blue-50 p-5 md:p-6" data-testid="next-business-action">
+              <p class="text-xs font-semibold uppercase tracking-wide text-blue-700">Next best action</p>
+              <h2 class="mt-2 text-xl font-semibold text-gray-900">{{ action.title }}</h2>
+              <p class="mt-2 text-sm text-gray-600">{{ action.reason }}</p>
+              <p class="mt-3 text-sm text-gray-700"><strong>Success looks like:</strong> {{ action.successMeasure }}</p>
+              <a [routerLink]="action.route" [queryParams]="action.queryParams" class="mt-4 inline-flex rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700">{{ action.actionLabel }}</a>
+            </article>
+          }
+          @if (actions().length > 1) {
+            <div class="grid gap-4 sm:grid-cols-2">
+              @for (action of actions().slice(1); track action.id) {
+                <article class="rounded-2xl border border-gray-200 bg-white p-5">
+                  <h2 class="font-semibold text-gray-900">{{ action.title }}</h2>
+                  <p class="mt-2 text-sm text-gray-500">{{ action.reason }}</p>
+                  <p class="mt-2 text-sm text-gray-600"><strong>Success looks like:</strong> {{ action.successMeasure }}</p>
+                  <a [routerLink]="action.route" [queryParams]="action.queryParams" class="mt-3 inline-flex text-sm font-semibold text-blue-700 hover:underline">{{ action.actionLabel }}</a>
+                </article>
+              }
+            </div>
+          }
+        </section>
+      }
+      @if (!analyticsOnly && showOnboarding()) {
         <app-onboarding-guide (guideDismissed)="dismissOnboarding()"></app-onboarding-guide>
       }
       <div>
-        <h2 class="text-2xl font-semibold tracking-tight text-gray-900">{{ justPublished() ? 'Your dashboard' : 'Welcome back!' }}</h2>
+        <h2 class="text-2xl font-semibold tracking-tight text-gray-900">{{ analyticsOnly ? 'Analytics' : 'Business snapshot' }}</h2>
         <p class="text-gray-500 text-sm">Here's what's happening with your business today.</p>
       </div>
 
@@ -258,6 +289,13 @@ export class AdminDashboardComponent implements OnInit {
   private platformId = inject(PLATFORM_ID);
   enquiries = this.dataService.enquiries;
   activities = this.dataService.activities;
+  readonly analyticsOnly = this.route.snapshot.data['view'] === 'analytics';
+  readonly actions = computed(() => businessActions({
+    setupComplete: this.dataService.isSetupComplete(),
+    enquiries: this.enquiries(), pages: this.dataService.getPages(),
+    recommendations: this.dataService.savedRecommendations(),
+  }, localDateKey()));
+  readonly nextAction = computed(() => this.actions()[0]);
 
   /** Set by the setup wizard / first sign-in via ?welcome=1. */
   justPublished = signal(false);

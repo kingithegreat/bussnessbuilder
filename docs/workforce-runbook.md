@@ -17,14 +17,15 @@ A single self-contained workflow does everything:
    - runs the CI gate (`npm ci` + lint + test + build);
    - on green, pushes the merge to `main` and deletes the branch;
    - on conflict or red CI, leaves the branch untouched and emits a warning.
-3. After anything lands, it best-effort kicks `deploy.yml`.
+3. The PAT push to main triggers `deploy.yml` for code changes. There is no
+   extra dispatch; docs-only pushes are excluded from deployment.
 
 ### Why it needs no admin toggles
 
-It uses only `contents: write` (the default `GITHUB_TOKEN`) and an unprotected
-`main`. There is **no PR**, so it does not need "Allow GitHub Actions to create
+It uses the existing `WORKFORCE_MERGE_PAT` for checkout and the protected main
+push. There is **no PR**, so it does not need "Allow GitHub Actions to create
 and approve pull requests"; there is no native auto-merge, so it does not need
-"Allow auto-merge" or branch protection. The schedule trigger means branches
+"Allow auto-merge". The schedule trigger means branches
 pushed before the workflow existed (or while it was down) still get drained —
 they don't have to be re-pushed.
 
@@ -35,24 +36,27 @@ This **replaced** the old PR-based pair (`auto-merge.yml` +
 up. `ci.yml` is kept for any human-opened PRs but is no longer part of the
 merge path.
 
-Merging to `main` does **not** trigger a Cloud Run deploy until the deploy
-inputs are configured (see `deploy.yml`), so autonomous merges are safe.
+Production deployment is configured: successful main-push deployments and the
+matching Cloud Run commit label were checked on 2026-10-05. Push only a complete,
+green task to `claude/**`; it can merge and deploy without another approval.
 
 ## Optional hardening (not required for the pipeline to work)
 
-- [ ] **Branch protection on `main`** (Settings → Branches). Note: if you
-  require PRs or status checks on `main`, the workflow's direct push is
-  rejected and it will warn instead of merging — leave `main` unprotected, or
-  switch back to a PR-based flow, if you enable this.
+- Main currently requires `verify`, with admin enforcement disabled. The
+  existing owner PAT can push after the workflow's own lint/test/build gate.
+  Do not weaken protection to repair a pipeline. A workflow success can still
+  mean a skipped merge: inspect its summary and the actual main commit.
 - [ ] **Automatically delete head branches** (Settings → General) — the
   workflow already deletes branches it merges, so this is optional cleanup for
   branches merged by other means.
 
-## To enable production auto-deploy on merge (separate, deliberate step)
+## Production deployment configuration
 
-Set repo variable `GCP_PROJECT_ID` and secrets `WIF_PROVIDER` +
-`WIF_SERVICE_ACCOUNT` (see `deploy.yml`). Until then, merges to `main` only
-build/lint — they do not redeploy the live site.
+Repo variable `GCP_PROJECT_ID` and secrets `WIF_PROVIDER` +
+`WIF_SERVICE_ACCOUNT` are configured (see `deploy.yml`). Their values were not
+read or changed for this finishing pass. Verify the deployed revision's commit
+label and `/healthz/` after the deployment completes; a green merge is not
+proof that the new revision is serving traffic.
 
 ## Bootstrapping note
 

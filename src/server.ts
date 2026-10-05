@@ -23,6 +23,9 @@ import {
 import type Stripe from 'stripe';
 import type { Firestore } from 'firebase-admin/firestore';
 import { getAllDocs } from './server-firestore';
+import { checkoutSubscriptionStatus, effectiveTier, tierForPrices } from './app/effective-tier';
+import { AI_GENERATION_LIMITS, aiUsageLimits, aiFallbackMessage, reserveAiCall, validAiInput } from './server-ai-budget';
+import { persistCheckoutSubscription, updateCurrentSubscription } from './server-subscription-sync';
 import { validateDomain } from './app/domain-verification';
 import { businessTypeLabel } from './app/presets';
 import {
@@ -601,7 +604,7 @@ app.get('/api/admin/users', async (req, res) => {
         isSetupComplete: mainData?.['isSetupComplete'] || false,
         businessName: mainData?.['profile']?.['name'] || '',
         siteSlug: mainData?.['siteSlug'] || '',
-        tier: subSnap.exists ? subSnap.data()?.['tier'] || 'free' : 'free',
+        tier: effectiveTier(subSnap.data()),
         enquiryCount: mainData ? (Array.isArray(mainData['enquiries']) ? mainData['enquiries'].length : 0) : 0,
         serviceCount: mainData ? (Array.isArray(mainData['services']) ? mainData['services'].length : 0) : 0,
       };
@@ -675,7 +678,7 @@ app.get('/api/admin/metrics', async (req, res) => {
       let tier = 'free';
       const subSnap = subSnaps[i];
       if (subSnap.exists) {
-        tier = subSnap.data()?.['tier'] || 'free';
+        tier = effectiveTier(subSnap.data());
         if (tier === 'pro') proUsers++;
         if (tier === 'business') businessUsers++;
       }
@@ -862,6 +865,7 @@ app.delete('/api/account/:uid', async (req, res) => {
     }
     await db.doc(`users/${uid}`).delete();
     await db.doc(`subscriptions/${uid}`).delete();
+    await db.doc(`serverAiUsage/${uid}`).delete();
 
     const slugsSnap = await db.collection('slugs').where('uid', '==', uid).get();
     for (const slugDoc of slugsSnap.docs) {
@@ -889,7 +893,7 @@ app.delete('/api/account/:uid', async (req, res) => {
 app.post('/api/ai/generate', express.json(), async (req, res) => {
   try {
     const { uid, prompt, systemPrompt } = req.body;
-    if (typeof uid !== 'string' || typeof prompt !== 'string') {
+    if (typeof uid !== 'string' || !validAiInput(prompt, systemPrompt)) {
       res.status(400).json({ error: 'Invalid request' });
       return;
     }
@@ -912,9 +916,15 @@ app.post('/api/ai/generate', express.json(), async (req, res) => {
     // Server-side tier enforcement: free users get template fallback only
     const db = await getDb();
     const subSnap = await db.doc(`subscriptions/${uid}`).get();
-    const userTier = subSnap.exists ? (subSnap.data()?.['tier'] || 'free') : 'free';
+    const userTier = effectiveTier(subSnap.data());
     if (userTier === 'free') {
       res.json({ text: null, fallback: true });
+      return;
+    }
+
+    const budget = await reserveAiCall(db, uid, aiUsageLimits(userTier, process.env));
+    if (budget !== 'allowed') {
+      res.json({ text: null, fallback: true, reason: budget, message: aiFallbackMessage(budget) });
       return;
     }
 
@@ -924,10 +934,10 @@ app.post('/api/ai/generate', express.json(), async (req, res) => {
       const response = await ai.models.generateContent({
         model: 'gemini-2.5-flash',
         contents: prompt,
-        config: systemPrompt ? { systemInstruction: systemPrompt } : undefined,
+        config: { ...AI_GENERATION_LIMITS, ...(systemPrompt ? { systemInstruction: systemPrompt } : {}) },
       });
       const generatedText = response.text ?? null;
-      res.json({ text: generatedText });
+      res.json({ text: generatedText, fallback: !generatedText });
     } catch (aiErr) {
       console.warn('AI generation failed:', aiErr);
       res.json({ text: null, fallback: true });
@@ -964,7 +974,7 @@ app.post('/api/ai/growth-report', express.json(), async (req, res) => {
 
     const mainData = mainSnap.exists ? mainSnap.data()! : {};
     const analyticsData = analyticsSnap.exists ? analyticsSnap.data()! : {};
-    const tier = subSnap.exists ? (subSnap.data()?.['tier'] || 'free') : 'free';
+    const tier = effectiveTier(subSnap.data());
 
     const profile = mainData['profile'] || {};
     const services: { name: string; description: string; price?: string }[] = Array.isArray(mainData['services']) ? mainData['services'] : [];
@@ -1029,7 +1039,9 @@ app.post('/api/ai/growth-report', express.json(), async (req, res) => {
     };
 
     const apiKey = process.env['GEMINI_API_KEY'];
-    if (!apiKey || tier === 'free') {
+    const budget = apiKey && tier !== 'free'
+      ? await reserveAiCall(db, uid, aiUsageLimits(tier, process.env)) : null;
+    if (!apiKey || tier === 'free' || budget !== 'allowed') {
       const recs: { title: string; reason: string; suggestion: string; priority: string; type: string }[] = [];
       if (services.length === 0) recs.push({ title: 'Add your services', reason: 'Your site has no services listed', suggestion: 'Add at least 3 services with descriptions and prices to help visitors understand what you offer.', priority: 'high', type: 'service' });
       if (services.some(s => !s.price)) recs.push({ title: 'Add pricing to services', reason: 'Some services are missing prices', suggestion: 'Adding starting prices reduces friction and increases enquiries.', priority: 'high', type: 'pricing' });
@@ -1040,6 +1052,11 @@ app.post('/api/ai/growth-report', express.json(), async (req, res) => {
       report['recommendations'] = recs;
       report['generatedSummary'] = `Your site received ${recentViews} views and ${totalEnquiries} enquiries this week. ${leadSummary.needsFollowUp > 0 ? `You have ${leadSummary.needsFollowUp} leads that need follow-up.` : 'All leads are up to date.'}`;
       report['suggestedActions'] = recs.filter(r => r.priority === 'high').map(r => r.title);
+      report['fallback'] = true;
+      if (budget && budget !== 'allowed') {
+        report['message'] = aiFallbackMessage(budget);
+        report['generatedSummary'] = `${report['message']} ${report['generatedSummary']}`;
+      }
       res.json(report);
       return;
     }
@@ -1074,10 +1091,19 @@ Return a JSON object with:
 
 Give 3-6 specific, actionable recommendations. Reference actual data. Be encouraging but honest. Do not suggest things the business already does well. The type field must match one of the listed values.`;
 
+      if (!validAiInput(prompt, 'You are a business growth coach for small service businesses. Return ONLY valid JSON, no markdown fences.')) {
+        report['fallback'] = true;
+        report['message'] = aiFallbackMessage('input_limit');
+        report['generatedSummary'] = `${report['message']} Your site received ${recentViews} views and ${totalEnquiries} enquiries this week.`;
+        res.json(report);
+        return;
+      }
+
       const response = await ai.models.generateContent({
         model: 'gemini-2.5-flash',
         contents: prompt,
         config: {
+          ...AI_GENERATION_LIMITS,
           systemInstruction: 'You are a business growth coach for small service businesses. Return ONLY valid JSON, no markdown fences.',
           responseMimeType: 'application/json',
         },
@@ -1094,7 +1120,9 @@ Give 3-6 specific, actionable recommendations. Reference actual data. Be encoura
       }
     } catch (aiErr) {
       console.warn('Growth report AI failed:', aiErr);
-      report['generatedSummary'] = `Your site received ${recentViews} views and ${totalEnquiries} enquiries this week.`;
+      report['fallback'] = true;
+      report['message'] = 'AI is unavailable. This report uses your recorded business metrics.';
+      report['generatedSummary'] = `${report['message']} Your site received ${recentViews} views and ${totalEnquiries} enquiries this week.`;
     }
 
     res.json(report);
@@ -1195,7 +1223,7 @@ app.post('/api/ai/draft-recommendation', express.json(), async (req, res) => {
 
     const db = await getDb();
     const subSnap = await db.doc(`subscriptions/${uid}`).get();
-    const userTier = subSnap.exists ? (subSnap.data()?.['tier'] || 'free') : 'free';
+    const userTier = effectiveTier(subSnap.data());
 
     const mainSnap = await db.doc(`users/${uid}/businessData/main`).get();
     const mainData = mainSnap.exists ? mainSnap.data()! : {};
@@ -1227,14 +1255,26 @@ app.post('/api/ai/draft-recommendation', express.json(), async (req, res) => {
       return;
     }
 
+    const prompt = buildDraftPrompt(recType, recSuggestion, profile, services, faqCount, testimonialCount);
+    const budget = validAiInput(prompt, 'You are a website improvement expert for small service businesses. Draft clear, ready-to-use content. Return ONLY valid JSON.')
+      ? await reserveAiCall(db, uid, aiUsageLimits(userTier, process.env)) : 'input_limit';
+    if (budget !== 'allowed') {
+      res.json({
+        title: recTitle, draftType: recType,
+        draftContent: getTemplateDraft(recType, recTitle, recSuggestion, profile, services),
+        explanation: aiFallbackMessage(budget), message: aiFallbackMessage(budget), fallback: true,
+      });
+      return;
+    }
+
     try {
       const { GoogleGenAI } = await import('@google/genai');
       const ai = new GoogleGenAI({ apiKey });
-      const prompt = buildDraftPrompt(recType, recSuggestion, profile, services, faqCount, testimonialCount);
       const response = await ai.models.generateContent({
         model: 'gemini-2.5-flash',
         contents: prompt,
         config: {
+          ...AI_GENERATION_LIMITS,
           systemInstruction: 'You are a website improvement expert for small service businesses. Draft clear, ready-to-use content. Return ONLY valid JSON.',
           responseMimeType: 'application/json',
         },
@@ -1315,6 +1355,7 @@ app.post('/api/stripe/create-checkout-session', express.json(), async (req, res)
       client_reference_id: uid,
       customer_email: email,
       metadata: { uid, tier },
+      subscription_data: { metadata: { uid } },
       // Lets Stripe's own hosted checkout show an "Add promotion code" field.
       // Codes created via /api/admin/discounts are synced to real Stripe
       // Promotion Codes (see below) so this actually redeems them — without
@@ -1380,32 +1421,41 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
     if (parsed.type === 'checkout.session.completed') {
       const session = parsed.data.object;
       const uid = session.client_reference_id || session.metadata?.['uid'];
-      const tier = session.metadata?.['tier'] || 'pro';
-      if (uid) {
-        await db.doc(`subscriptions/${uid}`).set({
+      const subscriptionId = typeof session.subscription === 'string' ? session.subscription : session.subscription?.id;
+      if (uid && subscriptionId) {
+        const sub = await stripe.subscriptions.retrieve(subscriptionId);
+        const tier = tierForPrices(sub.items.data.map(item => item.price.id), { pro: getPriceId('pro'), business: getPriceId('business') });
+        await persistCheckoutSubscription(db, uid, sub.id, sub.created, {
           tier,
-          status: 'active',
+          // Completion alone does not establish payment. Trials with no payment
+          // required still use the subscription's authoritative trialing status.
+          status: checkoutSubscriptionStatus(session.payment_status, sub.status),
           stripeCustomerId: session.customer,
-          stripeSubscriptionId: session.subscription,
-          currentPeriodEnd: null,
-          cancelAtPeriodEnd: false,
-        });
+          stripeSubscriptionId: sub.id,
+          currentPeriodEnd: sub.items.data[0]?.current_period_end ? new Date(sub.items.data[0].current_period_end * 1000).toISOString() : null,
+          cancelAtPeriodEnd: sub.cancel_at_period_end,
+        }, async id => (await stripe.subscriptions.retrieve(id)).created);
       }
     }
 
     if (parsed.type === 'customer.subscription.updated' || parsed.type === 'customer.subscription.deleted') {
-      const sub = parsed.data.object as Stripe.Subscription & { current_period_end?: number };
-      const customerId = sub.customer;
+      // Fetch current state on updates so delayed/reordered events cannot
+      // restore an older paid plan. Deletions use their final event payload.
+      const sub = parsed.type === 'customer.subscription.deleted'
+        ? parsed.data.object : await stripe.subscriptions.retrieve(parsed.data.object.id);
+      const customerId = typeof sub.customer === 'string' ? sub.customer : sub.customer.id;
       const subsSnap = await db.collection('subscriptions').where('stripeCustomerId', '==', customerId).get();
-      if (!subsSnap.empty) {
-        const docRef = subsSnap.docs[0].ref;
+      const matching = subsSnap.docs.find(doc => doc.data()['stripeSubscriptionId'] === sub.id);
+      if (matching) {
+        const docRef = matching.ref;
         if (parsed.type === 'customer.subscription.deleted') {
-          await docRef.update({ tier: 'free', status: 'canceled', cancelAtPeriodEnd: false });
+          await updateCurrentSubscription(db, docRef, sub.id, { tier: 'free', status: 'canceled', cancelAtPeriodEnd: false });
         } else {
-          await docRef.update({
-            status: sub.status === 'active' ? 'active' : sub.status === 'past_due' ? 'past_due' : sub.status,
+          await updateCurrentSubscription(db, docRef, sub.id, {
+            tier: tierForPrices(sub.items.data.map(item => item.price.id), { pro: getPriceId('pro'), business: getPriceId('business') }),
+            status: sub.status,
             cancelAtPeriodEnd: sub.cancel_at_period_end || false,
-            currentPeriodEnd: sub.current_period_end ? new Date(sub.current_period_end * 1000).toISOString() : null,
+            currentPeriodEnd: sub.items.data[0]?.current_period_end ? new Date(sub.items.data[0].current_period_end * 1000).toISOString() : null,
           });
         }
       }
@@ -1427,8 +1477,7 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
 
 async function requireBusinessTier(db: Firestore, uid: string): Promise<boolean> {
   const snap = await db.doc(`subscriptions/${uid}`).get();
-  const tier = snap.exists ? snap.data()?.['tier'] : 'free';
-  return tier === 'business';
+  return effectiveTier(snap.data()) === 'business';
 }
 
 async function saveDomainMappingState(db: Firestore, uid: string, state: DomainMappingState): Promise<void> {

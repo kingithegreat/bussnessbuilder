@@ -116,7 +116,7 @@ finds no tests.
 gcloud run deploy businessflow --source . --region us-central1 --set-env-vars="NG_ALLOWED_HOSTS=*"
 ```
 
-GitHub Actions (`deploy.yml`) exists but needs WIF secrets configured. Manual `gcloud run deploy` is the current method.
+GitHub Actions (`deploy.yml`) uses configured WIF and deploys code pushes to main. Verified on 2026-10-05: the live revision `businessflow-00085-xdk` carried main commit `1795d849e63050533d981208ba3ce414cc7af301`. Documentation-only pushes are excluded; manual dispatch remains available. Use the existing pipeline; do not dispatch a second deployment after a workforce merge. Live liveness checks use `/healthz/` (the slashless URL returned a platform 404 despite the app being healthy).
 
 ## Key architecture notes
 
@@ -190,6 +190,35 @@ GitHub Actions (`deploy.yml`) exists but needs WIF secrets configured. Manual `g
 - `src/app/firestore.service.ts` — Firestore persistence (pages, recommendations, notifications, payments, templates)
 - `src/app/app-admin-*.component.ts` — Owner admin panel (dashboard, users, discounts)
 
+## Finishing release prepared 2026-10-05
+
+- Home derives the next action from saved setup, enquiries, due follow-ups,
+  draft pages and recommendations. Navigation is Home, Website, Leads,
+  Marketing, Growth, Analytics and Settings; Website links the existing editors.
+  Old route paths remain valid. All pages except Landing load on demand.
+- Owner persistence starts only after a successful read. Account changes and
+  public previews disarm it; live server-owned inbox updates preserve site edits.
+  Opening a lead no longer changes its status; action links filter the inbox.
+- Paid entitlements require active/trialing status and configured Stripe price
+  IDs. Checkout binding and subscription updates use transactions to reject
+  older competing subscriptions. Live payment acceptance remains untested.
+- Shared AI allowances are Pro 20/day and 200/month, Business 60/day and
+  600/month, reset in UTC. Server input/output and thinking are bounded; BYOK
+  shares output/thinking caps. See [cost assumptions and limits](docs/COST_CONTROLS.md).
+- Local verification: 422/422 tests across 45 files, lint and production SSR
+  build passed. Lazy routes reduced the initial bundle from 1.38 MB to 864.67 kB
+  (estimated transfer 315.08 to 227.00 kB); dependency CommonJS warnings remain.
+  Built homepage, health, pricing, privacy, login and robots routes returned 200
+  with expected content; all 13 initial assets loaded. No paid provider calls
+  were used. Browser screenshot launch was blocked by automatic approval review;
+  signed-in visual/end-to-end acceptance is pending.
+- This implements the first V2 workspace foundation. The full chat action
+  engine, typed approval/diff/history/rollback flow and closed-loop outcome
+  measurement remain open. Do not describe the entire V2 brief as completed.
+- This branch is intended for the existing green workforce merge and WIF deploy.
+  Verify actual main ancestry and the live Cloud Run revision after it runs;
+  the pre-release revision noted above is a dated observation, not a release receipt.
+
 ## Known issues / TODO
 
 - Custom domains — the connect flow (`src/app/domain-verification.ts` + settings
@@ -211,7 +240,7 @@ GitHub Actions (`deploy.yml`) exists but needs WIF secrets configured. Manual `g
   Domain Mappings API wire format has **not** been exercised against the live
   project (no production GCP access while writing it); Part C of the runbook
   walks through the first live test.
-- GitHub Actions WIF secrets not configured for auto-deploy — step-by-step setup in [`docs/wif-setup-runbook.md`](docs/wif-setup-runbook.md) (one-time: ~15 min of gcloud + 2 GitHub secrets)
+- GitHub Actions WIF is configured and successful main-push deployments were verified on 2026-10-05. [`docs/wif-setup-runbook.md`](docs/wif-setup-runbook.md) remains the recovery/setup reference.
 - Stripe is in test mode — switch keys when ready for real payments
 - Admin `/users` + `/metrics` per-user Firestore reads are now **batched** via `getAllDocs` (chunked parallel `getAll`, `src/server-firestore.ts`) instead of sequential `.get()` in a loop; `/metrics` still has its 30s cache. Output shape unchanged.
 - Growth reports now **auto-generate weekly**: the latest report is persisted to
@@ -369,15 +398,15 @@ GitHub Actions (`deploy.yml`) exists but needs WIF secrets configured. Manual `g
 
 Scheduled AI sessions push `claude/**` branches; **`.github/workflows/workforce-merge.yml`**
 lands them on `main` autonomously so work doesn't pile up. It is fully
-self-contained and needs **zero admin toggles** — only `contents: write` (the
-default `GITHUB_TOKEN`) and an unprotected `main`. Per branch it three-way
+self-contained and uses the existing `WORKFORCE_MERGE_PAT` for the protected
+main push. Per branch it three-way
 *merges* the branch into current `main` (a real merge can't revert newer work —
 only a genuine conflict stops it), runs the CI gate (lint + test + build), and
 on green pushes to `main` and deletes the branch; conflicts/red CI are left
 alone with a warning. It triggers on push to `claude/**` (fast path) **and on an
 hourly schedule + manual dispatch**, so any backlog of already-pushed branches
-gets drained. Merging to `main` does NOT deploy (deploy is gated on GCP/WIF
-config), so it's safe; after a merge it best-effort kicks `deploy.yml`.
+gets drained. The PAT push to `main` triggers the configured deployment for code
+changes. There is no additional manual dispatch, avoiding duplicate deployments.
 
 This replaced the old PR-based pair (`auto-merge.yml` + `auto-merge-on-green.yml`),
 which stalled because `gh pr create` 403s without the "Allow Actions to create

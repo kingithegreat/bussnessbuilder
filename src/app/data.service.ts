@@ -1,4 +1,4 @@
-import { Injectable, computed, signal, effect, PLATFORM_ID, inject } from '@angular/core';
+import { Injectable, computed, signal, effect, PLATFORM_ID, inject, DestroyRef } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { AppState, BusinessProfile, Enquiry, FAQ, Service, Activity, Testimonial, ContentPage, GrowthReport, NotificationPreferences, PaymentSettings, SavedRecommendation, SiteTemplate, PublicSiteData } from './types';
 import { FirestoreService } from './firestore.service';
@@ -88,6 +88,12 @@ export class DataService {
   private state = signal<AppState>(defaultState);
   private uid = signal<string | null>(null);
   private saveTimeout: ReturnType<typeof setTimeout> | null = null;
+  private stopInbox: (() => void) | null = null;
+  private sessionVersion = 0;
+  private loading: { uid: string; promise: Promise<void> } | null = null;
+  private persistedSite = '';
+  // Server inbox snapshots must never trigger owner-site autosaves in a loop.
+  private ownerSite = computed(() => this.serializeSite(this.state()));
 
   private geminiKey = signal<string>('');
   readonly geminiApiKey = this.geminiKey.asReadonly();
@@ -118,13 +124,19 @@ export class DataService {
   readonly siteSlug = computed(() => this.state().siteSlug || '');
 
   constructor() {
+    inject(DestroyRef).onDestroy(() => this.stopPersistence());
     effect(() => {
-      const currentState = this.state();
+      const currentSite = this.ownerSite();
       const currentUid = this.uid();
-      if (currentUid && isPlatformBrowser(this.platformId)) {
-        if (this.saveTimeout) clearTimeout(this.saveTimeout);
+      if (this.saveTimeout) clearTimeout(this.saveTimeout);
+      if (currentUid && currentSite !== this.persistedSite && isPlatformBrowser(this.platformId)) {
+        const version = this.sessionVersion;
         this.saveTimeout = setTimeout(() => {
-          this.firestoreService.saveBusinessData(currentUid, currentState);
+          this.saveTimeout = null;
+          if (version !== this.sessionVersion || currentUid !== this.uid()) return;
+          this.firestoreService.saveBusinessData(currentUid, JSON.parse(currentSite)).then(() => {
+            if (version === this.sessionVersion) this.persistedSite = currentSite;
+          }).catch(error => console.error('Could not save site changes', error));
         }, 1500);
       }
     });
@@ -134,41 +146,97 @@ export class DataService {
 
   async init(uid: string) {
     if (this.initialized && this.uid() === uid) return;
-    this.uid.set(uid);
-    this.initialized = true;
-
-    this.loadPaymentSettings(uid);
-    this.loadTemplates(uid);
-    this.loadPages(uid);
-    this.loadNotificationPrefs(uid);
-    this.loadRecommendations(uid);
-    this.loadGrowthReport(uid);
-
-    const firestoreData = await this.firestoreService.loadBusinessData(uid);
-    if (firestoreData) {
-      this.state.set(firestoreData);
-      this.clearLocalStorage();
-      return;
+    if (this.loading?.uid === uid) return this.loading.promise;
+    this.resetSession();
+    const version = this.sessionVersion;
+    const promise = this.loadSession(uid, version);
+    this.loading = { uid, promise };
+    try {
+      await promise;
+    } finally {
+      if (version === this.sessionVersion) this.loading = null;
     }
+  }
 
-    if (isPlatformBrowser(this.platformId)) {
+  private async loadSession(uid: string, version: number) {
+    // A failed read must propagate; treating it as absence can overwrite a real site.
+    let data = await this.firestoreService.loadBusinessData(uid);
+    if (version !== this.sessionVersion) return;
+    if (!data && isPlatformBrowser(this.platformId)) {
+      const legacyKey = localStorage.getItem('businessflow_gemini_key');
+      if (legacyKey) this.geminiKey.set(legacyKey);
       const stored = localStorage.getItem('businessflow_state');
       if (stored) {
         try {
-          const parsed = JSON.parse(stored) as AppState;
-          this.state.set(parsed);
-          await this.firestoreService.saveBusinessData(uid, parsed);
-          this.clearLocalStorage();
-          return;
-        } catch (e) {
-          console.error('Failed to migrate localStorage data', e);
+          const parsed = JSON.parse(stored) as AppState | null;
+          if (parsed?.profile && typeof parsed.profile === 'object') data = parsed;
+          else console.warn('Ignoring an invalid setup draft');
+        } catch {
+          // Malformed browser data must not permanently block sign-in. The
+          // pending-publish flag remains for Login's existing lost-draft notice.
+          console.warn('Ignoring an unreadable setup draft');
+        }
+        if (data) {
+          // Keep this outside the parse catch: failed saves retain valid drafts.
+          await this.firestoreService.saveBusinessData(uid, data);
+          if (version !== this.sessionVersion) return;
         }
       }
-      const key = localStorage.getItem('businessflow_gemini_key');
-      if (key) this.geminiKey.set(key);
     }
+    const state = { ...defaultState, ...data,
+      enquiries: Array.isArray(data?.enquiries) ? data.enquiries : [],
+      activities: Array.isArray(data?.activities) ? data.activities : [],
+    };
+    this.state.set(state);
+    this.persistedSite = this.serializeSite(state);
+    this.clearLocalStorage();
+    this.initialized = true;
+    this.uid.set(uid);
+    this.stopInbox = this.firestoreService.watchInbox(uid, inbox => {
+      if (version !== this.sessionVersion) return;
+      this.state.update(current => ({ ...current, ...inbox }));
+    });
+    void this.loadPaymentSettings(uid);
+    void this.loadTemplates(uid);
+    void this.loadPages(uid);
+    void this.loadNotificationPrefs(uid);
+    void this.loadRecommendations(uid);
+    void this.loadGrowthReport(uid);
+  }
 
+  private serializeSite(state: AppState): string {
+    const site = { ...state } as Partial<AppState>;
+    delete site.enquiries;
+    delete site.activities;
+    return JSON.stringify(site);
+  }
+
+  private stopPersistence() {
+    this.sessionVersion++;
+    if (this.saveTimeout) clearTimeout(this.saveTimeout);
+    this.saveTimeout = null;
+    this.stopInbox?.();
+    this.stopInbox = null;
+  }
+
+  /** End an owner's session before logout, account switch, or public-site preview. */
+  resetSession() {
+    this.stopPersistence();
+    this.uid.set(null);
+    this.initialized = false;
+    this.loading = null;
+    this.persistedSite = '';
     this.state.set(defaultState);
+    this.pages.set([]);
+    this.notifPrefs.set({ emailOnNewEnquiry: false, notificationEmail: '' });
+    this.paymentSettings.set({ enabled: false, paymentLinks: [] });
+    this._recommendations.set([]);
+    this._lastGrowthReport.set(null);
+    this._templates.set([]);
+    this._activeTemplateId.set('');
+    this._publicSiteUid.set('');
+    this._hideBranding.set(false);
+    this.geminiKey.set('');
   }
 
   private clearLocalStorage() {
@@ -199,8 +267,7 @@ export class DataService {
   }
 
   resetSetup() {
-    this.state.set(defaultState);
-    this.initialized = false;
+    this.resetSession();
   }
 
   resetCustomization() {
@@ -345,8 +412,9 @@ export class DataService {
   }
 
   async loadPages(uid: string) {
+    const version = this.sessionVersion;
     const p = await this.firestoreService.loadPages(uid);
-    if (p) this.pages.set(p);
+    if (p && this.uid() === uid && version === this.sessionVersion) this.pages.set(p);
   }
 
   getNotificationPrefs(): NotificationPreferences {
@@ -361,8 +429,9 @@ export class DataService {
   }
 
   async loadNotificationPrefs(uid: string) {
+    const version = this.sessionVersion;
     const prefs = await this.firestoreService.loadNotificationPrefs(uid);
-    if (prefs) this.notifPrefs.set(prefs);
+    if (prefs && this.uid() === uid && version === this.sessionVersion) this.notifPrefs.set(prefs);
   }
 
   getPaymentSettings(): PaymentSettings {
@@ -377,13 +446,15 @@ export class DataService {
   }
 
   async loadPaymentSettings(uid: string) {
+    const version = this.sessionVersion;
     const settings = await this.firestoreService.loadPaymentSettings(uid);
-    if (settings) this.paymentSettings.set(settings);
+    if (settings && this.uid() === uid && version === this.sessionVersion) this.paymentSettings.set(settings);
   }
 
   async loadRecommendations(uid: string) {
+    const version = this.sessionVersion;
     const recs = await this.firestoreService.loadRecommendations(uid);
-    if (recs) this._recommendations.set(recs);
+    if (recs && this.uid() === uid && version === this.sessionVersion) this._recommendations.set(recs);
   }
 
   setRecommendations(recs: SavedRecommendation[]) {
@@ -394,8 +465,9 @@ export class DataService {
   }
 
   async loadGrowthReport(uid: string) {
+    const version = this.sessionVersion;
     const report = await this.firestoreService.loadGrowthReport(uid);
-    if (report) this._lastGrowthReport.set(report);
+    if (report && this.uid() === uid && version === this.sessionVersion) this._lastGrowthReport.set(report);
   }
 
   setGrowthReport(report: GrowthReport) {
@@ -415,8 +487,9 @@ export class DataService {
   }
 
   async loadTemplates(uid: string) {
+    const version = this.sessionVersion;
     const data = await this.firestoreService.loadTemplates(uid);
-    if (data) {
+    if (data && this.uid() === uid && version === this.sessionVersion) {
       this._templates.set(data.templates);
       this._activeTemplateId.set(data.activeTemplateId);
     }
@@ -493,6 +566,7 @@ export class DataService {
   }
 
   loadPublicSite(uid: string, data: PublicSiteData) {
+    this.resetSession();
     this._publicSiteUid.set(uid);
     this.state.set({
       ...defaultState,

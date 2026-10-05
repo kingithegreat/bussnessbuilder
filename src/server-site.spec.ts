@@ -11,7 +11,7 @@ describe('buildPublicSiteData', () => {
   };
 
   it('assembles the payload from the three docs', () => {
-    const payload = buildPublicSiteData(main, { enabled: true }, { tier: 'business' });
+    const payload = buildPublicSiteData(main, { enabled: true }, { tier: 'business', status: 'active' });
     expect(payload).toEqual({
       profile: { name: 'Sparkle Cleaners' },
       services: [{ id: 'svc_1', name: 'Deep clean' }],
@@ -25,6 +25,16 @@ describe('buildPublicSiteData', () => {
 
   it('returns null when the main doc is missing', () => {
     expect(buildPublicSiteData(undefined, null, null)).toBeNull();
+  });
+
+  it('restores branding when a Business subscription is unpaid or has no status', () => {
+    for (const status of ['past_due', 'unpaid', 'canceled', 'incomplete', undefined]) {
+      expect(buildPublicSiteData(main, null, { tier: 'business', status })!.hideBranding).toBe(false);
+    }
+  });
+
+  it('keeps paid branding through an active period scheduled for cancellation', () => {
+    expect(buildPublicSiteData(main, null, { tier: 'business', status: 'active', cancelAtPeriodEnd: true })!.hideBranding).toBe(true);
   });
 
   it('returns null when setup is not complete', () => {
@@ -42,9 +52,9 @@ describe('buildPublicSiteData', () => {
   });
 
   it('only hides branding on the business tier', () => {
-    expect(buildPublicSiteData(main, null, { tier: 'pro' })!.hideBranding).toBe(false);
+    expect(buildPublicSiteData(main, null, { tier: 'pro', status: 'active' })!.hideBranding).toBe(false);
     expect(buildPublicSiteData(main, null, null)!.hideBranding).toBe(false);
-    expect(buildPublicSiteData(main, null, { tier: 'business' })!.hideBranding).toBe(true);
+    expect(buildPublicSiteData(main, null, { tier: 'business', status: 'active' })!.hideBranding).toBe(true);
   });
 });
 

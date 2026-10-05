@@ -7,6 +7,16 @@ import { SubscriptionService } from './subscription.service';
 import { ToastService } from './toast.service';
 import { MatIconModule } from '@angular/material/icon';
 
+export const OUTCOME_NAVIGATION = [
+  { label: 'Home', route: '/admin/dashboard', icon: 'home' },
+  { label: 'Website', route: '/admin/website', icon: 'language' },
+  { label: 'Leads', route: '/admin/inbox', icon: 'inbox' },
+  { label: 'Marketing', route: '/admin/ai', icon: 'campaign' },
+  { label: 'Growth', route: '/admin/growth', icon: 'trending_up' },
+  { label: 'Analytics', route: '/admin/analytics', icon: 'analytics' },
+  { label: 'Settings', route: '/admin/settings', icon: 'tune' },
+] as const;
+
 @Component({
   selector: 'app-admin-layout',
   standalone: true,
@@ -44,50 +54,22 @@ import { MatIconModule } from '@angular/material/icon';
             </span>
           }
         </div>
-        <nav class="flex flex-col gap-1 flex-1 overflow-y-auto min-h-0">
-          <a routerLink="/admin/dashboard" routerLinkActive="bg-blue-50 text-blue-600 font-medium" (click)="sidebarOpen.set(false)" class="nav-item flex items-center gap-3 px-3 py-2 rounded-xl text-gray-500 hover:bg-gray-50 text-[13px] font-medium transition-colors">
-            <mat-icon class="w-5 h-5">dashboard</mat-icon> Dashboard
-          </a>
-          <a routerLink="/admin/growth" routerLinkActive="bg-emerald-50 text-emerald-600 font-medium" (click)="sidebarOpen.set(false)" class="nav-item flex items-center gap-3 px-3 py-2 rounded-xl text-gray-500 hover:bg-gray-50 text-[13px] font-medium transition-colors">
-            <mat-icon class="w-5 h-5">trending_up</mat-icon> Growth Coach
-          </a>
-          <a routerLink="/admin/inbox" routerLinkActive="bg-blue-50 text-blue-600 font-medium" (click)="sidebarOpen.set(false)" class="nav-item flex items-center gap-3 px-3 py-2 rounded-xl text-gray-500 hover:bg-gray-50 text-[13px] font-medium transition-colors">
-            <mat-icon class="w-5 h-5">inbox</mat-icon> Enquiries
-            @if(newEnquiriesCount() > 0) {
-              <span class="ml-auto bg-red-100 text-red-600 text-[10px] px-2 py-0.5 rounded-full font-bold">{{ newEnquiriesCount() }}</span>
-            }
-          </a>
-          <a routerLink="/admin/content" routerLinkActive="bg-blue-50 text-blue-600 font-medium" (click)="sidebarOpen.set(false)" class="nav-item flex items-center gap-3 px-3 py-2 rounded-xl text-gray-500 hover:bg-gray-50 text-[13px] font-medium transition-colors">
-            <mat-icon class="w-5 h-5">inventory_2</mat-icon> Content
-          </a>
-          <a routerLink="/admin/ai" routerLinkActive="bg-blue-50 text-blue-600 font-medium" (click)="sidebarOpen.set(false)" class="nav-item flex items-center gap-3 px-3 py-2 rounded-xl text-gray-500 hover:bg-gray-50 text-[13px] font-medium transition-colors">
-            <mat-icon class="w-5 h-5">auto_awesome</mat-icon> AI Tools
-          </a>
-          <a routerLink="/admin/customisation" routerLinkActive="bg-blue-50 text-blue-600 font-medium" (click)="sidebarOpen.set(false)" class="nav-item flex items-center gap-3 px-3 py-2 rounded-xl text-gray-500 hover:bg-gray-50 text-[13px] font-medium transition-colors">
-            <mat-icon class="w-5 h-5">settings</mat-icon> Customisation
-          </a>
-          <a routerLink="/admin/builder" routerLinkActive="bg-blue-50 text-blue-600 font-medium" (click)="sidebarOpen.set(false)" class="nav-item flex items-center gap-3 px-3 py-2 rounded-xl text-gray-500 hover:bg-gray-50 text-[13px] font-medium transition-colors">
-            <mat-icon class="w-5 h-5">view_quilt</mat-icon> Page Builder
-          </a>
-          <a routerLink="/admin/form-builder" routerLinkActive="bg-blue-50 text-blue-600 font-medium" (click)="sidebarOpen.set(false)" class="nav-item flex items-center gap-3 px-3 py-2 rounded-xl text-gray-500 hover:bg-gray-50 text-[13px] font-medium transition-colors">
-            <mat-icon class="w-5 h-5">dynamic_form</mat-icon> Form Builder
-          </a>
-          <a routerLink="/admin/pages" routerLinkActive="bg-blue-50 text-blue-600 font-medium" (click)="sidebarOpen.set(false)" class="nav-item flex items-center gap-3 px-3 py-2 rounded-xl text-gray-500 hover:bg-gray-50 text-[13px] font-medium transition-colors">
-            <mat-icon class="w-5 h-5">article</mat-icon> Pages
-          </a>
-          <a routerLink="/admin/payments" routerLinkActive="bg-blue-50 text-blue-600 font-medium" (click)="sidebarOpen.set(false)" class="nav-item flex items-center gap-3 px-3 py-2 rounded-xl text-gray-500 hover:bg-gray-50 text-[13px] font-medium transition-colors">
-            <mat-icon class="w-5 h-5">payments</mat-icon> Payments
-          </a>
-          <div class="mt-4 pt-4 border-t border-gray-100">
-            <a routerLink="/admin/settings" routerLinkActive="bg-blue-50 text-blue-600 font-medium" (click)="sidebarOpen.set(false)" class="nav-item flex items-center gap-3 px-3 py-2 rounded-xl text-gray-500 hover:bg-gray-50 text-[13px] font-medium transition-colors">
-              <mat-icon class="w-5 h-5">tune</mat-icon> Settings
+        <nav aria-label="Workspace" class="flex flex-col gap-1 flex-1 overflow-y-auto min-h-0">
+          @for (item of navigation; track item.route) {
+            <a [routerLink]="item.route" [attr.aria-label]="item.label" routerLinkActive="bg-blue-50 text-blue-600 font-medium" (click)="sidebarOpen.set(false)" class="nav-item flex items-center gap-3 px-3 py-2 rounded-xl text-gray-500 hover:bg-gray-50 text-[13px] font-medium transition-colors">
+              <mat-icon class="w-5 h-5">{{ item.icon }}</mat-icon> {{ item.label }}
+              @if (item.label === 'Leads' && newEnquiriesCount() > 0) {
+                <span class="ml-auto bg-red-100 text-red-600 text-[10px] px-2 py-0.5 rounded-full font-bold">{{ newEnquiriesCount() }}</span>
+              }
             </a>
-            @if (isOwnerAdmin()) {
-              <a routerLink="/app-admin" (click)="sidebarOpen.set(false)" class="nav-item flex items-center gap-3 px-3 py-2 rounded-xl text-red-500 hover:bg-red-50 text-[13px] font-medium transition-colors mt-1">
+          }
+          @if (isOwnerAdmin()) {
+            <div class="mt-4 pt-4 border-t border-gray-100">
+              <a routerLink="/app-admin" (click)="sidebarOpen.set(false)" class="nav-item flex items-center gap-3 px-3 py-2 rounded-xl text-red-500 hover:bg-red-50 text-[13px] font-medium transition-colors">
                 <mat-icon class="w-5 h-5">admin_panel_settings</mat-icon> Owner Admin
               </a>
-            }
-          </div>
+            </div>
+          }
         </nav>
         <div class="mt-auto pt-4 border-t border-gray-100">
           <div class="p-4 bg-gray-50 rounded-xl border border-gray-100 text-center">
@@ -138,6 +120,7 @@ export class AdminLayoutComponent implements OnInit {
   private http = inject(HttpClient);
   sidebarOpen = signal(false);
   isOwnerAdmin = signal(false);
+  readonly navigation = OUTCOME_NAVIGATION;
   
   profile = this.dataService.profile;
   enquiries = this.dataService.enquiries;
@@ -211,6 +194,7 @@ export class AdminLayoutComponent implements OnInit {
   }
 
   async logout() {
+    this.dataService.resetSession();
     await this.authService.logout();
   }
 }

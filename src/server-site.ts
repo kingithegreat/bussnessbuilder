@@ -5,6 +5,7 @@
 // Angular via request context so the site body server-renders with real
 // content. Keeping the assembly pure (doc data in, payload out) makes the
 // tier/branding/default rules unit-testable without Firestore.
+import { effectiveTier } from './app/effective-tier';
 
 export interface PublicSitePayload {
   profile: unknown;
@@ -35,7 +36,7 @@ export function buildPublicSiteData(
     faqs: (main['faqs'] as unknown[]) || [],
     customization: main['customization'],
     paymentSettings: payments ?? null,
-    hideBranding: subscription?.['tier'] === 'business',
+    hideBranding: effectiveTier(subscription) === 'business',
   };
 }
 

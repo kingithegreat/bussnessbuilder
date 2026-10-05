@@ -103,6 +103,21 @@ describe('SubscriptionService tier gating', () => {
   });
 
   describe('active status', () => {
+    it('removes paid capabilities on unpaid and canceled plans while keeping a valid trial', () => {
+      const sub = (service as unknown as { sub: { set(v: SubscriptionData): void } }).sub;
+      for (const status of ['past_due', 'canceled'] as const) {
+        sub.set({ tier: 'business', status });
+        expect(service.isBusiness()).toBe(false);
+        expect(service.canUseAi()).toBe(false);
+        expect(service.canUseGrowthAi()).toBe(false);
+        expect(service.canUseMarketing()).toBe(false);
+        expect(service.canExport()).toBe(false);
+        expect(service.canAddService(3)).toBe(false);
+      }
+      sub.set({ tier: 'business', status: 'trialing' });
+      expect(service.isBusiness()).toBe(true);
+      expect(service.canUseAi()).toBe(true);
+    });
     it('treats active and trialing as active', () => {
       const sub = (service as unknown as { sub: { set(v: SubscriptionData): void } }).sub;
       sub.set({ tier: 'pro', status: 'active' });

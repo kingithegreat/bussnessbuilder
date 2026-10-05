@@ -4,7 +4,7 @@
 
 - [x] Deployed on Google Cloud Run (us-central1)
 - [x] Multi-stage Dockerfile with `USER node` for security
-- [x] Healthcheck endpoint (`/healthz`)
+- [x] Healthcheck endpoint (use `/healthz/` for the live Cloud Run check)
 - [x] `NG_ALLOWED_HOSTS=*` configured
 - [x] `trustProxyHeaders: true` for Cloud Run reverse proxy
 - [ ] Custom domain mapping (manual via `gcloud run domain-mappings create`)
@@ -36,6 +36,7 @@
 - [x] Price IDs read from env vars at request time (not module load)
 - [x] Handles checkout.session.completed, subscription.updated, subscription.deleted
 - [x] Customer portal integration for self-service billing
+- [x] Paid access requires active/trialing status and a recognized Stripe price; subscription binding changes use transactions to reject older competing events
 - [ ] Switch from test keys to live keys when ready for real payments — **exact runbook: `docs/GO_LIVE_STRIPE.md`**
 - [ ] Configure Stripe webhook endpoint for production domain (covered in `docs/GO_LIVE_STRIPE.md` step 2)
 - [ ] Enable Stripe Radar for fraud detection
@@ -67,6 +68,9 @@
 - [x] Graceful fallback when API key missing or generation fails
 - [x] Rate-limited to prevent abuse
 - [x] Client-side fallback to template-only for free tier
+- [x] Atomic per-user daily/monthly allowances across all server AI routes (Pro 20/200, Business 60/600)
+- [x] Server input cap, output token cap and disabled extra thinking; BYOK shares output/thinking caps
+- [ ] Account-wide monetary budget/kill switch; actual bills and margins need measurement (see `docs/COST_CONTROLS.md`)
 
 ## CI/CD
 
@@ -74,7 +78,18 @@
 - [x] Workload Identity Federation (keyless auth, no JSON key files)
 - [x] Workflow gates behind GCP_PROJECT_ID variable
 - [x] Configure WIF_PROVIDER and WIF_SERVICE_ACCOUNT secrets in GitHub (done 2026-07-10 — auto-deploy verified live)
-- [ ] Add test step once test suite is expanded
+- [x] Angular tests run in CI, workforce integration and deployment verification
+- [x] Documentation-only pushes skip deployment; workforce main pushes trigger a single deployment
+
+## V2 finishing scope (2026-10-05)
+
+- [x] Home chooses actions from actual saved setup, lead, draft-page and recommendation state
+- [x] Seven outcome navigation destinations and a Website workspace retain existing editors
+- [x] Safe initial loading, account isolation and live inbox updates preserve owner edits
+- [x] Opening a lead preserves its status; Home links select new/due leads
+- [ ] Full chat action engine with typed actions, previews, approval, history and rollback
+- [ ] Closed-loop measurement connecting changes to actual business outcomes
+- [ ] Signed-in end-to-end acceptance and visual browser review of the final release (component behavior has automated coverage; browser launch was blocked by automatic approval review)
 
 ## Legal & Compliance
 

@@ -3,6 +3,7 @@ import { isPlatformBrowser } from '@angular/common';
 import { Auth } from '@angular/fire/auth';
 import { Firestore, doc, getDoc } from '@angular/fire/firestore';
 import { SubscriptionTier, SubscriptionData } from './types';
+import { effectiveTier } from './effective-tier';
 
 const TIER_LIMITS = {
   free:     { services: 3,  enquiries: 10, ai: false, exportImport: false, growthAi: false, marketing: false },
@@ -15,6 +16,7 @@ export class SubscriptionService {
   private platformId = inject(PLATFORM_ID);
   private auth = inject(Auth);
   private firestore = inject(Firestore);
+  private loadSequence = 0;
 
   private sub = signal<SubscriptionData>({
     tier: 'free',
@@ -22,7 +24,7 @@ export class SubscriptionService {
   });
 
   readonly subscription = this.sub.asReadonly();
-  readonly tier = computed<SubscriptionTier>(() => this.sub().tier);
+  readonly tier = computed<SubscriptionTier>(() => effectiveTier(this.sub()));
   readonly isActive = computed(() => this.sub().status === 'active' || this.sub().status === 'trialing');
   readonly isPro = computed(() => this.tier() === 'pro' || this.tier() === 'business');
   readonly isBusiness = computed(() => this.tier() === 'business');
@@ -72,10 +74,13 @@ export class SubscriptionService {
 
   async loadSubscription(uid: string) {
     if (!isPlatformBrowser(this.platformId)) return;
+    const sequence = ++this.loadSequence;
+    // Never leave the previous account's paid access visible during a failed read.
+    this.sub.set({ tier: 'free', status: 'active' });
     try {
       const ref = doc(this.firestore, 'subscriptions', uid);
       const snap = await getDoc(ref);
-      if (snap.exists()) {
+      if (sequence === this.loadSequence && snap.exists()) {
         this.sub.set(snap.data() as SubscriptionData);
       }
     } catch (e) {

@@ -1,5 +1,7 @@
-import { Component, inject, signal } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { Component, effect, inject, signal } from '@angular/core';
+import { ActivatedRoute, RouterLink } from '@angular/router';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { InboxFilter, inboxFilter, localDateKey, matchesInboxFilter } from './inbox-workflow';
 import { DataService } from './data.service';
 import { ToastService } from './toast.service';
 import { SubscriptionService } from './subscription.service';
@@ -241,14 +243,32 @@ export class AdminInboxComponent {
 
   enquiriesCount = () => this.dataService.enquiries().length;
   searchQuery = signal('');
-  activeFilter = signal<string>('all');
+  activeFilter = signal<InboxFilter>('all');
   replyIntent = signal<ReplyIntent>('reply');
   selectedEnquiry = signal<Enquiry | null>(null);
   isGeneratingDraft = false;
   copySuccess = false;
   customization = this.dataService.customization;
 
-  filters = [
+  private pendingLead = signal<string | null>(null);
+
+  constructor() {
+    inject(ActivatedRoute).queryParamMap.pipe(takeUntilDestroyed()).subscribe(params => {
+      this.activeFilter.set(inboxFilter(params.get('filter')));
+      this.pendingLead.set(params.get('lead'));
+    });
+    effect(() => {
+      const id = this.pendingLead() || this.selectedEnquiry()?.id;
+      if (!id) return;
+      const enquiry = this.dataService.enquiries().find(item => item.id === id);
+      if (enquiry && enquiry !== this.selectedEnquiry()) {
+        this.selectedEnquiry.set(enquiry);
+        this.pendingLead.set(null);
+      }
+    });
+  }
+
+  filters: { key: InboxFilter; label: string }[] = [
     { key: 'all', label: 'All' },
     { key: 'new', label: 'New' },
     { key: 'hot', label: 'Hot' },
@@ -257,19 +277,9 @@ export class AdminInboxComponent {
     { key: 'lost', label: 'Lost' },
   ];
 
-  filterCount(key: string): number {
+  filterCount(key: InboxFilter): number {
     const list = this.dataService.enquiries();
-    const today = new Date().toISOString().slice(0, 10);
-    if (key === 'new') return list.filter(e => e.status === 'New').length;
-    if (key === 'hot') return list.filter(e => e.leadScore === 'Hot').length;
-    if (key === 'followup') return list.filter(e => {
-      if (e.status === 'Won' || e.status === 'Lost') return false;
-      if (!e.followUpDate) return e.status === 'New' || e.status === 'Contacted';
-      return e.followUpDate <= today;
-    }).length;
-    if (key === 'won') return list.filter(e => e.status === 'Won' || e.status === 'Booked').length;
-    if (key === 'lost') return list.filter(e => e.status === 'Lost').length;
-    return 0;
+    return list.filter(e => matchesInboxFilter(e, key, localDateKey())).length;
   }
 
   get filteredEnquiries() {
@@ -278,19 +288,7 @@ export class AdminInboxComponent {
     let list = this.dataService.enquiries();
 
     if (filter !== 'all') {
-      const today = new Date().toISOString().slice(0, 10);
-      list = list.filter(e => {
-        if (filter === 'new') return e.status === 'New';
-        if (filter === 'hot') return e.leadScore === 'Hot';
-        if (filter === 'followup') {
-          if (e.status === 'Won' || e.status === 'Lost') return false;
-          if (!e.followUpDate) return e.status === 'New' || e.status === 'Contacted';
-          return e.followUpDate <= today;
-        }
-        if (filter === 'won') return e.status === 'Won' || e.status === 'Booked';
-        if (filter === 'lost') return e.status === 'Lost';
-        return true;
-      });
+      list = list.filter(e => matchesInboxFilter(e, filter, localDateKey()));
     }
 
     if (q) {
@@ -305,9 +303,6 @@ export class AdminInboxComponent {
 
   selectEnquiry(enquiry: Enquiry) {
     this.selectedEnquiry.set(enquiry);
-    if (enquiry.status === 'New') {
-      this.updateStatus(enquiry.id, 'In Progress');
-    }
     this.copySuccess = false;
   }
 

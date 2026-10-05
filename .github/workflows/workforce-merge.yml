@@ -41,8 +41,8 @@ name: Workforce auto-merge
 #   - push to claude/**   → process just that branch (fast path)
 #   - schedule / dispatch → sweep ALL open claude/** branches (drains backlog)
 #
-# Pushing to `main` does NOT deploy until the GCP/WIF inputs are configured
-# (see deploy.yml), so autonomous merges are safe.
+# GCP/WIF is configured: a successful code push to main triggers deploy.yml.
+# Push only complete, verified work to claude/**.
 
 on:
   push:
@@ -54,7 +54,6 @@ on:
 
 permissions:
   contents: write
-  actions: write # to re-trigger deploy.yml after a successful merge
 
 # Serialize every run so a scheduled sweep and a push can't race on `main`.
 concurrency:
@@ -82,7 +81,6 @@ jobs:
 
       - name: Merge green claude branches into main
         env:
-          GH_TOKEN: ${{ secrets.WORKFORCE_MERGE_PAT }}
           EVENT_NAME: ${{ github.event_name }}
           PUSHED_REF: ${{ github.ref_name }}
         run: |
@@ -150,8 +148,5 @@ jobs:
             echo "Skipped: ${SKIPPED[*]:-none}"
           } >> "$GITHUB_STEP_SUMMARY"
 
-          # If anything landed, kick the deploy workflow. It self-skips when the
-          # GCP/WIF inputs aren't set, so this is safe either way.
-          if [ "${#MERGED[@]}" -gt 0 ]; then
-            gh workflow run deploy.yml --ref main || true
-          fi
+          # The PAT-authenticated push above already triggers deploy.yml.
+          # A second workflow_dispatch would build and deploy the same code twice.

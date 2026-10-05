@@ -1,4 +1,4 @@
-import { Injectable, inject, PLATFORM_ID } from '@angular/core';
+import { Injectable, InjectionToken, inject, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import {
   Firestore,
@@ -6,24 +6,52 @@ import {
   getDoc,
   setDoc,
   runTransaction,
+  onSnapshot,
 } from '@angular/fire/firestore';
 import { AppState, ContentPage, GrowthReport, NotificationPreferences, PaymentSettings, SavedRecommendation, SiteTemplate } from './types';
+
+/** Explicit boundary for the SDK operations used by business-data persistence. */
+export const FIRESTORE_BUSINESS_DATA_SDK = new InjectionToken('Firestore business data SDK', {
+  providedIn: 'root',
+  factory: () => ({ doc, getDoc, setDoc, onSnapshot }),
+});
 
 @Injectable({ providedIn: 'root' })
 export class FirestoreService {
   private firestore = inject(Firestore);
   private platformId = inject(PLATFORM_ID);
+  private businessDataSdk = inject(FIRESTORE_BUSINESS_DATA_SDK);
 
   async loadBusinessData(uid: string): Promise<AppState | null> {
     if (!isPlatformBrowser(this.platformId)) return null;
     try {
-      const ref = doc(this.firestore, 'users', uid, 'businessData', 'main');
-      const snap = await getDoc(ref);
-      return snap.exists() ? (snap.data() as AppState) : null;
+      const ref = this.businessDataSdk.doc(this.firestore, 'users', uid, 'businessData', 'main');
+      const snap = await this.businessDataSdk.getDoc(ref);
+      if (!snap.exists()) return null;
+      const data = snap.data();
+      return {
+        ...data,
+        enquiries: Array.isArray(data['enquiries']) ? data['enquiries'] : [],
+        activities: Array.isArray(data['activities']) ? data['activities'] : [],
+      } as AppState;
     } catch (e) {
       console.error('Failed to load business data', e);
-      return null;
+      throw e;
     }
+  }
+
+  /** Listen only to the server-owned inbox; site edits remain owned by the editor. */
+  watchInbox(uid: string, receive: (data: Pick<AppState, 'enquiries' | 'activities'>) => void): () => void {
+    if (!isPlatformBrowser(this.platformId)) return () => undefined;
+    const ref = this.businessDataSdk.doc(this.firestore, 'users', uid, 'businessData', 'main');
+    return this.businessDataSdk.onSnapshot(ref, snapshot => {
+      if (!snapshot.exists()) return;
+      const data = snapshot.data();
+      receive({
+        enquiries: Array.isArray(data['enquiries']) ? data['enquiries'] : [],
+        activities: Array.isArray(data['activities']) ? data['activities'] : [],
+      });
+    }, error => console.error('Failed to receive inbox updates', error));
   }
 
   /**
@@ -31,9 +59,9 @@ export class FirestoreService {
    *
    * `enquiries` and `activities` are deliberately EXCLUDED and the write is a
    * merge. Both are written server-side by POST /api/site/:uid/enquiry while
-   * the owner may have the admin open, and DataService loads its state exactly
-   * once per session (`initialized`). A full-document setDoc of the client's
-   * snapshot therefore replaced the server's newly captured lead with a stale
+   * the owner may have the admin open. Even with live updates, an autosave's
+   * captured snapshot can predate a newly arrived lead. A full-document setDoc
+   * previously replaced the server's newly captured lead with a stale
    * array — an owner changing a colour 1.5s after an enquiry arrived destroyed
    * it, silently, with no error and no trace. Capturing enquiries is the one
    * thing this product exists to do.
@@ -44,13 +72,14 @@ export class FirestoreService {
   async saveBusinessData(uid: string, state: AppState): Promise<void> {
     if (!isPlatformBrowser(this.platformId)) return;
     try {
-      const ref = doc(this.firestore, 'users', uid, 'businessData', 'main');
+      const ref = this.businessDataSdk.doc(this.firestore, 'users', uid, 'businessData', 'main');
       const payload = JSON.parse(JSON.stringify(state)) as Record<string, unknown>;
       delete payload['enquiries'];
       delete payload['activities'];
-      await setDoc(ref, payload, { merge: true });
+      await this.businessDataSdk.setDoc(ref, payload, { merge: true });
     } catch (e) {
       console.error('Failed to save business data', e);
+      throw e;
     }
   }
 

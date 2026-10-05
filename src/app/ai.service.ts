@@ -6,6 +6,8 @@ import { getPreset } from './presets';
 import { businessTypeNoun, hashtagLine, aboutDescription } from './business-copy';
 import { DataService } from './data.service';
 import { AuthService } from './auth.service';
+import { ToastService } from './toast.service';
+import { AI_GENERATION_LIMITS } from './ai-generation-limits';
 
 const MODEL = 'gemini-2.5-flash';
 
@@ -22,6 +24,7 @@ export class AiService {
   private dataService = inject(DataService);
   private http = inject(HttpClient);
   private authService = inject(AuthService);
+  private toast = inject(ToastService);
 
   /** True when a Gemini API key is configured and live calls will be attempted. */
   isLive(): boolean {
@@ -51,7 +54,7 @@ export class AiService {
         const res = await ai.models.generateContent({
           model: MODEL,
           contents: prompt,
-          ...(system ? { config: { systemInstruction: system } } : {}),
+          config: { ...AI_GENERATION_LIMITS, ...(system ? { systemInstruction: system } : {}) },
         });
         const text = res.text?.trim();
         return text || null;
@@ -67,7 +70,7 @@ export class AiService {
       if (!token) return null;
       const uid = this.authService.currentUser()?.uid;
       const res = await firstValueFrom(
-        this.http.post<{ text: string }>('/api/ai/generate', {
+        this.http.post<{ text: string | null; fallback?: boolean; message?: string }>('/api/ai/generate', {
           uid,
           prompt,
           systemPrompt: system,
@@ -75,9 +78,11 @@ export class AiService {
           headers: { Authorization: `Bearer ${token}` },
         })
       );
+      if (res?.fallback) this.toast.info(res.message || 'Template content used instead of AI-generated content.');
       return res?.text?.trim() || null;
     } catch (err) {
       console.error('Server AI request failed, falling back to template:', err);
+      this.toast.info('AI is unavailable for this request. Template content is shown.');
       return null;
     }
   }
@@ -251,13 +256,14 @@ Sign off as "The team at ${profile.name}". Return only the email body.`,
       if (!token) return null;
       const uid = this.authService.currentUser()?.uid;
       const res = await firstValueFrom(
-        this.http.post<DraftRecommendationResponse>('/api/ai/draft-recommendation', {
+        this.http.post<DraftRecommendationResponse & { message?: string }>('/api/ai/draft-recommendation', {
           uid,
           recommendation,
         }, {
           headers: { Authorization: `Bearer ${token}` },
         })
       );
+      if (res?.message) this.toast.info(res.message);
       return res || null;
     } catch (err) {
       console.error('Draft recommendation failed:', err);
@@ -271,10 +277,11 @@ Sign off as "The team at ${profile.name}". Return only the email body.`,
       if (!token) return null;
       const uid = this.authService.currentUser()?.uid;
       const res = await firstValueFrom(
-        this.http.post<GrowthReport>('/api/ai/growth-report', { uid }, {
+        this.http.post<GrowthReport & { message?: string }>('/api/ai/growth-report', { uid }, {
           headers: { Authorization: `Bearer ${token}` },
         })
       );
+      if (res?.message) this.toast.info(res.message);
       return res || null;
     } catch (err) {
       console.error('Growth report generation failed:', err);
