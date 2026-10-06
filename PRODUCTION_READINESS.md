@@ -128,7 +128,7 @@
 
 ## Audit log
 
-- **2026-10-07 NZDT** — first typed homepage headline action prepared: 481/481
+- **2026-10-07 NZDT** — first typed homepage headline action prepared: 482/482
   tests in 51 spec files, lint and production build passed. Local SSR public
   routes/assets and unauthenticated action gates passed. Real Express journey
   tests cover preparation, reload, approval and undo with fake Firestore and no

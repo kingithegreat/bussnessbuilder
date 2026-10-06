@@ -170,7 +170,7 @@ export class HeadlineChatComponent implements OnInit {
   dismissProposal(): void {
     if (this.actions.busy()) return;
     this.actions.clearDraft();
-    this.status.set('Proposal closed. Your live headline has not changed.');
+    this.status.set('Proposal closed. Saved changes remain in your history.');
   }
 
   review(action: SiteAction): void {

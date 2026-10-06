@@ -195,6 +195,16 @@ describe('Homepage headline conversation and review', () => {
     expect(element.querySelector('[data-testid="headline-proposal"]')).toBeNull();
   });
 
+  it('does not claim the live headline is unchanged when an unconfirmed approval is closed', async () => {
+    actions.draft.set(proposal()); actions.history.set([proposal()]); actions.recoveryPending.set(true);
+    fixture.detectChanges(); await fixture.whenStable(); fixture.detectChanges();
+    await click('Close proposal');
+    expect(element.querySelector('[role="status"]')?.textContent).toContain('Saved changes remain in your history');
+    expect(element.querySelector('[role="status"]')?.textContent).not.toContain('has not changed');
+    expect(actions.recoveryPending()).toBe(true);
+    expect(actions.approve).not.toHaveBeenCalled();
+  });
+
   it('links to the live site only when setup is complete and prevents changing an unpublished site', async () => {
     expect(element.querySelector('a[target="_blank"]')?.getAttribute('href')).toBe('/site/apex');
     complete.set(false); fixture.detectChanges(); await fixture.whenStable(); fixture.detectChanges();

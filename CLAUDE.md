@@ -251,11 +251,13 @@ complete. Other intents direct owners to the existing Website editors.
 - See [workflow and verification scope](docs/HEADLINE_WORKFLOW.md) and
   [cost controls](docs/COST_CONTROLS.md). This is one typed action, not the entire
   V2 plan. Outcome measurement and signed-in browser acceptance remain open.
-- Local verification: 481/481 tests across all 51 spec files, lint and production
+- Local verification: 482/482 tests across all 51 spec files, lint and production
   SSR build passed. Initial bundle: 859.06 kB (227.14 kB estimated transfer).
   Built SSR served six public routes, all 12 initial JS/CSS assets and the new
   dashboard chunk; both action history and approval rejected unauthenticated
   requests. No paid provider calls or new dependencies were used.
+- A final status-message review adds a regression case: closing a proposal does
+  not claim the live headline stayed unchanged while an approval is unconfirmed.
 - Hosted deployment is pending the normal workforce/main pipeline. Release
   receipts belong in the Notion brief and claim ledger after actual merge and
   Cloud Run revision checks; a green workforce job alone is not proof of merge.
