@@ -87,6 +87,8 @@
 - [x] Seven outcome navigation destinations and a Website workspace retain existing editors
 - [x] Safe initial loading, account isolation and live inbox updates preserve owner edits
 - [x] Opening a lead preserves its status; Home links select new/due leads
+- [x] First typed chat action: homepage headline proposal, before/after review,
+  explicit approval, saved history and stale-safe undo; conventional editors remain available
 - [ ] Full chat action engine with typed actions, previews, approval, history and rollback
 - [ ] Closed-loop measurement connecting changes to actual business outcomes
 - [ ] Signed-in end-to-end acceptance and visual browser review of the final release (component behavior has automated coverage; browser launch was blocked by automatic approval review)
@@ -126,4 +128,10 @@
 
 ## Audit log
 
+- **2026-10-07 NZDT** — first typed homepage headline action prepared: 481/481
+  tests in 51 spec files, lint and production build passed. Local SSR public
+  routes/assets and unauthenticated action gates passed. Real Express journey
+  tests cover preparation, reload, approval and undo with fake Firestore and no
+  paid provider calls. Hosted revision verification follows the normal pipeline;
+  signed-in browser/Firebase acceptance remains open.
 - **2026-07-11** — full pre-release audit: lint clean, 213/213 tests, production build compiles (font-inlining failure in sandbox is a network restriction, CI green), `npm audit` 6 moderate (all the known firebase-admin@10 major-bump cluster, tracked), Firestore/Storage rules reviewed (owner-only data, server-only payment collections, default deny — no blockers), no secrets in repo, deploy workflow env-var merge strategy made explicit so manually-set live Stripe vars survive CI deploys.

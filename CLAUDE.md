@@ -116,7 +116,7 @@ finds no tests.
 gcloud run deploy businessflow --source . --region us-central1 --set-env-vars="NG_ALLOWED_HOSTS=*"
 ```
 
-GitHub Actions (`deploy.yml`) uses configured WIF and deploys code pushes to main. Verified on 2026-10-05: the live revision `businessflow-00085-xdk` carried main commit `1795d849e63050533d981208ba3ce414cc7af301`. Documentation-only pushes are excluded; manual dispatch remains available. Use the existing pipeline; do not dispatch a second deployment after a workforce merge. Live liveness checks use `/healthz/` (the slashless URL returned a platform 404 despite the app being healthy).
+GitHub Actions (`deploy.yml`) uses configured WIF and deploys code pushes to main. The preceding finishing release was verified on revision `businessflow-00086-lwt`, with 100% traffic and commit `27df72fdda86a2fbaa76c24366ac05ebfba2d015` (deployment run `37301002136`). Documentation-only pushes are excluded; manual dispatch remains available. Use the existing pipeline; do not dispatch a second deployment after a workforce merge. Live liveness checks use `/healthz/` (the slashless URL returned a platform 404 despite the app being healthy).
 
 ## Key architecture notes
 
@@ -199,7 +199,8 @@ in `angular.json`; browser font links remain and scripts/styles stay optimized.
 This removes an external network requirement from production builds. The
 follow-up passed all 422 tests, lint and production build locally; its initial
 bundle is 855.98 kB (226.42 kB estimated transfer), and emitted CSS preserves the
-runtime font imports. Verify its deployment before reporting the release live.
+runtime font imports. Deployment run `37301002136` succeeded; Cloud Run revision
+`businessflow-00086-lwt` carried the exact follow-up commit with 100% traffic.
 
 - Home derives the next action from saved setup, enquiries, due follow-ups,
   draft pages and recommendations. Navigation is Home, Website, Leads,
@@ -221,12 +222,46 @@ runtime font imports. Verify its deployment before reporting the release live.
   with expected content; all 13 initial assets loaded. No paid provider calls
   were used. Browser screenshot launch was blocked by automatic approval review;
   signed-in visual/end-to-end acceptance is pending.
-- This implements the first V2 workspace foundation. The full chat action
-  engine, typed approval/diff/history/rollback flow and closed-loop outcome
+- This implemented the first V2 workspace foundation. The next release below
+  adds the first typed action. The full chat engine and closed-loop outcome
   measurement remain open. Do not describe the entire V2 brief as completed.
 - This branch is intended for the existing green workforce merge and WIF deploy.
   Verify actual main ancestry and the live Cloud Run revision after it runs;
   the pre-release revision noted above is a dated observation, not a release receipt.
+
+## Homepage headline action (2026-10-07 NZDT)
+
+Home now has a Website assistant for “Improve my homepage headline”: saved draft,
+before/after review, explicit approval, history and undo. The action updates the
+existing `profile.tagline` field used by the public homepage; setup must be
+complete. Other intents direct owners to the existing Website editors.
+
+- Server-owned actions and temporary preparation claims live below
+  `businessActions/{uid}`. Firebase token verification protects every action API;
+  account deletion recursively removes the records. Preparation never publishes.
+  Transactions reject stale approval/undo while preserving unrelated data.
+- Stable request IDs deduplicate completed proposals; a two-minute claim with
+  a callback token handles contention and expired generations. Paid generation
+  reuses the existing shared AI caps, limits output to 256 tokens, and times out
+  after 20 seconds. Templates are labelled and work without a paid account/key.
+- Autosaves drain before new actions and pause during mutation. An uncertain
+  response keeps them paused until the same idempotent operation is confirmed
+  through “Retry unconfirmed change”; a history/profile read alone is insufficient.
+  Account changes invalidate old responses.
+- See [workflow and verification scope](docs/HEADLINE_WORKFLOW.md) and
+  [cost controls](docs/COST_CONTROLS.md). This is one typed action, not the entire
+  V2 plan. Outcome measurement and signed-in browser acceptance remain open.
+- Local verification: 481/481 tests across all 51 spec files, lint and production
+  SSR build passed. Initial bundle: 859.06 kB (227.14 kB estimated transfer).
+  Built SSR served six public routes, all 12 initial JS/CSS assets and the new
+  dashboard chunk; both action history and approval rejected unauthenticated
+  requests. No paid provider calls or new dependencies were used.
+- Hosted deployment is pending the normal workforce/main pipeline. Release
+  receipts belong in the Notion brief and claim ledger after actual merge and
+  Cloud Run revision checks; a green workforce job alone is not proof of merge.
+  Browser review remains unverified: the supported computer-use tool fails
+  kernel initialization, and the earlier headless launch was rejected by
+  automatic approval review. Live Firebase owner/payment acceptance is pending.
 
 ## Known issues / TODO
 

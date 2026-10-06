@@ -1,12 +1,14 @@
 # BusinessFlow cost controls
 
-Reviewed 2026-10-05. These are application controls and illustrative estimates,
+Application controls updated 2026-10-07; pricing reviewed 2026-10-05.
+These are application controls and illustrative estimates,
 not a measurement of the current bill or a global spending ceiling.
 
 ## AI allowance
 
 Only an active or trialing recognized paid subscription can use platform AI.
-All three server AI endpoints share an atomic Firestore allowance per user:
+All four server AI endpoints, including homepage headline proposals, share an
+atomic Firestore allowance per user:
 
 | Plan | Requests per UTC day | Requests per UTC calendar month |
 | --- | ---: | ---: |
@@ -22,6 +24,12 @@ Exhausted or unavailable counters return labelled template/metrics fallbacks.
 
 Server prompts plus system instructions are limited to 16,000 characters. Each
 generation limits output to 2,048 tokens and disables extra thinking tokens.
+The headline route uses a tighter 256-output-token limit and a 20-second provider
+timeout. Generation runs outside Firestore transactions; a stored request ID
+deduplicates successful proposal retries. Pending requests have a two-minute
+lease so simultaneous retries do not normally purchase duplicate generations.
+An expired lease can allow another attempt; every paid attempt still uses the
+shared allowance. Approval, undo and history do not call the AI provider.
 Customer-owned browser API keys use that output/thinking limit but are billed to
 the customer's provider account and do not use the platform request allowance.
 
@@ -52,7 +60,8 @@ verification gates remain in place. No new dependencies or paid services were
 added; local validation runs serially with one test worker.
 
 Lazy page imports reduced the initial production bundle from 1.38 MB to
-864.67 kB (estimated transfer from 315.08 to 227.00 kB). Editors download when
+859.06 kB (estimated transfer from 315.08 to 227.14 kB, latest headline build).
+Editors download when
 opened. This reduces first-page transfer; it does not imply an equal reduction
 in the total monthly hosting bill.
 

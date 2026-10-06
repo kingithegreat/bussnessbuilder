@@ -8,6 +8,7 @@ import { AuthService } from './auth.service';
 import { ToastService } from './toast.service';
 import { FunnelService } from './funnel.service';
 import { Enquiry } from './types';
+import { SiteActionService } from './site-action.service';
 
 const enquiry = (status: string): Enquiry => ({ id: 'one', date: '2026-10-05', name: 'Customer', email: '', phone: '', serviceInterest: 'Cleaning', message: '', preferredDateTime: '', urgency: '', status });
 describe('Home action center in the real dashboard', () => {
@@ -22,6 +23,7 @@ describe('Home action center in the real dashboard', () => {
       { provide: AuthService, useValue: { currentUser: () => null } },
       { provide: ToastService, useValue: { success: () => undefined, error: () => undefined } },
       { provide: FunnelService, useValue: { flag: () => undefined, step: () => undefined } },
+      { provide: SiteActionService, useValue: { busy: signal(false), error: signal(null), errorCode: signal(null), recoveryPending: signal(false), retryUnconfirmedChange: async () => false, draft: signal(null), history: signal([]), loadHistory: async () => undefined } },
     ] });
   });
   afterEach(() => localStorage.removeItem('bf_onboarding_dismissed'));
@@ -33,6 +35,8 @@ describe('Home action center in the real dashboard', () => {
     expect(action?.textContent).toContain('Success looks like:');
     expect(action?.querySelector('a')?.getAttribute('href')).toBe('/admin/inbox?filter=new');
     expect(element.textContent!.indexOf('1 new enquiry needs a reply')).toBeLessThan(element.textContent!.indexOf('Total Enquiries'));
+    expect(element.querySelector('app-headline-chat')).not.toBeNull();
+    expect(element.textContent!.indexOf('Improve your homepage headline')).toBeLessThan(element.textContent!.indexOf('1 new enquiry needs a reply'));
     enquiries.set([enquiry('Won')]); fixture.detectChanges();
     expect(element.querySelector('[data-testid="next-business-action"]')?.textContent).toContain('Review how your business is doing');
   });
@@ -44,6 +48,7 @@ describe('Home action center in the real dashboard', () => {
     TestBed.inject(ActivatedRoute).snapshot.data = { view: 'analytics' };
     const fixture = TestBed.createComponent(AdminDashboardComponent); fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('[aria-label="Home action center"]')).toBeNull();
+    expect(fixture.nativeElement.querySelector('app-headline-chat')).toBeNull();
     expect(fixture.nativeElement.textContent).toContain('Analytics');
     expect(fixture.nativeElement.textContent).toContain('Total Enquiries');
   });

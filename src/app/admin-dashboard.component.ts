@@ -11,11 +11,12 @@ import { MatIconModule } from '@angular/material/icon';
 import { OnboardingGuideComponent, LINK_SHARED_KEY } from './onboarding-guide.component';
 import { businessActions } from './action-center';
 import { localDateKey } from './inbox-workflow';
+import { HeadlineChatComponent } from './headline-chat.component';
 
 @Component({
   selector: 'app-admin-dashboard',
   standalone: true,
-  imports: [DatePipe, DecimalPipe, MatIconModule, OnboardingGuideComponent, RouterLink],
+  imports: [DatePipe, DecimalPipe, MatIconModule, OnboardingGuideComponent, RouterLink, HeadlineChatComponent],
   template: `
     <div class="flex flex-col gap-6">
       <!--
@@ -57,6 +58,7 @@ import { localDateKey } from './inbox-workflow';
       }
 
       @if (!analyticsOnly) {
+        <app-headline-chat></app-headline-chat>
         <section class="space-y-4" aria-label="Home action center">
           <div>
             <h1 class="text-2xl font-semibold tracking-tight text-gray-900">What should you do next?</h1>

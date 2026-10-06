@@ -92,6 +92,11 @@ export class DataService {
   private sessionVersion = 0;
   private loading: { uid: string; promise: Promise<void> } | null = null;
   private persistedSite = '';
+  private ownerWriteTail: Promise<void> = Promise.resolve();
+  private ownerSavePaused = signal(false);
+  private headlineRecoveryRequired = false;
+  private unconfirmedMutation: string | null = null;
+  private siteActionRunning = false;
   // Server inbox snapshots must never trigger owner-site autosaves in a loop.
   private ownerSite = computed(() => this.serializeSite(this.state()));
 
@@ -128,15 +133,16 @@ export class DataService {
     effect(() => {
       const currentSite = this.ownerSite();
       const currentUid = this.uid();
+      const paused = this.ownerSavePaused();
       if (this.saveTimeout) clearTimeout(this.saveTimeout);
-      if (currentUid && currentSite !== this.persistedSite && isPlatformBrowser(this.platformId)) {
+      this.saveTimeout = null;
+      if (!paused && currentUid && currentSite !== this.persistedSite && isPlatformBrowser(this.platformId)) {
         const version = this.sessionVersion;
         this.saveTimeout = setTimeout(() => {
           this.saveTimeout = null;
           if (version !== this.sessionVersion || currentUid !== this.uid()) return;
-          this.firestoreService.saveBusinessData(currentUid, JSON.parse(currentSite)).then(() => {
-            if (version === this.sessionVersion) this.persistedSite = currentSite;
-          }).catch(error => console.error('Could not save site changes', error));
+          void this.queueOwnerSave(currentUid, version, currentSite)
+            .catch(error => console.error('Could not save site changes', error));
         }, 1500);
       }
     });
@@ -211,6 +217,110 @@ export class DataService {
     return JSON.stringify(site);
   }
 
+  private isOwnerSession(uid: string, version: number): boolean {
+    return this.initialized && uid === this.uid() && version === this.sessionVersion;
+  }
+
+  private queueOwnerSave(uid: string, version: number, site: string): Promise<void> {
+    // A rejected write must settle before the next write, without poisoning the
+    // queue. Only successful writes advance the persisted baseline.
+    const write = this.ownerWriteTail.then(async () => {
+      if (!this.isOwnerSession(uid, version) || site === this.persistedSite) return;
+      await this.firestoreService.saveBusinessData(uid, JSON.parse(site));
+      if (this.isOwnerSession(uid, version)) this.persistedSite = site;
+    });
+    this.ownerWriteTail = write.catch(() => undefined);
+    return write;
+  }
+
+  private requireOwnerSession(uid: string, version: number): void {
+    if (!this.isOwnerSession(uid, version)) throw new Error('Your business session changed. Reopen Home and try again.');
+  }
+
+  private async flushOwnerChanges(uid: string, version: number): Promise<void> {
+    await this.ownerWriteTail;
+    this.requireOwnerSession(uid, version);
+    while (this.ownerSite() !== this.persistedSite) {
+      await this.queueOwnerSave(uid, version, this.ownerSite());
+      this.requireOwnerSession(uid, version);
+    }
+  }
+
+  private async reconcileHeadline(uid: string, version: number): Promise<void> {
+    const saved = await this.firestoreService.loadBusinessData(uid);
+    this.requireOwnerSession(uid, version);
+    if (!saved || typeof saved.profile?.tagline !== 'string') {
+      throw new Error('Could not confirm the saved headline. Reload change history before editing again.');
+    }
+    this.persistedSite = this.serializeSite(saved);
+    this.state.update(current => ({ ...current, profile: { ...current.profile, tagline: saved.profile.tagline } }));
+    this.headlineRecoveryRequired = false;
+  }
+
+  /** Flush owner edits before server actions and adopt their single committed field. */
+  async runSiteAction<T>(
+    uid: string,
+    task: (savedHeadline: string) => Promise<T>,
+    headlineOf: (result: T) => string | null = () => null,
+    options: { mayChangeHeadline?: boolean; operationKey?: string; readOnly?: boolean; isDefiniteRejection?: (error: unknown) => boolean } = {},
+  ): Promise<T> {
+    const version = this.sessionVersion;
+    const operationKey = options.mayChangeHeadline ? options.operationKey ?? 'unconfirmed-site-action' : null;
+    this.requireOwnerSession(uid, version);
+    if (this.siteActionRunning) {
+      throw new Error('A website change is already running. Wait for it to finish.');
+    }
+    if (this.unconfirmedMutation && operationKey !== this.unconfirmedMutation && !options.readOnly) {
+      throw new Error('Your last website change is unconfirmed. Retry that same change before making more edits.');
+    }
+    this.siteActionRunning = true;
+    this.ownerSavePaused.set(true);
+    if (this.saveTimeout) clearTimeout(this.saveTimeout);
+    this.saveTimeout = null;
+    let taskStarted = false;
+    try {
+      if (this.headlineRecoveryRequired && !this.unconfirmedMutation) await this.reconcileHeadline(uid, version);
+      // A read cannot prove a lost request finished. A matching mutation retry
+      // must reach its idempotent server action before any old local save.
+      if (!this.unconfirmedMutation && !options.readOnly) await this.flushOwnerChanges(uid, version);
+      const savedHeadline = this.profile().tagline;
+      taskStarted = true;
+      const result = await task(savedHeadline);
+      this.requireOwnerSession(uid, version);
+      const headline = headlineOf(result);
+      if (headline !== null) {
+        const committed = JSON.parse(this.persistedSite) as AppState;
+        committed.profile.tagline = headline;
+        this.persistedSite = this.serializeSite(committed);
+        this.state.update(current => ({ ...current, profile: { ...current.profile, tagline: headline } }));
+        if (operationKey === this.unconfirmedMutation) this.unconfirmedMutation = null;
+      }
+      return result;
+    } catch (error) {
+      if (taskStarted && options.mayChangeHeadline && this.isOwnerSession(uid, version)) {
+        if (!this.unconfirmedMutation && options.isDefiniteRejection?.(error)) {
+          // A response rejecting the initial request proves it has finished.
+          this.headlineRecoveryRequired = true;
+          try {
+            await this.reconcileHeadline(uid, version);
+          } catch {
+            // Keep paused until a later saved-state reconciliation succeeds.
+          }
+        } else {
+          // Even a successful read might precede a delayed commit. Keep paused
+          // until this exact idempotent mutation retry returns successfully.
+          this.unconfirmedMutation = operationKey;
+        }
+      }
+      throw error;
+    } finally {
+      if (this.isOwnerSession(uid, version) && !this.headlineRecoveryRequired && !this.unconfirmedMutation) {
+        this.ownerSavePaused.set(false);
+      }
+      if (version === this.sessionVersion) this.siteActionRunning = false;
+    }
+  }
+
   private stopPersistence() {
     this.sessionVersion++;
     if (this.saveTimeout) clearTimeout(this.saveTimeout);
@@ -226,6 +336,10 @@ export class DataService {
     this.initialized = false;
     this.loading = null;
     this.persistedSite = '';
+    this.headlineRecoveryRequired = false;
+    this.unconfirmedMutation = null;
+    this.siteActionRunning = false;
+    this.ownerSavePaused.set(false);
     this.state.set(defaultState);
     this.pages.set([]);
     this.notifPrefs.set({ emailOnNewEnquiry: false, notificationEmail: '' });

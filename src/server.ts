@@ -26,6 +26,7 @@ import { getAllDocs } from './server-firestore';
 import { checkoutSubscriptionStatus, effectiveTier, tierForPrices } from './app/effective-tier';
 import { AI_GENERATION_LIMITS, aiUsageLimits, aiFallbackMessage, reserveAiCall, validAiInput } from './server-ai-budget';
 import { persistCheckoutSubscription, updateCurrentSubscription } from './server-subscription-sync';
+import { siteActionRouter } from './server-site-action-routes';
 import { validateDomain } from './app/domain-verification';
 import { businessTypeLabel } from './app/presets';
 import {
@@ -866,6 +867,7 @@ app.delete('/api/account/:uid', async (req, res) => {
     await db.doc(`users/${uid}`).delete();
     await db.doc(`subscriptions/${uid}`).delete();
     await db.doc(`serverAiUsage/${uid}`).delete();
+    await db.recursiveDelete(db.doc(`businessActions/${uid}`));
 
     const slugsSnap = await db.collection('slugs').where('uid', '==', uid).get();
     for (const slugDoc of slugsSnap.docs) {
@@ -885,6 +887,12 @@ app.delete('/api/account/:uid', async (req, res) => {
     res.status(500).json({ error: 'Server error' });
   }
 });
+
+app.use('/api/actions', siteActionRouter({
+  getDb, verifyUser: verifyFirebaseUser,
+  isLimited: (key, max, windowMs) => rateLimiter.isLimited(key, max, windowMs),
+  env: process.env,
+}));
 
 // --- AI generation endpoint ---
 

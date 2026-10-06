@@ -241,3 +241,191 @@ describe('DataService account loading and live inbox', () => {
     expect(localStorage.getItem('bf_pending_publish')).toBe('1');
   });
 });
+
+describe('DataService server action save coordination', () => {
+  let service: DataService;
+  let stored: AppState;
+  const db = {
+    loadBusinessData: vi.fn(), saveBusinessData: vi.fn(),
+    watchInbox: () => () => undefined,
+    loadPages: async () => null, loadPaymentSettings: async () => null,
+    loadTemplates: async () => null, loadNotificationPrefs: async () => null,
+    loadRecommendations: async () => null, loadGrowthReport: async () => null,
+  };
+  const settle = async () => { for (let i = 0; i < 8; i++) await Promise.resolve(); };
+  beforeEach(async () => {
+    vi.resetAllMocks();
+    vi.useFakeTimers();
+    localStorage.clear();
+    TestBed.configureTestingModule({ providers: [DataService, { provide: FirestoreService, useValue: db }] });
+    service = TestBed.inject(DataService);
+    stored = JSON.parse(service.exportState());
+    stored.profile.tagline = 'Original headline';
+    db.loadBusinessData.mockResolvedValue(stored);
+    db.saveBusinessData.mockResolvedValue(undefined);
+    await service.init('owner-a');
+    TestBed.tick();
+  });
+  afterEach(() => {
+    TestBed.resetTestingModule();
+    vi.useRealTimers();
+  });
+
+  it('flushes pending edits before proposal generation and cancels the captured debounce', async () => {
+    service.updateProfile({ tagline: 'Manual headline', name: 'Saved business' });
+    TestBed.tick();
+    const task = vi.fn(async (headline: string) => {
+      expect(db.saveBusinessData).toHaveBeenCalledTimes(1);
+      expect(db.saveBusinessData.mock.calls[0][1].profile.name).toBe('Saved business');
+      return headline;
+    });
+    expect(await service.runSiteAction('owner-a', task)).toBe('Manual headline');
+    TestBed.tick();
+    await vi.advanceTimersByTimeAsync(2000);
+    expect(task).toHaveBeenCalledWith('Manual headline');
+    expect(db.saveBusinessData).toHaveBeenCalledTimes(1);
+  });
+
+  it('serializes in-flight autosaves before approval and never writes an old captured headline afterwards', async () => {
+    let finishFirst!: () => void;
+    let finishSecond!: () => void;
+    db.saveBusinessData.mockImplementationOnce(() => new Promise<void>(resolve => { finishFirst = resolve; }));
+    db.saveBusinessData.mockImplementationOnce(() => new Promise<void>(resolve => { finishSecond = resolve; }));
+    service.updateProfile({ name: 'First edit' });
+    TestBed.tick();
+    await vi.advanceTimersByTimeAsync(1600);
+    service.updateProfile({ name: 'Second edit' });
+    TestBed.tick();
+    await vi.advanceTimersByTimeAsync(1600);
+    expect(db.saveBusinessData).toHaveBeenCalledTimes(1);
+    const approve = vi.fn(async () => 'Approved headline');
+    const action = service.runSiteAction('owner-a', approve, headline => headline, { mayChangeHeadline: true });
+    await settle();
+    expect(approve).not.toHaveBeenCalled();
+    finishFirst();
+    await settle();
+    expect(db.saveBusinessData).toHaveBeenCalledTimes(2);
+    expect(approve).not.toHaveBeenCalled();
+    finishSecond();
+    await action;
+    expect(service.profile().name).toBe('Second edit');
+    expect(service.profile().tagline).toBe('Approved headline');
+    TestBed.tick();
+    await vi.advanceTimersByTimeAsync(2000);
+    expect(db.saveBusinessData).toHaveBeenCalledTimes(2);
+  });
+
+  it('retries a failed queued write before an action instead of treating failed data as saved', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    db.saveBusinessData.mockRejectedValueOnce(new Error('offline'));
+    service.updateProfile({ name: 'Unsaved business' });
+    TestBed.tick();
+    await vi.advanceTimersByTimeAsync(1600);
+    const task = vi.fn(async () => null);
+    await service.runSiteAction('owner-a', task);
+    expect(db.saveBusinessData).toHaveBeenCalledTimes(2);
+    expect(db.saveBusinessData.mock.calls[1][1].profile.name).toBe('Unsaved business');
+    expect(task).toHaveBeenCalledTimes(1);
+    vi.restoreAllMocks();
+  });
+
+  it('does not call the server when flushing owner edits fails', async () => {
+    db.saveBusinessData.mockRejectedValueOnce(new Error('save denied'));
+    service.updateProfile({ tagline: 'Local edit' });
+    const task = vi.fn(async () => 'Generated');
+    await expect(service.runSiteAction('owner-a', task)).rejects.toThrow('save denied');
+    expect(task).not.toHaveBeenCalled();
+    expect(service.profile().tagline).toBe('Local edit');
+  });
+
+  it('preserves unrelated edits made during approval and resumes their autosave with the committed headline', async () => {
+    let finish!: (headline: string) => void;
+    const task = vi.fn(() => new Promise<string>(resolve => { finish = resolve; }));
+    const action = service.runSiteAction('owner-a', task, headline => headline, { mayChangeHeadline: true });
+    await settle();
+    service.updateProfile({ description: 'Edited while waiting' });
+    TestBed.tick();
+    await vi.advanceTimersByTimeAsync(2000);
+    expect(db.saveBusinessData).not.toHaveBeenCalled();
+    finish('Approved headline');
+    await action;
+    TestBed.tick();
+    await vi.advanceTimersByTimeAsync(2000);
+    expect(db.saveBusinessData.mock.calls[0][1].profile).toMatchObject({ tagline: 'Approved headline', description: 'Edited while waiting' });
+  });
+
+  it('reconciles the saved headline after a definite initial rejection before resuming local edits', async () => {
+    const task = async () => {
+      service.updateProfile({ description: 'Retained local edit' });
+      db.loadBusinessData.mockResolvedValue({ ...stored, profile: { ...stored.profile, tagline: 'Already applied on server' } });
+      throw new Error('confirmed conflict');
+    };
+    await expect(service.runSiteAction('owner-a', task, () => null, { mayChangeHeadline: true, isDefiniteRejection: () => true })).rejects.toThrow('confirmed conflict');
+    expect(service.profile().tagline).toBe('Already applied on server');
+    expect(service.profile().description).toBe('Retained local edit');
+    TestBed.tick();
+    await vi.advanceTimersByTimeAsync(2000);
+    expect(db.saveBusinessData.mock.calls[0][1].profile.tagline).toBe('Already applied on server');
+  });
+
+  it('holds autosave after a lost response even when history and an early saved-state read show the old headline', async () => {
+    const options = { mayChangeHeadline: true, operationKey: 'action-1:approve' };
+    await expect(service.runSiteAction('owner-a', async () => { throw new Error('response lost'); }, () => null, options)).rejects.toThrow('response lost');
+    expect(db.loadBusinessData).toHaveBeenCalledTimes(1); // Only initialization; no racy recovery read.
+    service.updateProfile({ description: 'Retained offline edit' });
+    TestBed.tick();
+    await vi.advanceTimersByTimeAsync(3000);
+    expect(db.saveBusinessData).not.toHaveBeenCalled();
+    await service.runSiteAction('owner-a', async () => ['still prepared'], () => null, { readOnly: true });
+    TestBed.tick();
+    await vi.advanceTimersByTimeAsync(3000);
+    expect(db.saveBusinessData).not.toHaveBeenCalled();
+    await expect(service.runSiteAction('owner-a', async () => null)).rejects.toThrow('Retry that same change');
+    await service.runSiteAction('owner-a', async () => 'Committed remotely', headline => headline, options);
+    TestBed.tick();
+    await vi.advanceTimersByTimeAsync(2000);
+    expect(db.saveBusinessData.mock.calls[0][1].profile).toMatchObject({ tagline: 'Committed remotely', description: 'Retained offline edit' });
+  });
+
+  it('keeps the original uncertain request paused when a recovery retry is rejected before reaching its action', async () => {
+    const options = { mayChangeHeadline: true, operationKey: 'action-1:undo', isDefiniteRejection: () => true };
+    await expect(service.runSiteAction('owner-a', async () => { throw new Error('lost'); }, () => null, { ...options, isDefiniteRejection: () => false })).rejects.toThrow('lost');
+    await expect(service.runSiteAction('owner-a', async () => { throw new Error('rate limited'); }, () => null, options)).rejects.toThrow('rate limited');
+    service.updateProfile({ description: 'Keep this edit' });
+    TestBed.tick();
+    await vi.advanceTimersByTimeAsync(3000);
+    expect(db.saveBusinessData).not.toHaveBeenCalled();
+    await expect(service.runSiteAction('owner-a', async () => 'wrong', headline => headline, { ...options, operationKey: 'action-2:approve' })).rejects.toThrow('Retry that same change');
+    await service.runSiteAction('owner-a', async () => 'Original headline', headline => headline, options);
+    TestBed.tick();
+    await vi.advanceTimersByTimeAsync(2000);
+    expect(db.saveBusinessData.mock.calls[0][1].profile.description).toBe('Keep this edit');
+  });
+
+  it('retries a failed saved-headline reconciliation after a definite rejected mutation', async () => {
+    db.loadBusinessData.mockRejectedValueOnce(new Error('read offline'));
+    await expect(service.runSiteAction('owner-a', async () => { throw new Error('confirmed conflict'); }, () => null,
+      { mayChangeHeadline: true, isDefiniteRejection: () => true })).rejects.toThrow('confirmed conflict');
+    service.updateProfile({ description: 'Retained local edit' });
+    TestBed.tick();
+    await vi.advanceTimersByTimeAsync(2000);
+    expect(db.saveBusinessData).not.toHaveBeenCalled();
+    db.loadBusinessData.mockResolvedValue({ ...stored, profile: { ...stored.profile, tagline: 'Server edit' } });
+    await service.runSiteAction('owner-a', async () => null, () => null, { readOnly: true });
+    TestBed.tick();
+    await vi.advanceTimersByTimeAsync(2000);
+    expect(db.saveBusinessData.mock.calls[0][1].profile).toMatchObject({ tagline: 'Server edit', description: 'Retained local edit' });
+  });
+
+  it('ignores an action response belonging to a previous account', async () => {
+    let finish!: (headline: string) => void;
+    const oldAction = service.runSiteAction('owner-a', () => new Promise<string>(resolve => { finish = resolve; }), headline => headline);
+    const rejection = expect(oldAction).rejects.toThrow('session changed');
+    await settle();
+    db.loadBusinessData.mockResolvedValue({ ...stored, profile: { ...stored.profile, name: 'Owner B', tagline: 'B headline' } });
+    await service.init('owner-b');
+    finish('Private A headline');
+    await rejection;
+    expect(service.profile()).toMatchObject({ name: 'Owner B', tagline: 'B headline' });
+  });
+});
