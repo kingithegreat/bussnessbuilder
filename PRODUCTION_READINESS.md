@@ -132,6 +132,8 @@
   tests in 51 spec files, lint and production build passed. Local SSR public
   routes/assets and unauthenticated action gates passed. Real Express journey
   tests cover preparation, reload, approval and undo with fake Firestore and no
-  paid provider calls. Hosted revision verification follows the normal pipeline;
-  signed-in browser/Firebase acceptance remains open.
+  paid provider calls. Deployment `37508075075` succeeded: ready revision
+  `businessflow-00088-2xj` serves exact commit `b3d1f0b` at 100% traffic. Live checks
+  passed six public routes, 12 initial assets, the final dashboard bundle and two
+  action authentication gates. Signed-in browser/Firebase acceptance remains open.
 - **2026-07-11** — full pre-release audit: lint clean, 213/213 tests, production build compiles (font-inlining failure in sandbox is a network restriction, CI green), `npm audit` 6 moderate (all the known firebase-admin@10 major-bump cluster, tracked), Firestore/Storage rules reviewed (owner-only data, server-only payment collections, default deny — no blockers), no secrets in repo, deploy workflow env-var merge strategy made explicit so manually-set live Stripe vars survive CI deploys.

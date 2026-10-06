@@ -116,7 +116,7 @@ finds no tests.
 gcloud run deploy businessflow --source . --region us-central1 --set-env-vars="NG_ALLOWED_HOSTS=*"
 ```
 
-GitHub Actions (`deploy.yml`) uses configured WIF and deploys code pushes to main. The preceding finishing release was verified on revision `businessflow-00086-lwt`, with 100% traffic and commit `27df72fdda86a2fbaa76c24366ac05ebfba2d015` (deployment run `37301002136`). Documentation-only pushes are excluded; manual dispatch remains available. Use the existing pipeline; do not dispatch a second deployment after a workforce merge. Live liveness checks use `/healthz/` (the slashless URL returned a platform 404 despite the app being healthy).
+GitHub Actions (`deploy.yml`) uses configured WIF and deploys code pushes to main. Latest verified release (2026-10-07 NZDT): revision `businessflow-00088-2xj`, 100% traffic, exact source commit `b3d1f0bbde5b050008f080e42ed18ea6574df7d2`, deployment run `37508075075`. The preceding font/build fix was revision `businessflow-00086-lwt` at `27df72f`. Documentation-only pushes are excluded; manual dispatch remains available. Use the existing pipeline; do not dispatch a second deployment after a workforce merge. Live liveness checks use `/healthz/` (the slashless URL returned a platform 404 despite the app being healthy).
 
 ## Key architecture notes
 
@@ -258,9 +258,13 @@ complete. Other intents direct owners to the existing Website editors.
   requests. No paid provider calls or new dependencies were used.
 - A final status-message review adds a regression case: closing a proposal does
   not claim the live headline stayed unchanged while an approval is unconfirmed.
-- Hosted deployment is pending the normal workforce/main pipeline. Release
-  receipts belong in the Notion brief and claim ledger after actual merge and
-  Cloud Run revision checks; a green workforce job alone is not proof of merge.
+- Hosted verification completed: initial feature `8de5e39` and confirmation
+  follow-up `b3d1f0b` are on main. Workforce integration `37507848525` and deployment
+  `37508075075` succeeded. Ready revision `businessflow-00088-2xj` carries exact
+  commit `b3d1f0bbde5b050008f080e42ed18ea6574df7d2` with 100% traffic. Live checks
+  passed six public routes, all 12 initial JS/CSS assets, the final dashboard
+  bundle and unauthenticated history/approval gates. The Notion brief and claim
+  ledger record this release. Documentation receipts do not redeploy the app.
   Browser review remains unverified: the supported computer-use tool fails
   kernel initialization, and the earlier headless launch was rejected by
   automatic approval review. Live Firebase owner/payment acceptance is pending.
