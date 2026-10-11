@@ -3,6 +3,9 @@ import { DataService } from './data.service';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { BookingWidgetComponent } from './booking-widget.component';
+import { ReviewFormComponent } from './review-form.component';
+import { buildLocalBusinessJsonLd, jsonLdScript } from './structured-data';
+import { DOCUMENT } from '@angular/common';
 import { Title, Meta, DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { MatIconModule } from '@angular/material/icon';
 import { NgTemplateOutlet } from '@angular/common';
@@ -19,7 +22,7 @@ import { ToastService } from './toast.service';
 @Component({
   selector: 'app-public-page',
   standalone: true,
-  imports: [ReactiveFormsModule, MatIconModule, NgTemplateOutlet, RouterLink, EditableTextDirective, BookingWidgetComponent],
+  imports: [ReactiveFormsModule, MatIconModule, NgTemplateOutlet, RouterLink, EditableTextDirective, BookingWidgetComponent, ReviewFormComponent],
   styles: [`
     :host { display: block; }
     .dark-mode {
@@ -522,7 +525,7 @@ import { ToastService } from './toast.service';
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                       @for (testimonial of testimonials(); track testimonial.id) {
                         <div [style.borderRadius]="cardRadius" class="bg-white p-8 border border-gray-100 shadow-sm flex flex-col h-full">
-                          <div class="flex gap-1 mb-4 text-yellow-400">
+                          <div class="flex gap-1 mb-4 text-yellow-400" role="img" [attr.aria-label]="testimonial.rating + ' out of 5 stars'">
                             @for (star of [1,2,3,4,5]; track star) {
                               <mat-icon class="text-[18px] w-[18px] h-[18px]">{{ star <= testimonial.rating ? 'star' : 'star_border' }}</mat-icon>
                             }
@@ -557,7 +560,7 @@ import { ToastService } from './toast.service';
                                 <p class="text-sm text-gray-500">{{ testimonial.role }}</p>
                               }
                             </div>
-                            <div class="flex gap-1 text-yellow-400">
+                            <div class="flex gap-1 text-yellow-400" role="img" [attr.aria-label]="testimonial.rating + ' out of 5 stars'">
                               @for (star of [1,2,3,4,5]; track star) {
                                 <mat-icon class="text-[16px] w-[16px] h-[16px]">{{ star <= testimonial.rating ? 'star' : 'star_border' }}</mat-icon>
                               }
@@ -1090,6 +1093,7 @@ import { ToastService } from './toast.service';
       
       @if (!editable() && publicSiteId()) {
         <app-booking-widget [siteId]="publicSiteId()"></app-booking-widget>
+        <app-review-form [siteId]="publicSiteId()"></app-review-form>
       }
 
       <footer class="mt-auto py-8 border-t border-gray-200/60 text-center text-gray-400 text-xs">
@@ -1392,7 +1396,29 @@ export class PublicPageComponent {
       this.meta.updateTag({ name: 'twitter:title', content: title });
       this.meta.updateTag({ name: 'twitter:description', content: description });
       this.meta.updateTag({ name: 'theme-color', content: brand.primaryColor || '#2563eb' });
+      this.setJsonLd(buildLocalBusinessJsonLd({
+        name: p.name, description, email: p.email, phone: p.phone, address: p.address,
+        serviceArea: p.serviceArea, openingHours: p.openingHours, logoUrl: brand.logoUrl || undefined,
+        reviews: this.testimonials().map(t => ({ author: t.author, rating: t.rating, text: t.text, date: (t as { date?: string }).date })),
+      }));
     });
+  }
+
+  private doc = inject(DOCUMENT);
+
+  /** One <script type="application/ld+json" id="bf-jsonld"> in <head>, kept in sync (also during SSR). */
+  private setJsonLd(data: Record<string, unknown> | null) {
+    const head = this.doc?.head;
+    if (!head) return;
+    let el = head.querySelector('script#bf-jsonld') as HTMLScriptElement | null;
+    if (!data) { el?.remove(); return; }
+    if (!el) {
+      el = this.doc.createElement('script');
+      el.type = 'application/ld+json';
+      el.id = 'bf-jsonld';
+      head.appendChild(el);
+    }
+    el.textContent = jsonLdScript(data);
   }
 
   private setupDynamicForm() {

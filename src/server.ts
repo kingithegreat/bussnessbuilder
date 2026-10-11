@@ -33,6 +33,7 @@ import { HostSiteResolver, DomainRecord } from './server-host-routing';
 import type { FeatureDeps } from './server-owner';
 import { sendEmailIfConfigured } from './server-email';
 import { bookingsRouter } from './server-bookings-routes';
+import { reviewsRouter } from './server-reviews-routes';
 import { businessTypeLabel } from './app/presets';
 import {
   buildFunnelDeltas,
@@ -919,7 +920,8 @@ app.delete('/api/account/:uid', async (req, res) => {
 
     const db = await getDb();
 
-    const subDocs = ['main', 'pages', 'notifications', 'payments', 'templates'];
+    // Include every per-feature doc (bookings/reviews hold customer personal info).
+    const subDocs = ['main', 'pages', 'notifications', 'payments', 'templates', 'bookings', 'reviews', 'quotes', 'stats'];
     for (const subDoc of subDocs) {
       await db.doc(`users/${uid}/businessData/${subDoc}`).delete();
     }
@@ -957,6 +959,7 @@ const featureDeps: FeatureDeps = {
   env: process.env,
 };
 app.use(bookingsRouter(featureDeps));
+app.use(reviewsRouter(featureDeps));
 
 app.use('/api/actions', siteActionRouter({
   getDb, verifyUser: verifyFirebaseUser,

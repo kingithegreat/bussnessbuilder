@@ -1,3 +1,4 @@
+import { ReviewModerationComponent } from './review-moderation.component';
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -21,7 +22,7 @@ type Tab = 'services' | 'testimonials' | 'faqs';
 @Component({
   selector: 'app-admin-content',
   standalone: true,
-  imports: [FormsModule, MatIconModule, NgTemplateOutlet, ImagePickerComponent, RouterLink],
+  imports: [FormsModule, MatIconModule, NgTemplateOutlet, ImagePickerComponent, RouterLink, ReviewModerationComponent],
   template: `
     <div class="max-w-3xl mx-auto">
       <div class="flex items-start justify-between mb-6">
@@ -126,6 +127,7 @@ type Tab = 'services' | 'testimonials' | 'faqs';
 
       <!-- TESTIMONIALS -->
       @if (tab === 'testimonials') {
+        <app-review-moderation (approved)="onReviewApproved($event)"></app-review-moderation>
         <div class="bg-blue-50 border border-blue-100 rounded-xl p-4 mb-4">
           <div class="flex items-center justify-between mb-2">
             <span class="text-sm font-bold text-blue-900 flex items-center gap-2"><mat-icon class="text-[18px]">rate_review</mat-icon> Import Reviews</span>
@@ -266,6 +268,13 @@ export class AdminContentComponent implements OnInit {
     { id: 'testimonials', label: 'Testimonials', icon: 'format_quote' },
     { id: 'faqs', label: 'FAQs', icon: 'help_outline' },
   ];
+
+  /** An approved customer review is already saved server-side; mirror it locally so a later Save keeps it. */
+  onReviewApproved(t: Testimonial) {
+    if (!this.testimonials.some(x => x.id === t.id)) this.testimonials = [...this.testimonials, t];
+    const live = this.dataService.testimonials();
+    if (!live.some(x => x.id === t.id)) this.dataService.setTestimonials([...live, t]);
+  }
 
   ngOnInit() {
     // Deep copies so edits stay local until Save.
