@@ -221,7 +221,7 @@ app.get(['/site/:uid/sitemap.xml', '/s/:uid/sitemap.xml'], async (req, res) => {
       host: req.header('host') ?? undefined,
     });
     const db = await getDb();
-    const uid = await resolveUid(db, req.params.uid);
+    const uid = await resolveUid(db, (req.params["uid"] as string));
     const mainSnap = await db.doc(`users/${uid}/businessData/main`).get();
     if (!mainSnap.exists || !mainSnap.data()!['isSetupComplete']) {
       res.status(404).type('text/plain').send('Site not found');
@@ -238,7 +238,7 @@ app.get(['/site/:uid/sitemap.xml', '/s/:uid/sitemap.xml'], async (req, res) => {
       ? mainSnap.data()!['updatedAt'] as string
       : undefined;
     // Use the public-facing identifier from the URL (slug or uid) for canonical links.
-    const xml = buildSiteSitemap(origin, req.params.uid, pages, homeLastmod);
+    const xml = buildSiteSitemap(origin, (req.params["uid"] as string), pages, homeLastmod);
     res.type('application/xml').send(xml);
   } catch (e) {
     console.error('Error building sitemap:', e); captureServerError(e);
