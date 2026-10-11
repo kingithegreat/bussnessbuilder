@@ -30,6 +30,9 @@ import { siteActionRouter } from './server-site-action-routes';
 import { validateDomain } from './app/domain-verification';
 import { validateSlug, avoidReserved } from './app/slug-rules';
 import { HostSiteResolver, DomainRecord } from './server-host-routing';
+import type { FeatureDeps } from './server-owner';
+import { sendEmailIfConfigured } from './server-email';
+import { bookingsRouter } from './server-bookings-routes';
 import { businessTypeLabel } from './app/presets';
 import {
   buildFunnelDeltas,
@@ -943,6 +946,17 @@ app.delete('/api/account/:uid', async (req, res) => {
     res.status(500).json({ error: 'Server error' });
   }
 });
+
+// Feature routers share one dependency bundle (see server-owner.ts).
+const featureDeps: FeatureDeps = {
+  getDb,
+  verifyUser: verifyFirebaseUser,
+  isLimited: (key, max, windowMs) => rateLimiter.isLimited(key, max, windowMs),
+  resolveUid,
+  sendEmail: (msg) => sendEmailIfConfigured(process.env, msg),
+  env: process.env,
+};
+app.use(bookingsRouter(featureDeps));
 
 app.use('/api/actions', siteActionRouter({
   getDb, verifyUser: verifyFirebaseUser,

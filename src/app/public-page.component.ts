@@ -2,6 +2,7 @@ import { Component, inject, computed, input, output, effect, signal } from '@ang
 import { DataService } from './data.service';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
+import { BookingWidgetComponent } from './booking-widget.component';
 import { Title, Meta, DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { MatIconModule } from '@angular/material/icon';
 import { NgTemplateOutlet } from '@angular/common';
@@ -18,7 +19,7 @@ import { ToastService } from './toast.service';
 @Component({
   selector: 'app-public-page',
   standalone: true,
-  imports: [ReactiveFormsModule, MatIconModule, NgTemplateOutlet, RouterLink, EditableTextDirective],
+  imports: [ReactiveFormsModule, MatIconModule, NgTemplateOutlet, RouterLink, EditableTextDirective, BookingWidgetComponent],
   styles: [`
     :host { display: block; }
     .dark-mode {
@@ -1087,6 +1088,10 @@ import { ToastService } from './toast.service';
         }
       }
       
+      @if (!editable() && publicSiteId()) {
+        <app-booking-widget [siteId]="publicSiteId()"></app-booking-widget>
+      }
+
       <footer class="mt-auto py-8 border-t border-gray-200/60 text-center text-gray-400 text-xs">
          <div class="max-w-5xl mx-auto px-6">
            <div class="flex items-center justify-center gap-4 mb-3">
@@ -1102,6 +1107,11 @@ import { ToastService } from './toast.service';
 })
 export class PublicPageComponent {
   private dataService = inject(DataService);
+  /** Uid of the published site being viewed ('' in the builder/preview). */
+  readonly publicSiteId = computed(() => {
+    const fn = (this.dataService as unknown as { publicSiteUid?: () => string }).publicSiteUid;
+    return typeof fn === 'function' ? fn.call(this.dataService) : '';
+  });
   private fb = inject(FormBuilder);
   private http = inject(HttpClient);
   private title = inject(Title);
