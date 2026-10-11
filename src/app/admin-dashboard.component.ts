@@ -1,3 +1,4 @@
+import { SeoHelperComponent } from './seo-helper.component';
 import { Component, inject, OnInit, signal, computed, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
@@ -17,7 +18,7 @@ import { HeadlineChatComponent } from './headline-chat.component';
 @Component({
   selector: 'app-admin-dashboard',
   standalone: true,
-  imports: [DatePipe, DecimalPipe, MatIconModule, OnboardingGuideComponent, RouterLink, HeadlineChatComponent, LaunchChecklistComponent],
+  imports: [DatePipe, DecimalPipe, MatIconModule, OnboardingGuideComponent, RouterLink, HeadlineChatComponent, LaunchChecklistComponent, SeoHelperComponent],
   template: `
     <div class="flex flex-col gap-6">
       <!--
@@ -68,6 +69,7 @@ import { HeadlineChatComponent } from './headline-chat.component';
       @if (!analyticsOnly) {
         <app-headline-chat></app-headline-chat>
         <app-launch-checklist></app-launch-checklist>
+        <app-seo-helper [compact]="true"></app-seo-helper>
         <section class="space-y-4" aria-label="Home action center">
           <div>
             <h1 class="text-2xl font-semibold tracking-tight text-gray-900">What should you do next?</h1>

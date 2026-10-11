@@ -34,6 +34,7 @@ export const routes: Routes = [
       { path: 'dashboard', loadComponent: () => import('./admin-dashboard.component').then(m => m.AdminDashboardComponent) },
       { path: 'website', loadComponent: () => import('./admin-website.component').then(m => m.AdminWebsiteComponent) },
       { path: 'analytics', loadComponent: () => import('./admin-dashboard.component').then(m => m.AdminDashboardComponent), data: { view: 'analytics' } },
+      { path: 'seo', loadComponent: () => import('./seo-helper.component').then(m => m.SeoHelperComponent) },
       { path: 'quotes', loadComponent: () => import('./admin-quotes.component').then(m => m.AdminQuotesComponent) },
       { path: 'bookings', loadComponent: () => import('./admin-bookings.component').then(m => m.AdminBookingsComponent) },
       { path: 'inbox', loadComponent: () => import('./admin-inbox.component').then(m => m.AdminInboxComponent) },
