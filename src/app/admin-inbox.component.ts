@@ -11,11 +11,12 @@ import { AiService } from './ai.service';
 import { FormsModule } from '@angular/forms';
 import { EncodeUriComponentPipe } from './encode-uri.pipe';
 import { MatIconModule } from '@angular/material/icon';
+import { BookingRequestsComponent } from './booking-requests.component';
 
 @Component({
   selector: 'app-admin-inbox',
   standalone: true,
-  imports: [DatePipe, FormsModule, EncodeUriComponentPipe, MatIconModule, RouterLink],
+  imports: [DatePipe, FormsModule, EncodeUriComponentPipe, MatIconModule, RouterLink, BookingRequestsComponent],
   template: `
     <div class="h-full flex flex-col -m-8">
       @if (subService.tier() === 'free' && enquiriesCount() >= 10) {
@@ -39,6 +40,7 @@ import { MatIconModule } from '@angular/material/icon';
           </div>
         </div>
       }
+      <div class="px-8 pt-4 bg-white shrink-0"><app-booking-requests [compact]="true"></app-booking-requests></div>
       <div class="px-8 py-5 border-b border-gray-200 bg-white flex justify-between items-center shrink-0">
         <h2 class="text-xl font-bold tracking-tight text-gray-900">Enquiries</h2>
         <div class="relative">

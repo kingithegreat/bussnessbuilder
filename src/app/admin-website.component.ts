@@ -11,6 +11,7 @@ export const WEBSITE_TOOLS = [
   { title: 'Branding', description: 'Edit your logo, colours, fonts and website appearance.', route: '/admin/customisation', icon: 'palette' },
   { title: 'Services and content', description: 'Keep your services, testimonials and FAQs up to date.', route: '/admin/content', icon: 'inventory_2' },
   { title: 'Domain and site settings', description: 'Manage your public address, contact details and domain connection.', route: '/admin/settings', icon: 'language' },
+  { title: 'Online bookings', description: 'Let customers book a time on your site; accept or decline each request.', route: '/admin/bookings', icon: 'event_available' },
   { title: 'Payment links', description: 'Manage the payment options you offer to customers.', route: '/admin/payments', icon: 'payments' },
 ] as const;
 

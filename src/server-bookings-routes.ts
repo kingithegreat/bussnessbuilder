@@ -5,6 +5,12 @@ import { Booking, BookingStatus, sanitizeBookingSettings, isSlotBookable, busyFr
 
 const MAX_BOOKINGS = 1000;
 const docPath = (uid: string) => `users/${uid}/businessData/bookings`;
+/** The .ics token is a capability for the customer; never send it to the owner UI. */
+function stripToken(b: Booking & { token?: string }): Booking {
+  const copy = { ...b };
+  delete copy.token;
+  return copy;
+}
 
 /**
  * Bookings API.
@@ -131,7 +137,7 @@ export function bookingsRouter(deps: FeatureDeps): express.Router {
     try {
       const uid = await authorizeOwner(deps, req, res); if (!uid) return;
       const { settings, bookings } = await load(uid);
-      res.json({ settings, bookings: bookings.map(({ token: _t, ...b }) => b) });
+      res.json({ settings, bookings: bookings.map(stripToken) });
     } catch (e) { console.error('Bookings list error:', e); res.status(500).json({ error: 'Server error' }); }
   });
 
@@ -182,8 +188,7 @@ export function bookingsRouter(deps: FeatureDeps): express.Router {
       const email = await deps.sendEmail(status === 'accepted'
         ? { to: updated.email, replyTo: biz.email || undefined, subject: `Booking confirmed — ${biz.name}`, text: `Hi ${updated.name},\n\nYour booking for ${updated.serviceName} on ${when} is confirmed. The calendar file is attached.\n\n${biz.name}`, attachments: [{ filename: 'booking.ics', content: buildIcs(updated, biz.name, biz.address), contentType: 'text/calendar' }] }
         : { to: updated.email, replyTo: biz.email || undefined, subject: `About your booking request — ${biz.name}`, text: `Hi ${updated.name},\n\nSorry, we can't do ${updated.serviceName} on ${when}. Please pick another time on our website or reply to this email.\n\n${biz.name}` });
-      const { token: _t, ...booking } = updated;
-      res.json({ booking, emailSent: email.sent });
+      res.json({ booking: stripToken(updated), emailSent: email.sent });
     } catch (e) { console.error('Booking status error:', e); res.status(500).json({ error: 'Server error' }); }
   });
 
