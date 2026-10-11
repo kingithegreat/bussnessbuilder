@@ -1,5 +1,6 @@
+import { normalizeMobile } from './sms-rules';
 import { SITE_CURRENCIES, displayPrice } from './money';
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { MatIconModule } from '@angular/material/icon';
@@ -439,6 +440,33 @@ import { DatePipe } from '@angular/common';
         </div>
       </div>
 
+      <!-- Text alerts -->
+      <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+        <div class="p-6 border-b border-gray-100 bg-gray-50/50">
+          <h2 class="font-bold text-gray-900 flex items-center gap-2"><mat-icon class="text-[18px] text-gray-500" aria-hidden="true">sms</mat-icon> Text alerts</h2>
+        </div>
+        <div class="p-6 space-y-4">
+          @if (smsEnabled() === false) {
+            <div class="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-xl p-4" role="status">
+              <mat-icon class="text-amber-700 shrink-0" aria-hidden="true">info</mat-icon>
+              <div>
+                <p class="text-sm font-bold text-amber-900">Text alerts need setup</p>
+                <p class="text-xs text-amber-900">Texting isn't switched on for BusinessFlow yet. You can save your number now and alerts will start once it's set up. Email and the inbox still work as normal.</p>
+              </div>
+            </div>
+          }
+          <label class="flex items-start gap-3 text-sm text-gray-800">
+            <input type="checkbox" [(ngModel)]="prefs.smsOptIn" class="mt-0.5 w-5 h-5">
+            <span><strong>Text me</strong> when a new enquiry or booking request comes in. <span class="text-gray-600 text-xs block">Max 20 texts a day. Reply STOP to the number to opt out at any time.</span></span>
+          </label>
+          <div>
+            <label for="smsNumber" class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Mobile number</label>
+            <input id="smsNumber" type="tel" [(ngModel)]="smsNumberDraft" (blur)="checkSmsNumber()" placeholder="021 123 4567" aria-describedby="smsNumberHelp" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+            <p id="smsNumberHelp" class="text-xs mt-1" [class.text-red-700]="smsNumberError" [class.text-gray-600]="!smsNumberError">{{ smsNumberError || 'NZ mobiles can start with 02. Other countries: include the + code.' }}</p>
+          </div>
+        </div>
+      </div>
+
       <!-- Danger Zone -->
       <div class="bg-white rounded-2xl border border-red-200 shadow-sm overflow-hidden">
         <div class="p-6 border-b border-red-100 bg-red-50/50">
@@ -544,6 +572,10 @@ export class AdminSettingsComponent implements OnInit {
       this.prefs = { ...this.prefs, ...saved };
     }
     this.onDomainChange();
+    this.smsNumberDraft = this.prefs.smsNumber || '';
+    if (typeof window !== 'undefined' && typeof fetch === 'function') {
+      fetch('/api/sms/status').then(r => (r.ok ? r.json() : null)).then(j => this.smsEnabled.set(j ? j.enabled === true : null)).catch(() => undefined);
+    }
     if (!this.prefs.notificationEmail) {
       const user = this.authService.currentUser();
       if (user?.email) this.prefs.notificationEmail = user.email;
@@ -864,7 +896,21 @@ export class AdminSettingsComponent implements OnInit {
     }
   }
 
+  smsEnabled = signal<boolean | null>(null);
+  smsNumberDraft = '';
+  smsNumberError = '';
+
+  checkSmsNumber(): boolean {
+    const raw = this.smsNumberDraft.trim();
+    if (!raw) { this.smsNumberError = this.prefs.smsOptIn ? 'Add your mobile number to get text alerts.' : ''; this.prefs.smsNumber = ''; return !this.prefs.smsOptIn; }
+    const n = normalizeMobile(raw);
+    this.smsNumberError = n ? '' : "That doesn't look like a mobile number.";
+    if (n) this.prefs.smsNumber = n;
+    return !!n;
+  }
+
   saveSettings() {
+    if (!this.checkSmsNumber()) { this.toast.error(this.smsNumberError || 'Check your mobile number.'); return; }
     this.dataService.setNotificationPrefs(this.prefs);
     this.toast.success('Settings saved successfully!');
   }

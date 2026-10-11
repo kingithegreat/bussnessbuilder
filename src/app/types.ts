@@ -311,6 +311,9 @@ export interface NotificationPreferences {
   emailOnNewEnquiry: boolean;
   notificationEmail: string;
   customDomain?: string;
+  /** Text alerts: owner opted in, and their mobile in E.164 (+64...). */
+  smsOptIn?: boolean;
+  smsNumber?: string;
 }
 
 export interface PaymentLink {
