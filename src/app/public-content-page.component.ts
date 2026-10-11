@@ -1,3 +1,4 @@
+import { sendSiteHit } from './stats-beacon';
 import { Component, inject, signal, OnInit, PLATFORM_ID, REQUEST_CONTEXT, TransferState } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { isPlatformBrowser } from '@angular/common';
@@ -97,6 +98,7 @@ export class PublicContentPageComponent implements OnInit {
       .subscribe((page) => {
         this.page.set(page);
         this.loading.set(false);
+        if (page && this.uid) sendSiteHit(this.uid, window.location.pathname);
       });
   }
 }

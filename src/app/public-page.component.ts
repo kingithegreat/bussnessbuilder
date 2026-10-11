@@ -5,6 +5,7 @@ import { HttpClient } from '@angular/common/http';
 import { BookingWidgetComponent } from './booking-widget.component';
 import { ReviewFormComponent } from './review-form.component';
 import { displayPrice } from './money';
+import { sendSiteHit } from './stats-beacon';
 import { buildLocalBusinessJsonLd, jsonLdScript } from './structured-data';
 import { DOCUMENT } from '@angular/common';
 import { Title, Meta, DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
@@ -1351,6 +1352,11 @@ export class PublicPageComponent {
   }
 
   private trackView() {
+    // First-party, cookieless visit count for published sites (respects Decline).
+    effect(() => {
+      const id = this.publicSiteId();
+      if (id && !this.editable() && !this.previewCustomization() && typeof window !== 'undefined') sendSiteHit(id, window.location.pathname);
+    });
     effect(() => {
       if (this.previewCustomization()) return;
       const user = this.authService?.currentUser();

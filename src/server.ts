@@ -36,6 +36,7 @@ import { sendEmailIfConfigured } from './server-email';
 import { bookingsRouter } from './server-bookings-routes';
 import { reviewsRouter } from './server-reviews-routes';
 import { quotesRouter } from './server-quotes-routes';
+import { statsRouter } from './server-stats-routes';
 import { businessTypeLabel } from './app/presets';
 import {
   buildFunnelDeltas,
@@ -963,6 +964,7 @@ const featureDeps: FeatureDeps = {
 app.use(bookingsRouter(featureDeps));
 app.use(reviewsRouter(featureDeps));
 app.use(quotesRouter(featureDeps));
+app.use(statsRouter(featureDeps));
 
 app.use('/api/actions', siteActionRouter({
   getDb, verifyUser: verifyFirebaseUser,

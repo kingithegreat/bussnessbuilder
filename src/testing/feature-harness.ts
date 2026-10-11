@@ -37,5 +37,5 @@ export async function startFeatureServer(
     return { status: res.status, body: json as Record<string, any>, text }; // eslint-disable-line @typescript-eslint/no-explicit-any
   };
   const close = () => new Promise<void>((resolve, reject) => server.close(e => (e ? reject(e) : resolve())));
-  return { store, emails, call, close };
+  return { store, emails, call, close, base };
 }
