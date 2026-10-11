@@ -10,17 +10,17 @@ import { RouterLink } from '@angular/router';
       <!-- pointer-events-none on the shell so the banner never blocks the form
            beneath it; the card itself re-enables them. Measured: it covered two
            inputs on the setup wizard at a laptop viewport. -->
-      <div class="fixed bottom-0 left-0 right-0 z-[9999] p-4 sm:p-6 pointer-events-none">
-        <div class="max-w-4xl mx-auto bg-white rounded-2xl shadow-2xl border border-gray-200 p-4 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center gap-4 pointer-events-auto">
-          <div class="flex-grow text-sm text-gray-600 leading-relaxed">
-            We use essential cookies to keep you signed in and store your preferences. We don't use advertising or tracking cookies.
+      <div class="fixed bottom-0 left-0 right-0 sm:right-auto z-[9999] p-3 sm:p-4 pointer-events-none" role="region" aria-label="Cookie notice">
+        <div class="sm:max-w-sm bg-white rounded-2xl shadow-2xl border border-gray-200 p-4 flex flex-col gap-3 pointer-events-auto">
+          <div class="text-[13px] text-gray-700 leading-snug">
+            We only use essential cookies to keep you signed in. No ads or tracking.
             <a routerLink="/privacy" class="text-blue-600 hover:underline font-medium ml-1">Privacy Policy</a>
           </div>
-          <div class="flex items-center gap-3 shrink-0 w-full sm:w-auto">
-            <button (click)="decline()" class="flex-1 sm:flex-none px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">
+          <div class="flex items-center gap-2 w-full">
+            <button (click)="decline()" class="flex-1 px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">
               Decline
             </button>
-            <button (click)="accept()" class="flex-1 sm:flex-none px-6 py-2 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors shadow-sm">
+            <button (click)="accept()" class="flex-1 px-4 py-2 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors shadow-sm">
               Accept
             </button>
           </div>

@@ -27,7 +27,7 @@ import {
   standalone: true,
   imports: [ReactiveFormsModule, MatIconModule],
   template: `
-    <div class="min-h-screen bg-[#F5F5F7] py-8 lg:py-12 px-4 sm:px-6 lg:px-8 font-sans flex justify-center">
+    <div class="min-h-screen bg-[#F5F5F7] pt-8 pb-40 lg:pt-12 lg:pb-32 px-4 sm:px-6 lg:px-8 font-sans flex justify-center">
       <div class="max-w-6xl w-full grid grid-cols-1 lg:grid-cols-12 gap-8">
 
         <!-- Left Column: Form -->
@@ -117,13 +117,13 @@ import {
               </div>
             </div>
 
-            <div class="pt-6 mt-4 flex flex-col sm:flex-row justify-between items-center gap-4 border-t border-gray-100">
-              <div class="text-[13px] text-gray-500 flex items-center gap-1">
-                 <mat-icon class="text-[16px]">auto_awesome</mat-icon> AI will generate the rest
+            <div class="pt-6 mt-4 flex flex-col-reverse items-stretch gap-3 border-t border-gray-100">
+              <div class="text-[13px] text-gray-600 flex items-center justify-center gap-1">
+                 <mat-icon class="text-[16px]" aria-hidden="true">auto_awesome</mat-icon> AI will write the rest for you
               </div>
-              <button type="button" (click)="onReview()" class="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white px-8 py-3.5 rounded-full font-medium transition-colors disabled:opacity-50 flex items-center justify-center gap-2 shadow-sm cursor-pointer">
+              <button type="button" (click)="onReview()" class="w-full whitespace-nowrap bg-blue-600 hover:bg-blue-700 text-white px-8 py-3.5 rounded-full font-medium transition-colors disabled:opacity-50 flex items-center justify-center gap-2 shadow-sm cursor-pointer">
                 <span>Review &amp; continue</span>
-                <mat-icon class="text-sm">arrow_forward</mat-icon>
+                <mat-icon class="text-sm" aria-hidden="true">arrow_forward</mat-icon>
               </button>
               @if (formError()) {
                 <p class="text-red-500 text-sm font-medium w-full text-center mt-2">{{ formError() }}</p>
