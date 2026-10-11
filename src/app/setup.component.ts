@@ -107,13 +107,13 @@ import {
               <div>
                 <span class="block text-sm font-bold text-gray-900 mb-1">Phone Number</span>
                 <p class="text-[13px] text-gray-500 mb-2">Optional. Customers can use this to call you directly.</p>
-                <input type="tel" formControlName="phone" class="w-full px-4 py-3 bg-[#F5F5F7] border border-transparent rounded-2xl focus:ring-2 focus:ring-blue-500 focus:bg-white focus:border-blue-500 outline-none transition-all" placeholder="(555) 123-4567">
+                <input type="tel" formControlName="phone" class="w-full px-4 py-3 bg-[#F5F5F7] border border-transparent rounded-2xl focus:ring-2 focus:ring-blue-500 focus:bg-white focus:border-blue-500 outline-none transition-all" placeholder="021 123 4567">
               </div>
 
               <div>
                 <span class="block text-sm font-bold text-gray-900 mb-1">Service Area / Location</span>
                 <p class="text-[13px] text-gray-500 mb-2">The city or neighborhood where you operate.</p>
-                <input type="text" formControlName="serviceArea" class="w-full px-4 py-3 bg-[#F5F5F7] border border-transparent rounded-2xl focus:ring-2 focus:ring-blue-500 focus:bg-white focus:border-blue-500 outline-none transition-all" placeholder="e.g. Greater Seattle Area">
+                <input type="text" formControlName="serviceArea" class="w-full px-4 py-3 bg-[#F5F5F7] border border-transparent rounded-2xl focus:ring-2 focus:ring-blue-500 focus:bg-white focus:border-blue-500 outline-none transition-all" placeholder="e.g. Pyes Pa, Tauranga">
               </div>
             </div>
 

@@ -1,4 +1,4 @@
-import { Component, effect, inject, signal } from '@angular/core';
+import { Component, effect, inject, signal, PLATFORM_ID } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { InboxFilter, inboxFilter, localDateKey, matchesInboxFilter } from './inbox-workflow';
@@ -6,7 +6,7 @@ import { DataService } from './data.service';
 import { ToastService } from './toast.service';
 import { SubscriptionService } from './subscription.service';
 import { Enquiry, ReplyIntent } from './types';
-import { DatePipe } from '@angular/common';
+import { DatePipe, isPlatformBrowser } from '@angular/common';
 import { AiService } from './ai.service';
 import { FormsModule } from '@angular/forms';
 import { EncodeUriComponentPipe } from './encode-uri.pipe';
@@ -30,11 +30,20 @@ import { MatIconModule } from '@angular/material/icon';
           <a routerLink="/pricing" class="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-xl text-xs font-semibold transition-colors">Upgrade</a>
         </div>
       }
+      @if (emailAlertsOff()) {
+        <div class="px-8 py-3 bg-blue-50 border-b border-blue-200 flex items-start gap-3 shrink-0" role="status">
+          <mat-icon class="text-blue-700 shrink-0" aria-hidden="true">mark_email_unread</mat-icon>
+          <div>
+            <p class="text-sm font-semibold text-blue-900">Email alerts are off, enquiries still appear here</p>
+            <p class="text-xs text-blue-800">We can't send you an email when someone enquires right now, so check this inbox regularly. Nothing is lost.</p>
+          </div>
+        </div>
+      }
       <div class="px-8 py-5 border-b border-gray-200 bg-white flex justify-between items-center shrink-0">
         <h2 class="text-xl font-bold tracking-tight text-gray-900">Enquiries</h2>
         <div class="relative">
           <mat-icon class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">search</mat-icon>
-          <input type="text" placeholder="Search..." [ngModel]="searchQuery()" (ngModelChange)="searchQuery.set($event)" class="pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none w-64 shadow-sm bg-gray-50">
+          <input type="search" aria-label="Search enquiries" placeholder="Search..." [ngModel]="searchQuery()" (ngModelChange)="searchQuery.set($event)" class="pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none w-64 shadow-sm bg-gray-50">
         </div>
       </div>
       
@@ -240,6 +249,8 @@ export class AdminInboxComponent {
   private aiService = inject(AiService);
   private toast = inject(ToastService);
   subService = inject(SubscriptionService);
+  /** True when the server reports SMTP isn't configured (no email alerts). */
+  emailAlertsOff = signal(false);
 
   enquiriesCount = () => this.dataService.enquiries().length;
   searchQuery = signal('');
@@ -253,6 +264,12 @@ export class AdminInboxComponent {
   private pendingLead = signal<string | null>(null);
 
   constructor() {
+    if (isPlatformBrowser(inject(PLATFORM_ID)) && typeof fetch === 'function') {
+      fetch('/api/email-alerts/status')
+        .then(r => (r.ok ? r.json() : null))
+        .then((body: { enabled?: boolean } | null) => this.emailAlertsOff.set(body?.enabled === false))
+        .catch(() => undefined);
+    }
     inject(ActivatedRoute).queryParamMap.pipe(takeUntilDestroyed()).subscribe(params => {
       this.activeFilter.set(inboxFilter(params.get('filter')));
       this.pendingLead.set(params.get('lead'));

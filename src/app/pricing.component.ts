@@ -71,7 +71,7 @@ import { ToastService } from './toast.service';
               <p class="text-gray-500 text-sm">For growing businesses</p>
             </div>
             <div class="mb-6">
-              <span class="text-4xl font-black text-gray-900">$14</span>
+              <span class="text-4xl font-black text-gray-900">US$14</span>
               <span class="text-gray-500 text-sm">/month</span>
             </div>
             <ul class="space-y-3 mb-8 flex-grow text-sm text-gray-600">
@@ -98,7 +98,7 @@ import { ToastService } from './toast.service';
               <p class="text-gray-500 text-sm">For serious professionals</p>
             </div>
             <div class="mb-6">
-              <span class="text-4xl font-black text-gray-900">$22</span>
+              <span class="text-4xl font-black text-gray-900">US$22</span>
               <span class="text-gray-500 text-sm">/month</span>
             </div>
             <ul class="space-y-3 mb-8 flex-grow text-sm text-gray-600">
@@ -119,7 +119,7 @@ import { ToastService } from './toast.service';
 
         <div class="mt-16 text-center">
           <p class="text-gray-500 text-sm mb-2">All plans include full site customisation — branding, layouts, fonts, colours, and all section types.</p>
-          <p class="text-gray-400 text-xs">Prices in USD. Cancel anytime. No long-term contracts. Compare: Squarespace starts at $16/mo with no free tier.</p>
+          <p class="text-gray-600 text-xs">All prices are in US dollars (USD) and charged in USD by Stripe; your bank converts to NZD. Cancel anytime. No long-term contracts. Compare: Squarespace starts at $16/mo with no free tier.</p>
         </div>
       </main>
 
