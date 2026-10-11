@@ -23,7 +23,8 @@ import {
 import type Stripe from 'stripe';
 import type { Firestore } from 'firebase-admin/firestore';
 import { getAllDocs } from './server-firestore';
-import { checkoutSubscriptionStatus, effectiveTier, tierForPrices } from './app/effective-tier';
+import { checkoutSubscriptionStatus, effectiveTier } from './app/effective-tier';
+import { checkoutPriceId, tierForAnyPrices, pricingDisplay, nzdPriceIds, USD_DISPLAY, type PricingDisplay } from './server-pricing';
 import { AI_GENERATION_LIMITS, aiUsageLimits, aiFallbackMessage, reserveAiCall, validAiInput } from './server-ai-budget';
 import { persistCheckoutSubscription, updateCurrentSubscription } from './server-subscription-sync';
 import { siteActionRouter } from './server-site-action-routes';
@@ -34,6 +35,7 @@ import type { FeatureDeps } from './server-owner';
 import { sendEmailIfConfigured } from './server-email';
 import { bookingsRouter } from './server-bookings-routes';
 import { reviewsRouter } from './server-reviews-routes';
+import { quotesRouter } from './server-quotes-routes';
 import { businessTypeLabel } from './app/presets';
 import {
   buildFunnelDeltas,
@@ -960,6 +962,7 @@ const featureDeps: FeatureDeps = {
 };
 app.use(bookingsRouter(featureDeps));
 app.use(reviewsRouter(featureDeps));
+app.use(quotesRouter(featureDeps));
 
 app.use('/api/actions', siteActionRouter({
   getDb, verifyUser: verifyFirebaseUser,
@@ -1403,17 +1406,29 @@ async function getStripe(): Promise<Stripe> {
   return _stripe;
 }
 
-function getPriceId(tier: string): string {
-  if (tier === 'pro') return process.env['STRIPE_PRICE_ID_PRO'] || process.env['STRIPE_PRO_PRICE_ID'] || '';
-  if (tier === 'business') return process.env['STRIPE_PRICE_ID_BUSINESS'] || process.env['STRIPE_BUSINESS_PRICE_ID'] || '';
-  return '';
-}
+// Public: the amounts the pricing page shows. USD unless NZD price ids are
+// configured (docs/STRIPE_NZD.md); cached for an hour, read-only Stripe call.
+let pricingCache: { at: number; value: PricingDisplay } | null = null;
+app.get('/api/pricing', async (_req, res) => {
+  try {
+    if (!pricingCache || Date.now() - pricingCache.at > 3600_000) {
+      const value = nzdPriceIds(process.env)
+        ? await pricingDisplay(process.env, async (id) => { const p = await (await getStripe()).prices.retrieve(id); return { unit_amount: p.unit_amount, currency: p.currency }; })
+        : USD_DISPLAY;
+      pricingCache = { at: Date.now(), value };
+    }
+    res.setHeader('Cache-Control', 'public, max-age=300');
+    res.json(pricingCache.value);
+  } catch {
+    res.json(USD_DISPLAY);
+  }
+});
 
 app.post('/api/stripe/create-checkout-session', express.json(), async (req, res) => {
   try {
     const stripe = await getStripe();
-    const { uid, tier } = req.body;
-    const priceId = getPriceId(tier);
+    const { uid, tier, currency } = req.body;
+    const priceId = checkoutPriceId(tier, currency, process.env);
     if (typeof uid !== 'string' || typeof tier !== 'string' || !priceId) {
       res.status(400).json({ error: 'Invalid request' });
       return;
@@ -1505,7 +1520,7 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
       const subscriptionId = typeof session.subscription === 'string' ? session.subscription : session.subscription?.id;
       if (uid && subscriptionId) {
         const sub = await stripe.subscriptions.retrieve(subscriptionId);
-        const tier = tierForPrices(sub.items.data.map(item => item.price.id), { pro: getPriceId('pro'), business: getPriceId('business') });
+        const tier = tierForAnyPrices(sub.items.data.map(item => item.price.id), process.env);
         await persistCheckoutSubscription(db, uid, sub.id, sub.created, {
           tier,
           // Completion alone does not establish payment. Trials with no payment
@@ -1533,7 +1548,7 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
           await updateCurrentSubscription(db, docRef, sub.id, { tier: 'free', status: 'canceled', cancelAtPeriodEnd: false });
         } else {
           await updateCurrentSubscription(db, docRef, sub.id, {
-            tier: tierForPrices(sub.items.data.map(item => item.price.id), { pro: getPriceId('pro'), business: getPriceId('business') }),
+            tier: tierForAnyPrices(sub.items.data.map(item => item.price.id), process.env),
             status: sub.status,
             cancelAtPeriodEnd: sub.cancel_at_period_end || false,
             currentPeriodEnd: sub.items.data[0]?.current_period_end ? new Date(sub.items.data[0].current_period_end * 1000).toISOString() : null,

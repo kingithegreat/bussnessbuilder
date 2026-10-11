@@ -1,3 +1,4 @@
+import { SITE_CURRENCIES, displayPrice } from './money';
 import { Component, inject, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
@@ -70,6 +71,22 @@ import { DatePipe } from '@angular/common';
             <span class="block text-sm font-bold text-gray-700 mb-1">Opening Hours</span>
             <input aria-label="Mon-Fri: 9am - 5pm" type="text" [(ngModel)]="profileForm.openingHours" placeholder="Mon-Fri: 9am - 5pm" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm">
           </div>
+          <div>
+            <label for="set-currency" class="block text-sm font-bold text-gray-700 mb-1">Currency for your prices</label>
+            <select id="set-currency" [(ngModel)]="profileForm.currency" aria-describedby="set-currency-help" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+              <option value="">Show prices exactly as I type them</option>
+              @for (c of currencies; track c.code) { <option [value]="c.code">{{ c.label }}</option> }
+            </select>
+            <p id="set-currency-help" class="text-xs text-gray-600 mt-1">Used on your website and quotes. Example: "$45" shows as "{{ examplePrice() }}".</p>
+          </div>
+          @if (profileForm.currency === 'NZD') {
+            <div>
+              <span class="block text-sm font-bold text-gray-700 mb-1">GST</span>
+              <label class="flex items-center gap-2 text-sm text-gray-800"><input type="checkbox" [(ngModel)]="profileForm.pricesIncludeGst"> My prices include GST (15%)</label>
+              <label for="set-gst" class="block text-xs font-semibold text-gray-700 mt-2">GST number (optional, printed on tax invoices)</label>
+              <input id="set-gst" type="text" [(ngModel)]="profileForm.gstNumber" placeholder="123-456-789" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+            </div>
+          }
           <div class="sm:col-span-2">
             <span class="block text-sm font-bold text-gray-700 mb-1">Address</span>
             <input aria-label="Street address (optional)" type="text" [(ngModel)]="profileForm.address" placeholder="Street address (optional)" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm">
@@ -493,6 +510,8 @@ export class AdminSettingsComponent implements OnInit {
   generatingQr = false;
 
   presets = BUSINESS_PRESETS;
+  readonly currencies = SITE_CURRENCIES;
+  examplePrice() { return displayPrice('$45', { currency: this.profileForm.currency, pricesIncludeGst: this.profileForm.pricesIncludeGst }); }
   profileForm: BusinessProfile = {
     name: '', type: '', tagline: '', description: '', email: '', phone: '',
     address: '', serviceArea: '', openingHours: '', toneOfVoice: '',
@@ -621,6 +640,9 @@ export class AdminSettingsComponent implements OnInit {
       serviceArea: (this.profileForm.serviceArea || '').trim(),
       openingHours: (this.profileForm.openingHours || '').trim(),
       trustBadges: this.profileForm.trustBadges,
+      currency: this.profileForm.currency || '',
+      pricesIncludeGst: this.profileForm.pricesIncludeGst !== false,
+      gstNumber: (this.profileForm.gstNumber || '').trim(),
     });
     this.toast.success('Business profile updated!');
   }

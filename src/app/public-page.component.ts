@@ -4,6 +4,7 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { BookingWidgetComponent } from './booking-widget.component';
 import { ReviewFormComponent } from './review-form.component';
+import { displayPrice } from './money';
 import { buildLocalBusinessJsonLd, jsonLdScript } from './structured-data';
 import { DOCUMENT } from '@angular/common';
 import { Title, Meta, DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
@@ -403,7 +404,7 @@ import { ToastService } from './toast.service';
                                 @if (service.price) {
                           <p class="font-bold text-gray-900 flex items-center justify-between text-sm">
                                   <span class="text-gray-400 text-[10px] uppercase tracking-wider">{{ t('priceLabel') }}</span>
-                                  {{ service.price }}
+                                  {{ price(service.price) }}
                                 </p>
                         }
                                 @if (getPaymentLink(service.name); as payUrl) {
@@ -424,7 +425,7 @@ import { ToastService } from './toast.service';
                                 @if (service.price) {
                           <p class="font-bold text-gray-900 flex items-center justify-between text-sm">
                                   <span class="text-gray-400 text-[10px] uppercase tracking-wider">{{ t('priceLabel') }}</span>
-                                  {{ service.price }}
+                                  {{ price(service.price) }}
                                 </p>
                         }
                                 @if (getPaymentLink(service.name); as payUrl) {
@@ -454,7 +455,7 @@ import { ToastService } from './toast.service';
                           <div class="shrink-0 text-left md:text-right">
                             @if (service.price) {
                               <span class="text-gray-400 text-[10px] uppercase tracking-wider block">{{ t('priceLabel') }}</span>
-                              <p class="font-bold text-gray-900 text-lg">{{ service.price }}</p>
+                              <p class="font-bold text-gray-900 text-lg">{{ price(service.price) }}</p>
                             }
                             @if (getPaymentLink(service.name); as payUrl) {
                               <a [href]="payUrl" target="_blank" rel="noopener" [style.backgroundColor]="customization().branding.primaryColor" [style.borderRadius]="buttonRadius" class="mt-2 inline-flex items-center gap-1.5 text-white px-4 py-2 text-xs font-bold shadow-sm hover:opacity-90 transition-opacity">
@@ -476,7 +477,7 @@ import { ToastService } from './toast.service';
                               <span class="inline-block py-1 px-3 rounded-full bg-white/10 text-white text-[10px] font-bold uppercase tracking-widest mb-4">{{ t('servicesFeatured') }}</span>
                               <h3 class="text-2xl md:text-3xl font-black mb-4" [appEditableText]="editable()" (textChange)="onTextEdit('service', 'name', $event, service.id)">{{ service.name }}</h3>
                               <p class="text-gray-400 mb-6 leading-relaxed" [appEditableText]="editable()" (textChange)="onTextEdit('service', 'description', $event, service.id)">{{ service.description }}</p>
-                              <p class="font-bold text-xl">{{ service.price }}</p>
+                              <p class="font-bold text-xl">{{ price(service.price) }}</p>
                             </div>
                             <div class="w-full md:w-1/3 aspect-video bg-white/5 rounded-xl flex items-center justify-center shrink-0">
                               <mat-icon class="text-6xl text-white/20">star</mat-icon>
@@ -486,7 +487,7 @@ import { ToastService } from './toast.service';
                           <div [style.borderRadius]="cardRadius" class="bg-white p-8 border border-gray-100 shadow-sm flex flex-col h-full">
                             <h3 class="text-xl font-bold text-gray-900 mb-3" [appEditableText]="editable()" (textChange)="onTextEdit('service', 'name', $event, service.id)">{{ service.name }}</h3>
                             <p class="text-gray-500 mb-6 text-sm flex-grow" [appEditableText]="editable()" (textChange)="onTextEdit('service', 'description', $event, service.id)">{{ service.description }}</p>
-                            <p class="font-bold text-gray-900">{{ service.price }}</p>
+                            <p class="font-bold text-gray-900">{{ price(service.price) }}</p>
                           </div>
                         }
                       }
@@ -501,7 +502,7 @@ import { ToastService } from './toast.service';
                             <mat-icon>business_center</mat-icon>
                           </div>
                           <h3 class="text-sm font-bold text-gray-900 mb-2" [appEditableText]="editable()" (textChange)="onTextEdit('service', 'name', $event, service.id)">{{ service.name }}</h3>
-                          <p class="font-bold text-gray-500 text-xs">{{ service.price }}</p>
+                          <p class="font-bold text-gray-500 text-xs">{{ price(service.price) }}</p>
                         </div>
                       }
                     </div>
@@ -851,7 +852,7 @@ import { ToastService } from './toast.service';
                         <div class="p-4 md:p-5 flex flex-col flex-grow">
                           <h3 class="text-sm md:text-base font-bold text-gray-900" [appEditableText]="editable()" (textChange)="onTextEdit('service', 'name', $event, service.id)">{{ service.name }}</h3>
                           @if (service.price) {
-                            <p class="font-bold text-gray-900 text-sm mt-auto pt-3">{{ service.price }}</p>
+                            <p class="font-bold text-gray-900 text-sm mt-auto pt-3">{{ price(service.price) }}</p>
                           }
                           @if (getPaymentLink(service.name); as payUrl) {
                             <a [href]="payUrl" target="_blank" rel="noopener" [style.backgroundColor]="customization().branding.primaryColor" [style.borderRadius]="buttonRadius" class="mt-3 inline-flex items-center justify-center gap-1.5 text-white px-4 py-2 text-xs font-bold shadow-sm hover:opacity-90 transition-opacity">
@@ -1419,6 +1420,12 @@ export class PublicPageComponent {
       head.appendChild(el);
     }
     el.textContent = jsonLdScript(data);
+  }
+
+  /** Owner price with their currency + GST wording (legacy sites unchanged). */
+  price(raw: string | undefined): string {
+    const p = this.profile();
+    return displayPrice(raw, { currency: p.currency, pricesIncludeGst: p.pricesIncludeGst });
   }
 
   private setupDynamicForm() {

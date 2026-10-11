@@ -18,6 +18,12 @@ export interface BusinessProfile {
   ctaText: string;
   trustBadges: string[];
   enquiryFields: string[];
+  /** Currency for the owner's own prices on their site. Unset (older sites) = shown exactly as typed. */
+  currency?: 'NZD' | 'AUD' | 'USD' | 'GBP' | 'EUR' | '';
+  /** NZ: prices typed already include GST (default true). */
+  pricesIncludeGst?: boolean;
+  /** Optional NZ GST number, printed on tax invoices. */
+  gstNumber?: string;
 }
 
 export interface Service {
