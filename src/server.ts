@@ -29,6 +29,7 @@ import { persistCheckoutSubscription, updateCurrentSubscription } from './server
 import { siteActionRouter } from './server-site-action-routes';
 import { validateDomain } from './app/domain-verification';
 import { validateSlug, avoidReserved } from './app/slug-rules';
+import { HostSiteResolver, DomainRecord } from './server-host-routing';
 import { businessTypeLabel } from './app/presets';
 import {
   buildFunnelDeltas,
@@ -1727,6 +1728,61 @@ function loadShellHtml(): string | null {
   _shellHtml = '';
   return null;
 }
+
+/**
+ * Custom domains: a request for '/' on a verified customer domain (see
+ * domainMappings/{uid}) is served that owner's public site. Unknown hosts and
+ * BusinessFlow's own domains fall through to the marketing site unchanged.
+ * Lookups are cached in-process (5 min hit / 1 min miss).
+ */
+const hostSiteResolver = new HostSiteResolver(async (domain: string): Promise<DomainRecord[]> => {
+  const db = await getDb();
+  const snap = await db.collection('domainMappings').where('domain', '==', domain).limit(5).get();
+  return snap.docs.map((d) => ({
+    uid: d.id,
+    domain: String(d.get('domain') || ''),
+    status: String(d.get('status') || ''),
+  }));
+});
+
+app.get('/', async (req, res, next) => {
+  let uid: string | null = null;
+  try {
+    uid = await hostSiteResolver.resolve(req.header('x-forwarded-host') || req.header('host'));
+  } catch {
+    uid = null;
+  }
+  if (!uid) {
+    next();
+    return;
+  }
+  try {
+    const db = await getDb();
+    const [mainSnap, paySnap, subSnap] = await Promise.all([
+      db.doc(`users/${uid}/businessData/main`).get(),
+      db.doc(`users/${uid}/businessData/payments`).get(),
+      db.doc(`subscriptions/${uid}`).get(),
+    ]);
+    const data = buildPublicSiteData(
+      mainSnap.exists ? mainSnap.data()! : undefined,
+      paySnap.exists ? paySnap.data()! : null,
+      subSnap.exists ? subSnap.data()! : null,
+    );
+    if (!data) {
+      next();
+      return;
+    }
+    const response = await angularApp.handle(req, { publicSite: { uid, data }, hostSiteUid: uid });
+    if (response) {
+      await writeResponseToNodeResponse(response, res);
+    } else {
+      next();
+    }
+  } catch (e) {
+    console.error('Error rendering custom-domain site:', e); captureServerError(e);
+    next();
+  }
+});
 
 app.get(['/site/:uid', '/site/:uid/pages/:slug', '/s/:uid', '/s/:uid/pages/:slug'], async (req, res, next) => {
   if (!isCrawler(req.header('user-agent'))) {
