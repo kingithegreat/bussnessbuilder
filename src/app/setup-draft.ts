@@ -20,6 +20,8 @@ export interface SetupDraft {
   email: string;
   phone: string;
   serviceArea: string;
+  /** Chosen industry template id (optional; absent in older drafts). */
+  template?: string;
 }
 
 /** localStorage key holding the in-progress wizard answers. */
@@ -44,6 +46,7 @@ const FIELD_LABELS: Record<keyof SetupDraft, string> = {
   email: 'a valid Email',
   phone: 'Phone Number',
   serviceArea: 'Service Area',
+  template: 'Template',
 };
 
 export function emptyDraft(): SetupDraft {
@@ -70,6 +73,7 @@ export function parseDraft(raw: string | null): SetupDraft | null {
       email: str(parsed['email']),
       phone: str(parsed['phone']),
       serviceArea: str(parsed['serviceArea']),
+      ...(str(parsed['template']) ? { template: str(parsed['template']) } : {}),
     };
   } catch {
     return null;

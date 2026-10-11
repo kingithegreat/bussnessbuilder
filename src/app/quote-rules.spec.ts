@@ -22,6 +22,7 @@ describe('sanitizeQuote / numbering', () => {
     expect(q.gstMode).toBe('exclusive');
     expect(q.currency).toBe('NZD');
     expect(q.dueDate).toBe('2026-11-01');
+    expect(sanitizeQuote({ currency: 'AUD', gstMode: 'exclusive' }, { id: 'y', number: 'Q-0002', status: 'draft', createdAt: '' }, '2026-10-02T00:00:00Z').gstMode).toBe('none');
   });
   it('caps lines at what the PDF can itemise', () => {
     const q = sanitizeQuote({ lines: Array.from({ length: 40 }, (_, i) => ({ description: 'L' + i, quantity: 1, unitPrice: 1 })) },
@@ -30,6 +31,7 @@ describe('sanitizeQuote / numbering', () => {
   });
   it('numbers sequentially per kind', () => {
     expect(nextQuoteNumber([], 'quote')).toBe('Q-0001');
+    expect(nextQuoteNumber([], 'quote', 7)).toBe('Q-0008'); // never reuse a deleted number
     expect(nextQuoteNumber([{ kind: 'quote', number: 'Q-0007' }, { kind: 'invoice', number: 'INV-0002' }], 'invoice')).toBe('INV-0003');
   });
 });
