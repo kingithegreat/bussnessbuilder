@@ -13,6 +13,8 @@ import { ToastService } from './toast.service';
 import { NotificationPreferences, BusinessProfile, BusinessType, DomainMappingState } from './types';
 import { requiredRecords, validateDomain, verifyDomain, DnsRecord, VerificationResult } from './domain-verification';
 import { resolvePublicSiteUrl, qrFilenameFor } from './qr-code';
+import { SlugService } from './slug.service';
+import { validateSlug } from './slug-rules';
 import { BUSINESS_PRESETS } from './presets';
 import { DatePipe } from '@angular/common';
 
@@ -100,6 +102,16 @@ import { DatePipe } from '@angular/common';
               <mat-icon class="text-[18px]">qr_code</mat-icon> QR Code
             </button>
           </div>
+          <form class="mt-4" (submit)="$event.preventDefault(); saveSlug()">
+            <label for="site-slug" class="block text-sm font-bold text-gray-700 mb-1">Choose your short address</label>
+            <p id="site-slug-help" class="text-xs text-gray-600 mb-2">Letters, numbers and hyphens, 3–40 characters. Your old link keeps working.</p>
+            <div class="flex flex-col sm:flex-row sm:items-center gap-2">
+              <span class="text-sm font-mono text-gray-600 shrink-0">{{ origin }}/s/</span>
+              <input id="site-slug" name="siteSlug" type="text" [(ngModel)]="slugDraft" aria-describedby="site-slug-help site-slug-error" autocomplete="off" spellcheck="false" placeholder="your-business" class="flex-1 px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-mono focus:ring-2 focus:ring-blue-500 outline-none">
+              <button type="submit" [disabled]="savingSlug" class="bg-gray-900 text-white px-4 py-2.5 rounded-xl text-sm font-bold hover:bg-gray-800 transition-colors disabled:opacity-50 shrink-0">{{ savingSlug ? 'Saving…' : 'Save address' }}</button>
+            </div>
+            <p id="site-slug-error" class="text-xs text-red-700 mt-2" role="alert">{{ slugError }}</p>
+          </form>
           @if (friendlyUrl) {
             <p class="text-xs text-green-600 font-medium mt-2 flex items-center gap-1">
               <mat-icon class="text-[14px]">check_circle</mat-icon> Friendly URL active
@@ -447,6 +459,32 @@ export class AdminSettingsComponent implements OnInit {
   newTemplateName = '';
   siteUrl = '';
   friendlyUrl = '';
+  origin = '';
+  slugDraft = '';
+  slugError = '';
+  savingSlug = false;
+  private slugService = inject(SlugService);
+
+  async saveSlug() {
+    this.slugError = '';
+    const check = validateSlug(this.slugDraft);
+    if (!check.ok) {
+      this.slugError = check.error;
+      return;
+    }
+    this.savingSlug = true;
+    const result = await this.slugService.claimExact(check.slug);
+    this.savingSlug = false;
+    if (result.error || !result.slug) {
+      this.slugError = result.error || 'Could not save that address.';
+      return;
+    }
+    this.slugDraft = result.slug;
+    this.friendlyUrl = `${window.location.origin}/s/${result.slug}`;
+    this.qrDataUrl = null;
+    this.showQrPanel = false;
+    this.toast.success('Your new address is live.');
+  }
 
   // QR code for the public site link
   showQrPanel = false;
@@ -493,10 +531,12 @@ export class AdminSettingsComponent implements OnInit {
     }
     const user = this.authService.currentUser();
     if (user) {
+      this.origin = window.location.origin;
       this.siteUrl = `${window.location.origin}/site/${user.uid}`;
       const slug = this.dataService.siteSlug();
       if (slug) {
-        this.friendlyUrl = `${window.location.origin}/site/${slug}`;
+        this.friendlyUrl = `${window.location.origin}/s/${slug}`;
+        this.slugDraft = slug;
       }
       this.loadMappingState(user.uid);
     }
