@@ -920,7 +920,8 @@ app.delete('/api/account/:uid', async (req, res) => {
 
     const db = await getDb();
 
-    const subDocs = ['main', 'pages', 'notifications', 'payments', 'templates'];
+    // Include every per-feature doc (bookings/reviews hold customer personal info).
+    const subDocs = ['main', 'pages', 'notifications', 'payments', 'templates', 'bookings', 'reviews', 'quotes', 'stats'];
     for (const subDoc of subDocs) {
       await db.doc(`users/${uid}/businessData/${subDoc}`).delete();
     }
