@@ -15,6 +15,9 @@ export const routes: Routes = [
   { path: 'pricing', loadComponent: () => import('./pricing.component').then(m => m.PricingComponent) },
   { path: 'site/:uid', loadComponent: () => import('./site-view.component').then(m => m.SiteViewComponent) },
   { path: 'site/:uid/pages/:slug', loadComponent: () => import('./public-content-page.component').then(m => m.PublicContentPageComponent) },
+  // Short owner-chosen addresses; same views as /site/:uid (slug resolves server-side).
+  { path: 's/:uid', loadComponent: () => import('./site-view.component').then(m => m.SiteViewComponent) },
+  { path: 's/:uid/pages/:slug', loadComponent: () => import('./public-content-page.component').then(m => m.PublicContentPageComponent) },
   { path: 'pages/:slug', loadComponent: () => import('./content-page-view.component').then(m => m.ContentPageViewComponent) },
   { path: 'setup', loadComponent: () => import('./setup.component').then(m => m.SetupWizardComponent), canActivate: [setupGuard] },
   { path: 'public', loadComponent: () => import('./public-page.component').then(m => m.PublicPageComponent), canActivate: [publicGuard] },

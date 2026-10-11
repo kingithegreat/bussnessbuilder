@@ -28,6 +28,7 @@ import { AI_GENERATION_LIMITS, aiUsageLimits, aiFallbackMessage, reserveAiCall, 
 import { persistCheckoutSubscription, updateCurrentSubscription } from './server-subscription-sync';
 import { siteActionRouter } from './server-site-action-routes';
 import { validateDomain } from './app/domain-verification';
+import { validateSlug, avoidReserved } from './app/slug-rules';
 import { HostSiteResolver, DomainRecord } from './server-host-routing';
 import { businessTypeLabel } from './app/presets';
 import {
@@ -213,7 +214,7 @@ app.get('/robots.txt', (req, res) => {
  * Per-site sitemap.xml: the site home plus every published content page, so the
  * owner can submit it to Search Console and crawlers can discover deep pages.
  */
-app.get('/site/:uid/sitemap.xml', async (req, res) => {
+app.get(['/site/:uid/sitemap.xml', '/s/:uid/sitemap.xml'], async (req, res) => {
   try {
     const origin = originFromRequest({
       forwardedProto: req.header('x-forwarded-proto') ?? undefined,
@@ -221,7 +222,7 @@ app.get('/site/:uid/sitemap.xml', async (req, res) => {
       host: req.header('host') ?? undefined,
     });
     const db = await getDb();
-    const uid = await resolveUid(db, req.params.uid);
+    const uid = await resolveUid(db, (req.params["uid"] as string));
     const mainSnap = await db.doc(`users/${uid}/businessData/main`).get();
     if (!mainSnap.exists || !mainSnap.data()!['isSetupComplete']) {
       res.status(404).type('text/plain').send('Site not found');
@@ -238,7 +239,7 @@ app.get('/site/:uid/sitemap.xml', async (req, res) => {
       ? mainSnap.data()!['updatedAt'] as string
       : undefined;
     // Use the public-facing identifier from the URL (slug or uid) for canonical links.
-    const xml = buildSiteSitemap(origin, req.params.uid, pages, homeLastmod);
+    const xml = buildSiteSitemap(origin, (req.params["uid"] as string), pages, homeLastmod);
     res.type('application/xml').send(xml);
   } catch (e) {
     console.error('Error building sitemap:', e); captureServerError(e);
@@ -528,6 +529,39 @@ app.post('/api/funnel', express.json({ limit: '4kb' }), async (req, res) => {
 app.post('/api/slugs/claim', express.json(), async (req, res) => {
   try {
     const { uid, name } = req.body;
+    // Exact mode: the owner picked an address themselves in Settings.
+    const wanted = req.body?.slug;
+    if (typeof uid === 'string' && typeof wanted === 'string') {
+      if (!await verifyFirebaseUser(req, uid)) {
+        res.status(401).json({ error: 'Unauthorized' });
+        return;
+      }
+      const check = validateSlug(wanted);
+      if (!check.ok) {
+        res.status(400).json({ error: check.error });
+        return;
+      }
+      const db = await getDb();
+      const slugRef = db.doc(`slugs/${check.slug}`);
+      const mainRef = db.doc(`users/${uid}/businessData/main`);
+      const outcome = await db.runTransaction(async (tx) => {
+        const [slugSnap, mainSnap] = await Promise.all([tx.get(slugRef), tx.get(mainRef)]);
+        if (slugSnap.exists && slugSnap.data()?.['uid'] !== uid) return 'taken';
+        const previous = mainSnap.exists ? mainSnap.data()?.['siteSlug'] : null;
+        if (typeof previous === 'string' && previous && previous !== check.slug) {
+          tx.delete(db.doc(`slugs/${previous}`));
+        }
+        tx.set(slugRef, { uid, claimedAt: new Date().toISOString() });
+        if (mainSnap.exists) tx.set(mainRef, { siteSlug: check.slug }, { merge: true });
+        return 'ok';
+      });
+      if (outcome === 'taken') {
+        res.status(409).json({ error: 'That address is already taken — try another' });
+        return;
+      }
+      res.json({ slug: check.slug });
+      return;
+    }
     if (typeof uid !== 'string' || typeof name !== 'string' || !name.trim()) {
       res.status(400).json({ error: 'Invalid request' });
       return;
@@ -538,7 +572,7 @@ app.post('/api/slugs/claim', express.json(), async (req, res) => {
     }
 
     const db = await getDb();
-    const slug = generateSlug(name);
+    const slug = avoidReserved(generateSlug(name));
     if (!slug) {
       res.status(400).json({ error: 'Could not generate a URL from that name' });
       return;
@@ -1771,7 +1805,7 @@ app.get('/', async (req, res, next) => {
   }
 });
 
-app.get(['/site/:uid', '/site/:uid/pages/:slug'], async (req, res, next) => {
+app.get(['/site/:uid', '/site/:uid/pages/:slug', '/s/:uid', '/s/:uid/pages/:slug'], async (req, res, next) => {
   if (!isCrawler(req.header('user-agent'))) {
     // Humans: server-render the site home page with real content by loading
     // the site once and handing it to Angular SSR via request context

@@ -227,7 +227,7 @@ export class AdminBuilderComponent implements OnInit, OnDestroy {
   // completed, matching the header "View live site" button.
   previewUrl = computed(() => {
     const slug = this.dataService.siteSlug();
-    if (slug) return `/site/${slug}`;
+    if (slug) return `/s/${slug}`;
     const uid = this.authService.currentUser()?.uid;
     return uid ? `/site/${uid}` : null;
   });
