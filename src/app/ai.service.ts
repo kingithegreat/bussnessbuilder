@@ -87,6 +87,11 @@ export class AiService {
     }
   }
 
+  /** Raw generation for the dashboard's one-click updates. Null when AI isn't available, so callers use a template. */
+  async generateText(prompt: string, system?: string): Promise<string | null> {
+    return this.generate(prompt, system);
+  }
+
   async generateBusinessDescription(profile: BusinessProfile): Promise<string> {
     const ai = await this.generate(
       `Write a warm, professional 2-3 sentence "About Us" description for this business.
