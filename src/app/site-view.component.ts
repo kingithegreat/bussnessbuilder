@@ -10,6 +10,7 @@ import { resolveFaviconHref, applyFavicon } from './site-favicon';
 import { PublicPageComponent } from './public-page.component';
 import { PublicSiteData } from './types';
 import { PUBLIC_SITE_STATE_KEY, readPublicSiteContext } from './public-site-context';
+import { currentHostSiteUid } from './host-site';
 
 @Component({
   selector: 'app-site-view',
@@ -44,6 +45,8 @@ export class SiteViewComponent implements OnInit {
   private platformId = inject(PLATFORM_ID);
   private requestContext = inject(REQUEST_CONTEXT, { optional: true });
   private transferState = inject(TransferState);
+  /** Set when served at '/' of a customer's custom domain (no :uid param). */
+  private hostSiteUid = currentHostSiteUid();
 
   loading = signal(true);
   error = signal(false);
@@ -71,7 +74,7 @@ export class SiteViewComponent implements OnInit {
     this.route.paramMap
       .pipe(
         switchMap((params) => {
-          const uid = params.get('uid');
+          const uid = params.get('uid') || this.hostSiteUid;
           this.loading.set(true);
           this.error.set(false);
           if (!uid) {
