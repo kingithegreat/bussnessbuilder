@@ -54,7 +54,7 @@ import { RouterLink } from '@angular/router';
               <p>When visitors submit enquiries through your public page, we collect the information they provide in the contact form (name, email, phone, message, and any custom form fields you configure).</p>
 
               <h3 class="font-semibold text-gray-900 mt-4 mb-2">2.4 Analytics Data</h3>
-              <p>We collect page view statistics for your public page, including daily view counts. This data is aggregated and does not include personally identifiable information about your visitors.</p>
+              <p>We collect page view statistics for your public page: daily view counts, the pages viewed, and a daily count of unique visitors. To count unique visitors we combine the visitor's IP address and browser type into a one-way hash that changes every day; the IP address itself is never stored, and the day's hashes are discarded. No cookies are set for this. Visitors who decline cookies, or whose browser sends Do Not Track or Global Privacy Control, are not counted.</p>
 
               <h3 class="font-semibold text-gray-900 mt-4 mb-2">2.5 Usage Data</h3>
               <p>We automatically collect certain information when you use the Service, including browser type, device information, IP address, pages visited, and timestamps.</p>
