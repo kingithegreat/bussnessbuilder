@@ -1,9 +1,9 @@
-import { Component, inject, signal, computed, OnInit, PLATFORM_ID } from '@angular/core';
+import { Component, inject, signal, computed, OnInit, PLATFORM_ID, DestroyRef } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { OwnerApiService } from './owner-api.service';
 import { DataService } from './data.service';
-import { Quote, QuoteStatus, quoteTotals } from './quote-rules';
+import { Quote, QuoteStatus, quoteTotals, MAX_QUOTE_LINES } from './quote-rules';
 import { quotePdf } from './quote-pdf';
 import { pdfBytes } from './pdf-lite';
 import { formatMoney, SiteCurrency } from './money';
@@ -48,7 +48,11 @@ type Draft = Omit<Quote, 'id' | 'number' | 'status' | 'createdAt' | 'updatedAt'>
                 <button type="button" (click)="d.lines.splice(i, 1)" class="col-span-1 py-2 text-red-700 font-bold" [attr.aria-label]="'Remove line ' + (i + 1)">✕</button>
               </div>
             }
-            <button type="button" (click)="d.lines.push({ description: '', quantity: 1, unitPrice: 0 })" class="text-sm font-bold text-blue-700">+ Add line</button>
+            @if (d.lines.length < maxLines) {
+              <button type="button" (click)="d.lines.push({ description: '', quantity: 1, unitPrice: 0 })" class="text-sm font-bold text-blue-700">+ Add line</button>
+            } @else {
+              <p class="text-xs text-gray-700">Up to {{ maxLines }} lines per quote. Group smaller items together.</p>
+            }
           </fieldset>
           <div class="grid sm:grid-cols-2 gap-4">
             <div>
@@ -115,6 +119,8 @@ export class AdminQuotesComponent implements OnInit {
   private api = inject(OwnerApiService);
   private data = inject(DataService);
   private platformId = inject(PLATFORM_ID);
+  private destroyRef = inject(DestroyRef);
+  readonly maxLines = MAX_QUOTE_LINES;
   quotes = signal<Quote[]>([]);
   draft = signal<Draft | null>(null);
   busy = signal(false);
@@ -133,7 +139,8 @@ export class AdminQuotesComponent implements OnInit {
   async ngOnInit() {
     if (!isPlatformBrowser(this.platformId)) return;
     // Recompute totals as the owner types (ngModel mutates the draft in place).
-    setInterval(() => this.tick.update(n => n + 1), 400);
+    const timer = setInterval(() => this.tick.update(n => n + 1), 400);
+    this.destroyRef.onDestroy(() => clearInterval(timer));
     try { this.quotes.set((await this.api.get<{ quotes: Quote[] }>('/api/quotes')).quotes); } catch { this.flash("Couldn't load your quotes.", true); }
   }
 

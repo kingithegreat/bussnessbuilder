@@ -1,5 +1,8 @@
 import { NZ_GST_RATE, roundCents, SiteCurrency } from './money';
 
+/** Must match what fits on the one-page PDF, so every charge is itemised. */
+export const MAX_QUOTE_LINES = 25;
+
 export type QuoteKind = 'quote' | 'invoice';
 export type QuoteStatus = 'draft' | 'sent' | 'accepted';
 export interface QuoteLine { description: string; quantity: number; unitPrice: number }
@@ -47,7 +50,7 @@ export function sanitizeQuote(raw: unknown, base: Pick<Quote, 'id' | 'number' | 
   const r = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>;
   const today = nowIso.slice(0, 10);
   const in30 = new Date(Date.parse(today) + 30 * 86400_000).toISOString().slice(0, 10);
-  const lines = (Array.isArray(r['lines']) ? r['lines'] : []).slice(0, 50).map(l => {
+  const lines = (Array.isArray(r['lines']) ? r['lines'] : []).slice(0, MAX_QUOTE_LINES).map(l => {
     const o = (l || {}) as Record<string, unknown>;
     return { description: str(o['description'], 300), quantity: num(o['quantity'], 0, 100000), unitPrice: roundCents(num(o['unitPrice'], -1e7, 1e7)) };
   }).filter(l => l.description || l.unitPrice);

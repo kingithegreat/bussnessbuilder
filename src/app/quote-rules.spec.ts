@@ -23,6 +23,11 @@ describe('sanitizeQuote / numbering', () => {
     expect(q.currency).toBe('NZD');
     expect(q.dueDate).toBe('2026-11-01');
   });
+  it('caps lines at what the PDF can itemise', () => {
+    const q = sanitizeQuote({ lines: Array.from({ length: 40 }, (_, i) => ({ description: 'L' + i, quantity: 1, unitPrice: 1 })) },
+      { id: 'x', number: 'Q-0001', status: 'draft', createdAt: '' }, '2026-10-02T00:00:00Z');
+    expect(q.lines).toHaveLength(25);
+  });
   it('numbers sequentially per kind', () => {
     expect(nextQuoteNumber([], 'quote')).toBe('Q-0001');
     expect(nextQuoteNumber([{ kind: 'quote', number: 'Q-0007' }, { kind: 'invoice', number: 'INV-0002' }], 'invoice')).toBe('INV-0003');
