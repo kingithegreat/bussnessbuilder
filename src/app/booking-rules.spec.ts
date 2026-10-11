@@ -1,4 +1,4 @@
-import { defaultBookingSettings, sanitizeBookingSettings, availableSlots, isSlotBookable, zonedTimeToUtc, weekdayOf, buildIcs, busyFromBookings, Booking } from './booking-rules';
+import { localTime, defaultBookingSettings, sanitizeBookingSettings, availableSlots, isSlotBookable, zonedTimeToUtc, weekdayOf, buildIcs, busyFromBookings, Booking } from './booking-rules';
 
 const tz = 'Pacific/Auckland';
 const enabled = () => ({ ...defaultBookingSettings(), enabled: true, leadTimeHours: 0 });
@@ -32,6 +32,14 @@ describe('booking rules', () => {
     expect(isSlotBookable(enabled(), 'consultation', '2026-10-13T21:00:00.000Z', busy, now)).toBe(true);
     expect(isSlotBookable(enabled(), 'consultation', '2026-10-13T20:00:00.000Z', busyFromBookings([{ ...booked, status: 'declined' }]), now)).toBe(true);
     expect(isSlotBookable(enabled(), 'consultation', '2026-10-13T20:10:00.000Z', [], now)).toBe(false); // off-grid
+  });
+  it('skips nonexistent local times on the DST spring-forward day', () => {
+    // NZ clocks jump 02:00 -> 03:00 on Sun 27 Sep 2026.
+    const s = { ...enabled(), weekly: { ...enabled().weekly, sun: [{ start: '01:00', end: '04:00' }] }, slotStepMin: 30 };
+    const slots = availableSlots(s, 'consultation', '2026-09-27', [], new Date('2026-09-01T00:00:00Z'));
+    const starts = slots.map(x => x.start);
+    expect(new Set(starts).size).toBe(starts.length);
+    expect(slots.map(x => localTime(new Date(x.start), tz))).toEqual(['01:00', '01:30', '03:00']); // 02:00 and 02:30 don't exist
   });
   it('sanitises untrusted settings', () => {
     const s = sanitizeBookingSettings({ enabled: true, timezone: 'Not/AZone', services: [{ name: ' Mow ', durationMin: 9999 }, { name: '' }], weekly: { mon: [{ start: '17:00', end: '09:00' }, { start: '08:00', end: '12:00' }] }, blackouts: ['2026-12-25', 'bad'] });
