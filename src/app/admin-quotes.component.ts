@@ -55,7 +55,7 @@ type Draft = Omit<Quote, 'id' | 'number' | 'status' | 'createdAt' | 'updatedAt'>
             }
           </fieldset>
           <div class="grid sm:grid-cols-2 gap-4">
-            <div>
+            <div [hidden]="d.currency !== 'NZD'">
               <label for="q-gst" class="text-xs font-semibold text-gray-700">GST</label>
               <select id="q-gst" name="gst" [(ngModel)]="d.gstMode" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm">
                 <option value="exclusive">Prices exclude GST — add 15%</option>
@@ -152,7 +152,7 @@ export class AdminQuotesComponent implements OnInit {
     const p = this.data.profile();
     this.message.set('');
     this.draft.set({ kind, customerName: '', customerEmail: '', lines: [{ description: '', quantity: 1, unitPrice: 0 }],
-      gstMode: p.currency === 'NZD' && p.pricesIncludeGst !== false ? 'inclusive' : 'exclusive', currency: this.currency(), notes: '', issueDate: today, dueDate: due });
+      gstMode: this.currency() !== 'NZD' ? 'none' : p.pricesIncludeGst !== false ? 'inclusive' : 'exclusive', currency: this.currency(), notes: '', issueDate: today, dueDate: due });
   }
 
   edit(q: Quote) { this.message.set(''); this.draft.set(JSON.parse(JSON.stringify(q))); }

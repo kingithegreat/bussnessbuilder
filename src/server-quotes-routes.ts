@@ -20,14 +20,23 @@ export function quotesRouter(deps: FeatureDeps): express.Router {
     return { name: trimStr(p['name'], 120), email: trimStr(p['email'], 200), phone: trimStr(p['phone'], 50), address: trimStr(p['address'], 200), gstNumber: trimStr(p['gstNumber'], 30) };
   }
 
-  async function mutate<T>(uid: string, fn: (list: Quote[]) => { list?: Quote[]; result: T }): Promise<T> {
+  async function mutate<T>(uid: string, fn: (list: Quote[], counters: Record<QuoteKind, number>) => { list?: Quote[]; result: T }): Promise<T> {
     const db = await deps.getDb();
     const ref = db.doc(quotesPath(uid));
     return db.runTransaction(async (tx) => {
       const snap = await tx.get(ref);
-      const list = ((snap.exists ? snap.data()?.['items'] : null) || []) as Quote[];
-      const out = fn(list);
-      if (out.list) tx.set(ref, { items: out.list.slice(0, MAX_QUOTES) });
+      const data = (snap.exists ? snap.data() : {}) as Record<string, unknown>;
+      const list = (data['items'] || []) as Quote[];
+      const counters = { quote: 0, invoice: 0, ...((data['counters'] as Record<string, number>) || {}) };
+      const out = fn(list, counters);
+      if (out.list) {
+        // Remember the highest number ever issued so deleting one never frees it for reuse.
+        for (const q of out.list) {
+          const n = parseInt(q.number.replace(/^\D+-/, ''), 10);
+          if (Number.isFinite(n)) counters[q.kind] = Math.max(counters[q.kind] || 0, n);
+        }
+        tx.set(ref, { items: out.list.slice(0, MAX_QUOTES), counters });
+      }
       return out.result;
     });
   }
@@ -47,15 +56,15 @@ export function quotesRouter(deps: FeatureDeps): express.Router {
       const uid = await authorizeOwner(deps, req, res); if (!uid) return;
       const raw = req.body?.quote || {};
       const id = typeof raw.id === 'string' && raw.id ? raw.id : '';
-      const quote = await mutate(uid, (list) => {
+      const quote = await mutate(uid, (list, counters) => {
         const now = nowIso();
         const i = id ? list.findIndex(q => q.id === id) : -1;
         if (id && i < 0) return { result: null };
         const kind: QuoteKind = raw.kind === 'invoice' ? 'invoice' : 'quote';
         const existing = i >= 0 ? list[i] : null;
         const base = existing
-          ? { ...existing, number: existing.kind === kind ? existing.number : nextQuoteNumber(list, kind) }
-          : { id: randomUUID(), number: nextQuoteNumber(list, kind), status: 'draft' as const, createdAt: now };
+          ? { ...existing, number: existing.kind === kind ? existing.number : nextQuoteNumber(list, kind, counters[kind]) }
+          : { id: randomUUID(), number: nextQuoteNumber(list, kind, counters[kind]), status: 'draft' as const, createdAt: now };
         const q = sanitizeQuote(raw, base, now);
         const next = [...list];
         if (i >= 0) next[i] = q; else next.unshift(q);

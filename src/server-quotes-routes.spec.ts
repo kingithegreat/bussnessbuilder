@@ -25,5 +25,7 @@ describe('quotes HTTP journey', () => {
     expect((await h.call('POST', `/api/quotes/${id}/status`, { uid: 'owner', status: 'paid' }, true)).status).toBe(400);
     expect((await h.call('POST', `/api/quotes/${id}/delete`, { uid: 'owner' }, true)).status).toBe(200);
     expect((await h.call('GET', '/api/quotes?uid=owner', undefined, true)).body['quotes']).toHaveLength(1);
+    const after = await h.call('POST', '/api/quotes/save', { uid: 'owner', quote: { lines: [] } }, true);
+    expect(after.body['quote'].number).toBe('Q-0002'); // Q-0001 was deleted but is never reused
   });
 });

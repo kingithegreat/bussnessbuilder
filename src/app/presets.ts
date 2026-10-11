@@ -140,5 +140,8 @@ export function getPreset(type: BusinessType): BusinessPreset | undefined {
  */
 export function businessTypeLabel(type: string | null | undefined): string {
   if (!type) return '';
-  return getPreset(type as BusinessType)?.label || '';
+  return getPreset(type as BusinessType)?.label || EXTRA_TYPE_LABELS[type] || '';
 }
+
+/** Wizard types that have no preset but do have a sensible label. */
+const EXTRA_TYPE_LABELS: Record<string, string> = { cafe: 'Café / Restaurant' };
