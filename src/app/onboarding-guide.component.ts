@@ -32,8 +32,8 @@ export const LINK_SHARED_KEY = 'bf_link_shared';
               <h2 class="text-lg md:text-xl font-black tracking-tight mb-1">Get your first customer</h2>
               <p class="text-blue-100 text-sm font-medium">{{ progress().done }} of {{ progress().total }} done — finish these and you're ready for enquiries.</p>
             </div>
-            <button (click)="dismiss()" class="text-white/60 hover:text-white p-1 rounded-lg hover:bg-white/10 transition-colors shrink-0" title="Dismiss guide">
-              <mat-icon>close</mat-icon>
+            <button (click)="dismiss()" class="text-white/60 hover:text-white p-1 rounded-lg hover:bg-white/10 transition-colors shrink-0" title="Dismiss guide" aria-label="Dismiss guide">
+              <mat-icon aria-hidden="true">close</mat-icon>
             </button>
           </div>
 
@@ -77,7 +77,7 @@ export const LINK_SHARED_KEY = 'bf_link_shared';
               @for (step of steps(); track step.id; let i = $index) {
                 <button (click)="focused.set(i)"
                         class="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap"
-                        [class]="i === focusedIndex() ? 'bg-gray-100 text-gray-900' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-50'">
+                        [class]="i === focusedIndex() ? 'bg-gray-100 text-gray-900' : 'text-gray-500 hover:text-gray-600 hover:bg-gray-50'">
                   <div class="w-5 h-5 rounded-md flex items-center justify-center text-white text-[10px]"
                        [class]="step.done ? 'bg-green-500' : stepBgClass(step.color)">
                     @if (step.done) {
@@ -86,13 +86,13 @@ export const LINK_SHARED_KEY = 'bf_link_shared';
                       {{ i + 1 }}
                     }
                   </div>
-                  <span class="hidden sm:inline" [class.line-through]="step.done" [class.text-gray-400]="step.done">{{ step.title }}</span>
+                  <span class="hidden sm:inline" [class.line-through]="step.done" [class.text-gray-500]="step.done">{{ step.title }}</span>
                 </button>
               }
             </div>
 
             <div class="flex items-center gap-2 shrink-0 ml-4">
-              <button (click)="dismiss()" class="px-3 py-1.5 rounded-lg text-xs font-bold text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors">
+              <button (click)="dismiss()" class="px-3 py-1.5 rounded-lg text-xs font-bold text-gray-500 hover:text-gray-600 hover:bg-gray-100 transition-colors">
                 Hide
               </button>
             </div>

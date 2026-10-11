@@ -39,20 +39,20 @@ import { FormFieldConfig, CustomizationSettings } from './types';
                    (keydown.enter)="expandedField === field.id ? expandedField = null : expandedField = field.id"
                    (click)="expandedField === field.id ? expandedField = null : expandedField = field.id">
                 <div class="flex items-center gap-3">
-                  <mat-icon class="text-gray-400 cursor-move">drag_indicator</mat-icon>
+                  <mat-icon class="text-gray-500 cursor-move">drag_indicator</mat-icon>
                   <div>
                     <h3 class="font-bold text-gray-900 text-sm">{{ field.label || 'Unnamed Field' }}</h3>
                     <p class="text-[10px] font-bold text-gray-500 uppercase">{{ field.type }} @if (field.required) {<span class="text-red-500">*</span>}</p>
                   </div>
                 </div>
                 <div class="flex items-center gap-2">
-                   <button (click)="moveUp(i); $event.stopPropagation()" [disabled]="i === 0" class="text-gray-400 hover:text-gray-700 disabled:opacity-30">
-                     <mat-icon class="text-[18px]">keyboard_arrow_up</mat-icon>
+                   <button (click)="moveUp(i); $event.stopPropagation()" [disabled]="i === 0" class="text-gray-500 hover:text-gray-700 disabled:opacity-30" aria-label="Move up">
+                     <mat-icon aria-hidden="true" class="text-[18px]">keyboard_arrow_up</mat-icon>
                    </button>
-                   <button (click)="moveDown(i); $event.stopPropagation()" [disabled]="i === fields.length - 1" class="text-gray-400 hover:text-gray-700 disabled:opacity-30">
-                     <mat-icon class="text-[18px]">keyboard_arrow_down</mat-icon>
+                   <button (click)="moveDown(i); $event.stopPropagation()" [disabled]="i === fields.length - 1" class="text-gray-500 hover:text-gray-700 disabled:opacity-30" aria-label="Move down">
+                     <mat-icon aria-hidden="true" class="text-[18px]">keyboard_arrow_down</mat-icon>
                    </button>
-                   <mat-icon class="text-gray-400 text-[20px] transition-transform" [class.rotate-180]="expandedField === field.id">
+                   <mat-icon class="text-gray-500 text-[20px] transition-transform" [class.rotate-180]="expandedField === field.id">
                      expand_more
                    </mat-icon>
                 </div>
@@ -98,7 +98,7 @@ import { FormFieldConfig, CustomizationSettings } from './types';
                   @if (field.type === 'dropdown' || field.type === 'radio' || field.type === 'multi-select') {
                     <div>
                       <label [for]="'opt_'+field.id" class="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Options (Comma separated)</label>
-                      <input [id]="'opt_'+field.id" type="text" [(ngModel)]="field.options" placeholder="Option 1, Option 2" class="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm text-gray-700">
+                      <input aria-label="Option 1, Option 2" [id]="'opt_'+field.id" type="text" [(ngModel)]="field.options" placeholder="Option 1, Option 2" class="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm text-gray-700">
                     </div>
                   }
 
@@ -135,7 +135,7 @@ import { FormFieldConfig, CustomizationSettings } from './types';
                         <div class="flex items-center gap-2">
                           <span class="text-xs text-gray-600">equals</span>
                         </div>
-                        <input type="text" [(ngModel)]="field.dependsOn.value" placeholder="Value to match" class="w-full px-3 py-1.5 bg-white border border-gray-200 rounded-md outline-none text-xs text-gray-700">
+                        <input aria-label="Value to match" type="text" [(ngModel)]="field.dependsOn.value" placeholder="Value to match" class="w-full px-3 py-1.5 bg-white border border-gray-200 rounded-md outline-none text-xs text-gray-700">
                       </div>
                     }
                   </div>
@@ -205,7 +205,7 @@ import { FormFieldConfig, CustomizationSettings } from './types';
                         </div>
                       } @else if (field.type === 'file') {
                         <div class="w-full px-4 py-6 bg-gray-50 border-2 border-dashed border-gray-200 rounded-xl text-center cursor-pointer hover:bg-gray-100 transition-colors">
-                          <mat-icon class="text-gray-400 mb-2">cloud_upload</mat-icon>
+                          <mat-icon class="text-gray-500 mb-2">cloud_upload</mat-icon>
                           <p class="text-sm text-gray-600 font-medium">{{ field.placeholder || 'Click or drag file to upload' }}</p>
                         </div>
                       } @else if (field.type === 'multi-select') {

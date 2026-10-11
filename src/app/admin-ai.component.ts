@@ -26,7 +26,7 @@ import { MatIconModule } from '@angular/material/icon';
           <a routerLink="/pricing" class="inline-flex items-center gap-2 bg-blue-600 text-white px-6 py-2.5 rounded-xl text-sm font-bold hover:bg-blue-700 transition-colors">
             <mat-icon class="text-[18px]">upgrade</mat-icon> Upgrade to Pro
           </a>
-          <p class="text-xs text-gray-400 mt-3">Free plan uses built-in templates instead of AI</p>
+          <p class="text-xs text-gray-500 mt-3">Free plan uses built-in templates instead of AI</p>
         </div>
       }
 
@@ -55,7 +55,7 @@ import { MatIconModule } from '@angular/material/icon';
             <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener" class="text-blue-600 font-medium hover:underline">Get a key</a>.
           </p>
           <div class="flex flex-col sm:flex-row gap-3">
-            <input type="password" [(ngModel)]="apiKeyInput" placeholder="Paste your Gemini API key..." autocomplete="off" class="flex-1 px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm text-gray-700">
+            <input aria-label="Paste your Gemini API key" type="password" [(ngModel)]="apiKeyInput" placeholder="Paste your Gemini API key..." autocomplete="off" class="flex-1 px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm text-gray-700">
             <div class="flex gap-2">
               <button (click)="saveApiKey()" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl text-sm font-bold transition-colors shadow-sm">Save Key</button>
               @if (isLive()) {
@@ -106,7 +106,7 @@ import { MatIconModule } from '@angular/material/icon';
             </h3>
           </div>
           <div class="p-6 flex-1 flex flex-col">
-            <input type="text" [(ngModel)]="googleTopic" placeholder="What's the update about?" class="w-full px-4 py-2.5 mb-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm text-gray-700">
+            <input aria-label="What's the update about?" type="text" [(ngModel)]="googleTopic" placeholder="What's the update about?" class="w-full px-4 py-2.5 mb-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm text-gray-700">
             <button (click)="generateGoogle()" [disabled]="!googleTopic || isGeneratingGoogle" class="w-full bg-blue-50 text-blue-600 px-4 py-2.5 rounded-xl text-sm font-bold transition-colors hover:bg-blue-100 disabled:opacity-50 flex items-center justify-center gap-2 mb-4">
                @if(isGeneratingGoogle) {
                   <span class="animate-spin h-4 w-4 border-2 border-blue-600 border-t-transparent rounded-full"></span>
@@ -134,7 +134,7 @@ import { MatIconModule } from '@angular/material/icon';
             </h3>
           </div>
           <div class="p-6 flex-1 flex flex-col">
-            <input type="text" [(ngModel)]="socialTopic" placeholder="What's the post about?" class="w-full px-4 py-2.5 mb-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm text-gray-700">
+            <input aria-label="What's the post about?" type="text" [(ngModel)]="socialTopic" placeholder="What's the post about?" class="w-full px-4 py-2.5 mb-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm text-gray-700">
             <button (click)="generateSocial()" [disabled]="!socialTopic || isGeneratingSocial" class="w-full bg-blue-50 text-blue-600 px-4 py-2.5 rounded-xl text-sm font-bold transition-colors hover:bg-blue-100 disabled:opacity-50 flex items-center justify-center gap-2 mb-4">
                @if(isGeneratingSocial) {
                   <span class="animate-spin h-4 w-4 border-2 border-blue-600 border-t-transparent rounded-full"></span>

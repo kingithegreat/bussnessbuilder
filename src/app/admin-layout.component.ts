@@ -84,8 +84,8 @@ export const OUTCOME_NAVIGATION = [
       <main class="flex-1 flex flex-col overflow-hidden">
         <header class="h-12 md:h-14 bg-white/80 backdrop-blur-xl border-b border-gray-200/60 flex items-center justify-between px-4 md:px-8 shrink-0">
            <div class="flex items-center gap-2 text-sm text-gray-500">
-             <button (click)="sidebarOpen.set(!sidebarOpen())" class="md:hidden p-1.5 rounded-lg text-gray-500 hover:bg-gray-100 transition-colors">
-               <mat-icon>menu</mat-icon>
+             <button (click)="sidebarOpen.set(!sidebarOpen())" class="md:hidden p-1.5 rounded-lg text-gray-500 hover:bg-gray-100 transition-colors" aria-label="Open menu">
+               <mat-icon aria-hidden="true">menu</mat-icon>
              </button>
              <span class="hidden sm:inline">Admin</span>
              <mat-icon class="text-[16px] hidden sm:inline">chevron_right</mat-icon>

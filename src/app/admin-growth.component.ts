@@ -118,7 +118,7 @@ const SECTION_INSERT_TYPES: RecommendationType[] = ['pricing', 'marketing', 'seo
             <div class="w-7 h-7 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center">
               <mat-icon class="text-[16px]">visibility</mat-icon>
             </div>
-            <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Views (7d)</span>
+            <span class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Views (7d)</span>
           </div>
           <span class="text-2xl font-bold text-gray-900">{{ analyticsService.viewsLast7Days() }}</span>
         </div>
@@ -127,7 +127,7 @@ const SECTION_INSERT_TYPES: RecommendationType[] = ['pricing', 'marketing', 'seo
             <div class="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
               <mat-icon class="text-[16px]">mail</mat-icon>
             </div>
-            <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Enquiries</span>
+            <span class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Enquiries</span>
           </div>
           <span class="text-2xl font-bold text-gray-900">{{ enquiries().length }}</span>
         </div>
@@ -136,7 +136,7 @@ const SECTION_INSERT_TYPES: RecommendationType[] = ['pricing', 'marketing', 'seo
             <div class="w-7 h-7 rounded-lg bg-green-50 text-green-600 flex items-center justify-center">
               <mat-icon class="text-[16px]">percent</mat-icon>
             </div>
-            <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Conversion</span>
+            <span class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Conversion</span>
           </div>
           <span class="text-2xl font-bold text-gray-900">{{ conversionRate() }}%</span>
         </div>
@@ -145,7 +145,7 @@ const SECTION_INSERT_TYPES: RecommendationType[] = ['pricing', 'marketing', 'seo
             <div class="w-7 h-7 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center">
               <mat-icon class="text-[16px]">schedule</mat-icon>
             </div>
-            <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Follow-ups</span>
+            <span class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Follow-ups</span>
           </div>
           <span class="text-2xl font-bold" [class.text-amber-600]="needsFollowUp().length > 0" [class.text-gray-900]="needsFollowUp().length === 0">{{ needsFollowUp().length }}</span>
         </div>
@@ -177,17 +177,17 @@ const SECTION_INSERT_TYPES: RecommendationType[] = ['pricing', 'marketing', 'seo
         <!-- Recommendations -->
         <div class="bg-white rounded-2xl shadow-sm border border-gray-100 flex flex-col">
           <div class="p-5 border-b border-gray-100 flex items-center gap-2 bg-gray-50/50 rounded-t-2xl">
-            <mat-icon class="text-[18px] text-gray-400">lightbulb</mat-icon>
+            <mat-icon class="text-[18px] text-gray-500">lightbulb</mat-icon>
             <h3 class="font-bold text-sm text-gray-900">Recommendations</h3>
             @if (dismissedCount() > 0) {
-              <button (click)="showDismissed.set(!showDismissed())" class="ml-auto text-[10px] text-gray-400 hover:text-gray-600 font-bold">
+              <button (click)="showDismissed.set(!showDismissed())" class="ml-auto text-[10px] text-gray-500 hover:text-gray-600 font-bold">
                 {{ showDismissed() ? 'Hide' : 'Show' }} dismissed ({{ dismissedCount() }})
               </button>
             }
           </div>
           <div class="p-5 flex-1 space-y-4 max-h-[600px] overflow-y-auto">
             @if (visibleRecommendations().length === 0) {
-              <div class="text-center py-8 text-gray-400">
+              <div class="text-center py-8 text-gray-500">
                 <mat-icon class="text-3xl mb-2">psychology</mat-icon>
                 <p class="text-sm font-medium">Generate a report to get personalised recommendations.</p>
               </div>
@@ -240,7 +240,7 @@ const SECTION_INSERT_TYPES: RecommendationType[] = ['pricing', 'marketing', 'seo
                         <button (click)="markDone(rec)" class="bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 px-3 py-1.5 rounded-lg text-[11px] font-bold transition-colors flex items-center gap-1">
                           <mat-icon class="text-[14px]">check</mat-icon> Done
                         </button>
-                        <button (click)="dismiss(rec)" class="bg-white border border-gray-200 hover:bg-gray-50 text-gray-400 px-3 py-1.5 rounded-lg text-[11px] font-bold transition-colors flex items-center gap-1">
+                        <button (click)="dismiss(rec)" class="bg-white border border-gray-200 hover:bg-gray-50 text-gray-500 px-3 py-1.5 rounded-lg text-[11px] font-bold transition-colors flex items-center gap-1">
                           <mat-icon class="text-[14px]">close</mat-icon> Dismiss
                         </button>
                       </div>
@@ -255,7 +255,7 @@ const SECTION_INSERT_TYPES: RecommendationType[] = ['pricing', 'marketing', 'seo
                     @if (rec.draftContent) {
                       <div class="mt-3 p-3 bg-white rounded-lg border border-gray-200 shadow-sm">
                         <div class="flex items-center justify-between mb-2">
-                          <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Draft Preview</span>
+                          <span class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Draft Preview</span>
                           <div class="flex gap-1">
                             @if (rec.type === 'faq' && rec.status !== 'applied' && !hasPlaceholder(rec.draftContent)) {
                               <button (click)="addAsFaq(rec)" class="bg-blue-50 hover:bg-blue-100 text-blue-600 px-2 py-1 rounded text-[10px] font-bold transition-colors flex items-center gap-1">
@@ -307,12 +307,12 @@ const SECTION_INSERT_TYPES: RecommendationType[] = ['pricing', 'marketing', 'seo
         <!-- Leads Needing Follow-up -->
         <div class="bg-white rounded-2xl shadow-sm border border-gray-100 flex flex-col">
           <div class="p-5 border-b border-gray-100 flex items-center gap-2 bg-gray-50/50 rounded-t-2xl">
-            <mat-icon class="text-[18px] text-gray-400">people</mat-icon>
+            <mat-icon class="text-[18px] text-gray-500">people</mat-icon>
             <h3 class="font-bold text-sm text-gray-900">Leads Needing Follow-up</h3>
           </div>
           <div class="flex-1 max-h-96 overflow-y-auto">
             @if (needsFollowUp().length === 0) {
-              <div class="p-8 text-center text-gray-400">
+              <div class="p-8 text-center text-gray-500">
                 <mat-icon class="text-3xl mb-2">check_circle</mat-icon>
                 <p class="text-sm font-medium">All caught up! No leads need follow-up.</p>
               </div>
@@ -332,7 +332,7 @@ const SECTION_INSERT_TYPES: RecommendationType[] = ['pricing', 'marketing', 'seo
                   </div>
                   <div class="text-right shrink-0">
                     <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase" [class.bg-red-100]="lead.leadScore === 'Hot'" [class.text-red-600]="lead.leadScore === 'Hot'" [class.bg-orange-100]="lead.leadScore === 'Warm'" [class.text-orange-600]="lead.leadScore === 'Warm'" [class.bg-blue-100]="lead.leadScore !== 'Hot' && lead.leadScore !== 'Warm'" [class.text-blue-600]="lead.leadScore !== 'Hot' && lead.leadScore !== 'Warm'">{{ lead.leadScore || 'New' }}</span>
-                    <p class="text-[10px] text-gray-400 mt-1">{{ daysSince(lead.date) }}</p>
+                    <p class="text-[10px] text-gray-500 mt-1">{{ daysSince(lead.date) }}</p>
                   </div>
                 </a>
               }
@@ -344,7 +344,7 @@ const SECTION_INSERT_TYPES: RecommendationType[] = ['pricing', 'marketing', 'seo
       <!-- Marketing Quick Actions -->
       <div class="bg-white rounded-2xl shadow-sm border border-gray-100">
         <div class="p-5 border-b border-gray-100 flex items-center gap-2 bg-gray-50/50 rounded-t-2xl">
-          <mat-icon class="text-[18px] text-gray-400">campaign</mat-icon>
+          <mat-icon class="text-[18px] text-gray-500">campaign</mat-icon>
           <h3 class="font-bold text-sm text-gray-900">Marketing Content Generator</h3>
           @if (!subService.canUseMarketing()) {
             <span class="ml-2 px-2 py-0.5 rounded text-[9px] font-bold uppercase bg-blue-100 text-blue-600">Pro</span>
@@ -357,7 +357,7 @@ const SECTION_INSERT_TYPES: RecommendationType[] = ['pricing', 'marketing', 'seo
                 class="p-4 rounded-xl border text-left transition-all hover:shadow-sm"
                 [class.border-emerald-300]="selectedMarketing() === action.type" [class.bg-emerald-50]="selectedMarketing() === action.type"
                 [class.border-gray-200]="selectedMarketing() !== action.type" [class.hover:border-gray-300]="selectedMarketing() !== action.type">
-                <mat-icon class="text-[20px] mb-2" [class.text-emerald-600]="selectedMarketing() === action.type" [class.text-gray-400]="selectedMarketing() !== action.type">{{ action.icon }}</mat-icon>
+                <mat-icon class="text-[20px] mb-2" [class.text-emerald-600]="selectedMarketing() === action.type" [class.text-gray-500]="selectedMarketing() !== action.type">{{ action.icon }}</mat-icon>
                 <p class="text-sm font-bold text-gray-900">{{ action.label }}</p>
                 <p class="text-[10px] text-gray-500 mt-0.5">{{ action.desc }}</p>
               </button>

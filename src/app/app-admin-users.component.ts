@@ -28,7 +28,7 @@ interface AdminUser {
           <h1 class="text-2xl font-black text-gray-900 tracking-tight">Users</h1>
           <p class="text-sm text-gray-500">All registered accounts and their sites.</p>
         </div>
-        <span class="text-sm font-bold text-gray-400">{{ users().length }} total</span>
+        <span class="text-sm font-bold text-gray-500">{{ users().length }} total</span>
       </div>
 
       @if (loading()) {
@@ -60,7 +60,7 @@ interface AdminUser {
                   <tr class="border-b border-gray-50 hover:bg-gray-50/50 transition-colors">
                     <td class="px-4 py-3">
                       <p class="font-bold text-gray-900">{{ user.displayName || 'No name' }}</p>
-                      <p class="text-xs text-gray-400">{{ user.email }}</p>
+                      <p class="text-xs text-gray-500">{{ user.email }}</p>
                     </td>
                     <td class="px-4 py-3">
                       @if (user.businessName) {
@@ -71,7 +71,7 @@ interface AdminUser {
                           <a [href]="'/site/' + user.uid" target="_blank" class="text-xs text-blue-500 font-mono hover:underline">View site</a>
                         }
                       } @else {
-                        <span class="text-gray-400 text-xs">Not set up</span>
+                        <span class="text-gray-500 text-xs">Not set up</span>
                       }
                     </td>
                     <td class="px-4 py-3">

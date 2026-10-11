@@ -12,8 +12,8 @@ import { MatIconModule } from '@angular/material/icon';
         <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden">
           <div class="p-4 border-b border-gray-100 flex items-center justify-between">
             <h3 class="font-bold text-gray-900 text-sm">Crop & Resize Image</h3>
-            <button (click)="cancel()" class="text-gray-400 hover:text-gray-600">
-              <mat-icon>close</mat-icon>
+            <button (click)="cancel()" class="text-gray-500 hover:text-gray-600" aria-label="Close">
+              <mat-icon aria-hidden="true">close</mat-icon>
             </button>
           </div>
 
@@ -25,7 +25,7 @@ import { MatIconModule } from '@angular/material/icon';
             <div>
               <label for="cropQuality" class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Quality</label>
               <input id="cropQuality" type="range" [(ngModel)]="quality" min="0.3" max="1" step="0.1" class="w-full accent-blue-600">
-              <div class="flex justify-between text-[10px] text-gray-400 mt-1">
+              <div class="flex justify-between text-[10px] text-gray-500 mt-1">
                 <span>Smaller file</span>
                 <span>{{ (quality * 100).toFixed(0) }}%</span>
                 <span>Higher quality</span>

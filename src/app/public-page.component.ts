@@ -109,8 +109,8 @@ import { ToastService } from './toast.service';
             <a href="#contact" (click)="scrollTo('contact', $event)" [style.backgroundColor]="customization().branding.primaryColor" [style.borderRadius]="buttonRadius" class="text-white px-3 py-2 md:px-5 md:py-2.5 text-xs md:text-sm font-bold shadow-md hover:opacity-90 transition-opacity whitespace-nowrap cursor-pointer">
               {{ ctaLabel() }}
             </a>
-            <button (click)="mobileMenuOpen.set(!mobileMenuOpen())" class="md:hidden p-2 rounded-lg text-gray-500 hover:bg-gray-100 transition-colors">
-              <mat-icon>{{ mobileMenuOpen() ? 'close' : 'menu' }}</mat-icon>
+            <button (click)="mobileMenuOpen.set(!mobileMenuOpen())" class="md:hidden p-2 rounded-lg text-gray-500 hover:bg-gray-100 transition-colors" [attr.aria-label]="mobileMenuOpen() ? 'Close menu' : 'Open menu'" [attr.aria-expanded]="mobileMenuOpen()">
+              <mat-icon aria-hidden="true">{{ mobileMenuOpen() ? 'close' : 'menu' }}</mat-icon>
             </button>
           </div>
         </div>
@@ -202,9 +202,9 @@ import { ToastService } from './toast.service';
                       </div>
                       <div [style.borderRadius]="cardRadius" class="aspect-square bg-gray-100 overflow-hidden relative shadow-lg">
                         @if (getSection('hero')?.imageUrl) {
-                          <img [src]="getSection('hero')!.imageUrl" alt="Hero" referrerpolicy="no-referrer" class="w-full h-full object-cover">
+                          <img [src]="getSection('hero')!.imageUrl" [alt]="profile().name ? profile().name + ' — main photo' : 'Main photo'" referrerpolicy="no-referrer" class="w-full h-full object-cover">
                         } @else {
-                          <img src="https://images.unsplash.com/photo-1556761175-5973dc0f32d7?w=800&q=80" alt="Hero" referrerpolicy="no-referrer" class="w-full h-full object-cover">
+                          <img src="https://images.unsplash.com/photo-1556761175-5973dc0f32d7?w=800&q=80" [alt]="profile().name ? profile().name + ' — main photo' : 'Main photo'" referrerpolicy="no-referrer" class="w-full h-full object-cover">
                         }
                       </div>
                     </div>
@@ -340,7 +340,7 @@ import { ToastService } from './toast.service';
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
                       <div [style.borderRadius]="cardRadius" class="aspect-[4/3] bg-gray-100 overflow-hidden relative shadow-lg order-2 lg:order-1">
                         @if (getSection('about')?.imageUrl) {
-                          <img [src]="getSection('about')!.imageUrl" alt="About" referrerpolicy="no-referrer" class="w-full h-full object-cover">
+                          <img [src]="getSection('about')!.imageUrl" [alt]="profile().name ? 'About ' + profile().name : 'About us photo'" referrerpolicy="no-referrer" class="w-full h-full object-cover">
                         } @else {
                           <div class="w-full h-full flex items-center justify-center">
                             <mat-icon class="text-[64px] w-[64px] h-[64px] text-gray-300">storefront</mat-icon>

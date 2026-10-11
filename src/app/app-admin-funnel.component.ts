@@ -57,7 +57,7 @@ const ABANDON_LABELS: { key: keyof FunnelReport['abandon']; label: string; hint:
     </div>
 
     @if (loading()) {
-      <div class="bg-white rounded-2xl border border-gray-200 p-12 text-center text-gray-400 text-sm">Loading…</div>
+      <div class="bg-white rounded-2xl border border-gray-200 p-12 text-center text-gray-500 text-sm">Loading…</div>
     } @else if (!report()) {
       <div class="bg-white rounded-2xl border border-gray-200 p-12 text-center">
         <mat-icon class="text-4xl text-gray-300">filter_alt</mat-icon>
@@ -67,7 +67,7 @@ const ABANDON_LABELS: { key: keyof FunnelReport['abandon']; label: string; hint:
       <div class="bg-white rounded-2xl border border-gray-200 p-12 text-center">
         <mat-icon class="text-4xl text-gray-300">hourglass_empty</mat-icon>
         <p class="text-sm font-medium text-gray-500 mt-2">No sessions recorded yet in this window.</p>
-        <p class="text-xs text-gray-400 mt-1">Counting starts from the first visit after this was deployed.</p>
+        <p class="text-xs text-gray-500 mt-1">Counting starts from the first visit after this was deployed.</p>
       </div>
     } @else {
       <!-- Headline tiles -->
@@ -75,33 +75,33 @@ const ABANDON_LABELS: { key: keyof FunnelReport['abandon']; label: string; hint:
         <div class="bg-white rounded-2xl border border-gray-200 p-5">
           <div class="flex items-center gap-2 mb-3">
             <div class="w-7 h-7 rounded-lg bg-gray-100 text-gray-500 flex items-center justify-center"><mat-icon class="text-[16px]">groups</mat-icon></div>
-            <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Sessions</span>
+            <span class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Sessions</span>
           </div>
           <p class="text-2xl font-black text-gray-900">{{ report()!.sessions }}</p>
         </div>
         <div class="bg-white rounded-2xl border border-gray-200 p-5">
           <div class="flex items-center gap-2 mb-3">
             <div class="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center"><mat-icon class="text-[16px]">edit_note</mat-icon></div>
-            <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Reached wizard</span>
+            <span class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Reached wizard</span>
           </div>
           <p class="text-2xl font-black text-gray-900">{{ stepValue('wizard_started') }}</p>
-          <p class="text-xs text-gray-400 mt-1">{{ stepPct('wizard_started') }}% of sessions</p>
+          <p class="text-xs text-gray-500 mt-1">{{ stepPct('wizard_started') }}% of sessions</p>
         </div>
         <div class="bg-white rounded-2xl border border-gray-200 p-5">
           <div class="flex items-center gap-2 mb-3">
             <div class="w-7 h-7 rounded-lg bg-green-50 text-green-600 flex items-center justify-center"><mat-icon class="text-[16px]">person_add</mat-icon></div>
-            <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Accounts</span>
+            <span class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Accounts</span>
           </div>
           <p class="text-2xl font-black text-gray-900">{{ stepValue('account_created') }}</p>
-          <p class="text-xs text-gray-400 mt-1">{{ stepPct('account_created') }}% of sessions</p>
+          <p class="text-xs text-gray-500 mt-1">{{ stepPct('account_created') }}% of sessions</p>
         </div>
         <div class="bg-white rounded-2xl border border-gray-200 p-5">
           <div class="flex items-center gap-2 mb-3">
             <div class="w-7 h-7 rounded-lg bg-red-50 text-red-600 flex items-center justify-center"><mat-icon class="text-[16px]">rocket_launch</mat-icon></div>
-            <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Sites live</span>
+            <span class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Sites live</span>
           </div>
           <p class="text-2xl font-black text-gray-900">{{ stepValue('site_live') }}</p>
-          <p class="text-xs text-gray-400 mt-1">{{ stepPct('site_live') }}% of sessions</p>
+          <p class="text-xs text-gray-500 mt-1">{{ stepPct('site_live') }}% of sessions</p>
         </div>
       </div>
 
@@ -109,7 +109,7 @@ const ABANDON_LABELS: { key: keyof FunnelReport['abandon']; label: string; hint:
       <div class="bg-white rounded-2xl border border-gray-200 mb-6">
         <div class="px-5 py-4 border-b border-gray-100">
           <h2 class="font-bold text-sm text-gray-900">Step by step</h2>
-          <p class="text-xs text-gray-400 mt-0.5">Each bar is the share of all sessions. The drop column is how many of the previous step made it here.</p>
+          <p class="text-xs text-gray-500 mt-0.5">Each bar is the share of all sessions. The drop column is how many of the previous step made it here.</p>
         </div>
         <div class="p-5 space-y-3">
           @for (row of report()!.funnel; track row.step) {
@@ -118,9 +118,9 @@ const ABANDON_LABELS: { key: keyof FunnelReport['abandon']; label: string; hint:
                 <span class="font-bold text-gray-700">{{ row.label }}</span>
                 <span class="text-gray-500">
                   <span class="font-bold text-gray-900">{{ row.reached }}</span>
-                  <span class="text-gray-400"> · {{ row.conversionFromTop }}% of all</span>
+                  <span class="text-gray-500"> · {{ row.conversionFromTop }}% of all</span>
                   @if (!$first) {
-                    <span [class]="row.conversionFromPrev < 50 ? 'text-red-600 font-bold' : 'text-gray-400'">
+                    <span [class]="row.conversionFromPrev < 50 ? 'text-red-600 font-bold' : 'text-gray-500'">
                       · {{ row.conversionFromPrev }}% of previous
                     </span>
                   }
@@ -139,19 +139,19 @@ const ABANDON_LABELS: { key: keyof FunnelReport['abandon']; label: string; hint:
         <div class="bg-white rounded-2xl border border-gray-200">
           <div class="px-5 py-4 border-b border-gray-100">
             <h2 class="font-bold text-sm text-gray-900">Where they quit</h2>
-            <p class="text-xs text-gray-400 mt-0.5">Every session lands in exactly one bucket, so these add up.</p>
+            <p class="text-xs text-gray-500 mt-0.5">Every session lands in exactly one bucket, so these add up.</p>
           </div>
           <div class="p-5 space-y-4">
             @for (bucket of abandonRows(); track bucket.key) {
               <div>
                 <div class="flex justify-between text-xs mb-1">
                   <span class="font-bold text-gray-700">{{ bucket.label }}</span>
-                  <span class="font-bold text-gray-900">{{ bucket.count }} <span class="text-gray-400 font-medium">({{ bucket.pct }}%)</span></span>
+                  <span class="font-bold text-gray-900">{{ bucket.count }} <span class="text-gray-500 font-medium">({{ bucket.pct }}%)</span></span>
                 </div>
                 <div class="w-full bg-gray-100 rounded-full h-2">
                   <div class="bg-red-400 h-2 rounded-full" [style.width.%]="bucket.pct"></div>
                 </div>
-                <p class="text-[11px] text-gray-400 mt-1">{{ bucket.hint }}</p>
+                <p class="text-[11px] text-gray-500 mt-1">{{ bucket.hint }}</p>
               </div>
             }
             <div class="pt-3 border-t border-gray-100 flex justify-between text-xs">
@@ -165,11 +165,11 @@ const ABANDON_LABELS: { key: keyof FunnelReport['abandon']; label: string; hint:
         <div class="bg-white rounded-2xl border border-gray-200">
           <div class="px-5 py-4 border-b border-gray-100">
             <h2 class="font-bold text-sm text-gray-900">Friction</h2>
-            <p class="text-xs text-gray-400 mt-0.5">Things that went wrong, counted once per session.</p>
+            <p class="text-xs text-gray-500 mt-0.5">Things that went wrong, counted once per session.</p>
           </div>
           <div class="p-5">
             @if (frictionRows().length === 0) {
-              <p class="text-sm text-gray-400 text-center py-6">Nothing recorded.</p>
+              <p class="text-sm text-gray-500 text-center py-6">Nothing recorded.</p>
             } @else {
               <table class="w-full text-left">
                 <tbody class="text-sm divide-y divide-gray-50">
@@ -211,7 +211,7 @@ const ABANDON_LABELS: { key: keyof FunnelReport['abandon']; label: string; hint:
       <div class="bg-white rounded-2xl border border-gray-200">
         <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
           <h2 class="font-bold text-sm text-gray-900">Sites going live, by day</h2>
-          <span class="text-xs text-gray-400">{{ report()!.from }} → {{ report()!.to }}</span>
+          <span class="text-xs text-gray-500">{{ report()!.from }} → {{ report()!.to }}</span>
         </div>
         <div class="p-5">
           <div class="flex items-end gap-1 h-24">
