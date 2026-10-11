@@ -1,9 +1,12 @@
 import { Routes } from '@angular/router';
 import { LandingComponent } from './landing.component';
+import { hostSiteMatch } from './host-site';
 import { authGuard, setupGuard, publicGuard, appAdminGuard, previewFrameGuard } from './auth.guard';
 
 export const routes: Routes = [
   // Keep the landing page immediate; load each workflow only when it is opened.
+  // On a verified customer custom domain, '/' is that business's site.
+  { path: '', canMatch: [hostSiteMatch], loadComponent: () => import('./site-view.component').then(m => m.SiteViewComponent) },
   { path: '', component: LandingComponent },
   { path: 'login', loadComponent: () => import('./login.component').then(m => m.LoginComponent) },
   { path: 'signup', loadComponent: () => import('./login.component').then(m => m.LoginComponent) },
