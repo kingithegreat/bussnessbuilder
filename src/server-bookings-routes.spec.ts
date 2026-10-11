@@ -1,4 +1,4 @@
-import { bookingsRouter } from './server-bookings-routes';
+import { bookingsRouter, pruneBookings } from './server-bookings-routes';
 import { startFeatureServer } from './testing/feature-harness';
 
 const now = () => new Date('2026-10-01T00:00:00Z');
@@ -53,5 +53,15 @@ describe('bookings HTTP journey', () => {
     expect((await h.call('POST', '/api/site/owner/booking', { serviceId: 'mow', start: '2026-10-14T03:00:00.000Z', name: 'A', email: 'a@b.co' })).status).toBe(409);
     await h.call('PUT', '/api/bookings/settings', { uid: 'owner', settings: { ...settings, enabled: false } }, true);
     expect((await h.call('GET', '/api/site/owner/booking')).body).toEqual({ enabled: false });
+  });
+});
+
+describe('pruneBookings', () => {
+  it('drops long-past bookings and caps the list', () => {
+    const now = new Date('2026-10-01T00:00:00Z');
+    const old = { end: '2026-01-01T00:00:00Z' };
+    const soon = { end: '2026-10-02T00:00:00Z' };
+    expect(pruneBookings([soon, old], now)).toEqual([soon]);
+    expect(pruneBookings(Array.from({ length: 400 }, () => soon), now)).toHaveLength(300);
   });
 });

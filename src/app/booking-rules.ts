@@ -129,6 +129,11 @@ export function localDate(date: Date, timeZone: string): string {
   return new Intl.DateTimeFormat('en-CA', { timeZone, year: 'numeric', month: '2-digit', day: '2-digit' }).format(date);
 }
 
+/** Local wall-clock 'HH:MM' of an instant in `timeZone`. */
+export function localTime(date: Date, timeZone: string): string {
+  return new Intl.DateTimeFormat('en-GB', { timeZone, hourCycle: 'h23', hour: '2-digit', minute: '2-digit' }).format(date);
+}
+
 export function weekdayOf(dateStr: string): Weekday {
   const [y, m, d] = dateStr.split('-').map(Number);
   return WEEKDAYS[(new Date(Date.UTC(y, m - 1, d)).getUTCDay() + 6) % 7];
@@ -154,6 +159,9 @@ export function availableSlots(settings: BookingSettings, serviceId: string, dat
       const hh = String(Math.floor(m / 60)).padStart(2, '0');
       const mm = String(m % 60).padStart(2, '0');
       const start = zonedTimeToUtc(dateStr, `${hh}:${mm}`, settings.timezone).getTime();
+      // Skip wall-clock times that don't exist (DST spring-forward gap): they
+      // would map onto a real neighbouring instant and duplicate a slot.
+      if (localTime(new Date(start), settings.timezone) !== `${hh}:${mm}` || localDate(new Date(start), settings.timezone) !== dateStr) continue;
       const end = start + service.durationMin * 60_000;
       if (start < earliest || start > latest) continue;
       if (busyMs.some(([s, e]) => overlaps(start, end, s, e))) continue;

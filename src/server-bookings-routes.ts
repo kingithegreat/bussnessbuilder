@@ -3,7 +3,16 @@ import { randomUUID } from 'node:crypto';
 import { FeatureDeps, authorizeOwner, clientIp, isEmail, trimStr, validUid } from './server-owner';
 import { Booking, BookingStatus, sanitizeBookingSettings, isSlotBookable, busyFromBookings, availableSlots, buildIcs, formatSlot, defaultBookingSettings } from './app/booking-rules';
 
-const MAX_BOOKINGS = 1000;
+// One Firestore doc holds every booking, so bound its size well under 1 MB:
+// <=300 records x ~2.5 KB worst case (notes capped at 500 chars).
+const MAX_BOOKINGS = 300;
+const KEEP_PAST_DAYS = 90;
+
+/** Drop bookings that ended more than KEEP_PAST_DAYS ago, then cap the list. */
+export function pruneBookings<T extends { end: string }>(list: T[], now: Date): T[] {
+  const cutoff = now.getTime() - KEEP_PAST_DAYS * 86400_000;
+  return list.filter(b => Date.parse(b.end) >= cutoff).slice(0, MAX_BOOKINGS);
+}
 const docPath = (uid: string) => `users/${uid}/businessData/bookings`;
 /** The .ics token is a capability for the customer; never send it to the owner UI. */
 function stripToken(b: Booking & { token?: string }): Booking {
@@ -94,10 +103,10 @@ export function bookingsRouter(deps: FeatureDeps): express.Router {
         const booking: Booking & { token: string } = {
           id: randomUUID(), serviceId: service.id, serviceName: service.name, start,
           end: new Date(Date.parse(start) + service.durationMin * 60_000).toISOString(),
-          name, email, phone: trimStr(b.phone, 50), notes: trimStr(b.notes, 2000),
+          name, email, phone: trimStr(b.phone, 50), notes: trimStr(b.notes, 500),
           status: 'pending', createdAt: now().toISOString(), token: randomUUID(),
         };
-        tx.set(ref, { ...data, settings: data['settings'] ?? settings, bookings: [booking, ...bookings].slice(0, MAX_BOOKINGS) });
+        tx.set(ref, { ...data, settings: data['settings'] ?? settings, bookings: pruneBookings([booking, ...bookings], now()) });
         return { ok: true as const, booking, timezone: settings.timezone };
       });
       if (!result.ok) { res.status(result.status).json({ error: result.error }); return; }
