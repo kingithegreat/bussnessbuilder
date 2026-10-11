@@ -68,7 +68,7 @@ describe('SetupWizardComponent — preview-before-publish gate', () => {
 
   it('onReview with a valid form opens the gate but does NOT publish', () => {
     const c = makeComponent();
-    c.form.setValue({ name: 'Apex', type: 'cleaner', tagline: '', email: 'a@b.com', phone: '', serviceArea: '', openingHours: '', heroImageUrl: '' });
+    c.form.setValue({ name: 'Apex', type: 'cleaner', tagline: '', email: 'a@b.com', phone: '', serviceArea: '', openingHours: '', heroImageUrl: '', template: '' });
     c.onReview();
     expect(c.reviewing()).toBe(true);
     expect(c.formError()).toBe('');
@@ -85,7 +85,7 @@ describe('SetupWizardComponent — preview-before-publish gate', () => {
 
   it('onConfirmPublish completes setup and navigates to the dashboard', async () => {
     const c = makeComponent();
-    c.form.setValue({ name: 'Apex', type: 'cleaner', tagline: '', email: 'a@b.com', phone: '', serviceArea: '', openingHours: '', heroImageUrl: '' });
+    c.form.setValue({ name: 'Apex', type: 'cleaner', tagline: '', email: 'a@b.com', phone: '', serviceArea: '', openingHours: '', heroImageUrl: '', template: '' });
     await c.onConfirmPublish();
     expect(completeSetupCalls).toBe(1);
     expect(navigated).toEqual(['/admin/dashboard']);
@@ -99,7 +99,7 @@ describe('SetupWizardComponent — preview-before-publish gate', () => {
 
   it('claims a slug when publishing while logged in', async () => {
     const c = makeComponent();
-    c.form.setValue({ name: 'Apex', type: 'cleaner', tagline: '', email: 'a@b.com', phone: '', serviceArea: '', openingHours: '', heroImageUrl: '' });
+    c.form.setValue({ name: 'Apex', type: 'cleaner', tagline: '', email: 'a@b.com', phone: '', serviceArea: '', openingHours: '', heroImageUrl: '', template: '' });
     await c.onConfirmPublish();
     expect(claimCalls).toBe(1);
   });
@@ -109,7 +109,7 @@ describe('SetupWizardComponent — preview-before-publish gate', () => {
 
     it('finishes the wizard, stashes the site and routes to sign-up', async () => {
       const c = makeComponent();
-      c.form.setValue({ name: 'Apex', type: 'cleaner', tagline: '', email: 'a@b.com', phone: '', serviceArea: '', openingHours: '', heroImageUrl: '' });
+      c.form.setValue({ name: 'Apex', type: 'cleaner', tagline: '', email: 'a@b.com', phone: '', serviceArea: '', openingHours: '', heroImageUrl: '', template: '' });
       await c.onConfirmPublish();
 
       expect(completeSetupCalls).toBe(1);
@@ -121,7 +121,7 @@ describe('SetupWizardComponent — preview-before-publish gate', () => {
 
     it('does not try to claim a slug before an account exists', async () => {
       const c = makeComponent();
-      c.form.setValue({ name: 'Apex', type: 'cleaner', tagline: '', email: 'a@b.com', phone: '', serviceArea: '', openingHours: '', heroImageUrl: '' });
+      c.form.setValue({ name: 'Apex', type: 'cleaner', tagline: '', email: 'a@b.com', phone: '', serviceArea: '', openingHours: '', heroImageUrl: '', template: '' });
       await c.onConfirmPublish();
       expect(claimCalls).toBe(0);
     });

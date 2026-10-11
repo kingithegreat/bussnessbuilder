@@ -54,8 +54,9 @@ export function sanitizeQuote(raw: unknown, base: Pick<Quote, 'id' | 'number' | 
     const o = (l || {}) as Record<string, unknown>;
     return { description: str(o['description'], 300), quantity: num(o['quantity'], 0, 100000), unitPrice: roundCents(num(o['unitPrice'], -1e7, 1e7)) };
   }).filter(l => l.description || l.unitPrice);
-  const gstMode = r['gstMode'] === 'inclusive' || r['gstMode'] === 'none' ? r['gstMode'] : 'exclusive';
   const currency = (['NZD', 'AUD', 'USD', 'GBP', 'EUR'].includes(String(r['currency'])) ? r['currency'] : 'NZD') as SiteCurrency;
+  // GST maths is NZ-only (15%). Other currencies get no tax line rather than a wrong one.
+  const gstMode = currency !== 'NZD' ? 'none' : r['gstMode'] === 'inclusive' || r['gstMode'] === 'none' ? r['gstMode'] : 'exclusive';
   return {
     ...base,
     kind: r['kind'] === 'invoice' ? 'invoice' : 'quote',
@@ -73,9 +74,9 @@ export function sanitizeQuote(raw: unknown, base: Pick<Quote, 'id' | 'number' | 
 }
 
 /** Next sequential number, e.g. Q-0003 / INV-0012, based on existing ones of that kind. */
-export function nextQuoteNumber(existing: readonly Pick<Quote, 'kind' | 'number'>[], kind: QuoteKind): string {
+export function nextQuoteNumber(existing: readonly Pick<Quote, 'kind' | 'number'>[], kind: QuoteKind, lastIssued = 0): string {
   const prefix = kind === 'invoice' ? 'INV-' : 'Q-';
   const max = existing.filter(q => q.kind === kind && q.number.startsWith(prefix))
-    .map(q => parseInt(q.number.slice(prefix.length), 10)).filter(Number.isFinite).reduce((a, b) => Math.max(a, b), 0);
+    .map(q => parseInt(q.number.slice(prefix.length), 10)).filter(Number.isFinite).reduce((a, b) => Math.max(a, b), lastIssued);
   return `${prefix}${String(max + 1).padStart(4, '0')}`;
 }

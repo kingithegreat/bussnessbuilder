@@ -9,7 +9,8 @@ import { SlugService } from './slug.service';
 import { FunnelService } from './funnel.service';
 import { BusinessType } from './types';
 import { MatIconModule } from '@angular/material/icon';
-import { BUSINESS_PRESETS, getPreset } from './presets';
+import { BUSINESS_PRESETS, getPreset, businessTypeLabel } from './presets';
+import { INDUSTRY_TEMPLATES, getIndustryTemplate, applyTemplateSections, templateServices } from './industry-templates';
 import { getStockImages } from './stock-images';
 import {
   SETUP_DRAFT_KEY,
@@ -66,6 +67,28 @@ import {
           <form [formGroup]="form" (ngSubmit)="onReview()" class="p-8 space-y-8">
             <div class="space-y-6">
 
+              <fieldset>
+                <legend class="block text-sm font-bold text-gray-900 mb-1">Start from a template <span class="font-normal text-gray-600">(optional)</span></legend>
+                <p class="text-[13px] text-gray-600 mb-3">Pick your industry for ready-made sections, wording, colours and photos. You can change everything later.</p>
+                <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  @for (t of templates; track t.id) {
+                    <label class="relative cursor-pointer rounded-2xl overflow-hidden border-2 transition-colors focus-within:ring-2 focus-within:ring-blue-500"
+                      [class.border-blue-600]="form.get('template')?.value === t.id" [class.border-transparent]="form.get('template')?.value !== t.id">
+                      <input type="radio" class="sr-only" formControlName="template" [value]="t.id" (change)="applyTemplate(t.id)">
+                      <img [src]="t.heroImage.replace('w=1200', 'w=400')" alt="" class="w-full h-20 object-cover" loading="lazy" referrerpolicy="no-referrer">
+                      <span class="block p-2 bg-white">
+                        <span class="block text-xs font-bold text-gray-900">{{ t.label }}</span>
+                        <span class="block text-[11px] text-gray-600 leading-tight">{{ t.blurb }}</span>
+                      </span>
+                      <span class="absolute top-1 left-1 w-4 h-4 rounded-full border-2 border-white" [style.backgroundColor]="t.colors.primary" aria-hidden="true"></span>
+                    </label>
+                  }
+                </div>
+                @if (form.get('template')?.value) {
+                  <button type="button" (click)="clearTemplate()" class="mt-2 text-xs font-bold text-gray-700 underline">Don't use a template</button>
+                }
+              </fieldset>
+
               <div>
                 <label for="setup-name" class="block text-sm font-bold text-gray-900 mb-1">Business Name *</label>
                 <p id="setup-name-help" class="text-[13px] text-gray-600 mb-2">What's the official name of your business?</p>
@@ -83,6 +106,7 @@ import {
                   @for (preset of presets; track preset.id) {
                     <option [value]="preset.id">{{ preset.label }}</option>
                   }
+                  <option value="cafe">Café / Restaurant</option>
                   <option value="other">Other</option>
                 </select>
                 @if (form.get('type')?.invalid && form.get('type')?.touched) {
@@ -297,9 +321,31 @@ export class SetupWizardComponent implements OnInit {
     // Optional extras (not part of the saved draft).
     openingHours: [''],
     heroImageUrl: [''],
+    template: [''],
   });
 
   extrasOpen = signal(false);
+  readonly templates = INDUSTRY_TEMPLATES;
+
+  /** Fill the wizard from an industry template without overwriting what the visitor typed. */
+  applyTemplate(id: string) {
+    const t = getIndustryTemplate(id);
+    if (!t) return;
+    const v = this.form.value;
+    const autoTaglines = new Set(['', ...INDUSTRY_TEMPLATES.map(x => x.tagline), ...this.presets.map(p => p.suggestedHeroCopy)]);
+    this.form.patchValue({
+      type: t.businessType,
+      heroImageUrl: t.heroImage,
+      ...(autoTaglines.has(v.tagline || '') ? { tagline: t.tagline } : {}),
+      ...(!(v.openingHours || '').trim() || INDUSTRY_TEMPLATES.some(x => x.openingHours === v.openingHours) ? { openingHours: t.openingHours } : {}),
+    });
+    // patchValue on type resets the tagline to the preset's; restore the template's.
+    if (autoTaglines.has(this.form.value.tagline || '')) this.form.patchValue({ tagline: t.tagline });
+  }
+
+  clearTemplate() {
+    this.form.patchValue({ template: '' });
+  }
   readonly hoursPresets = [
     { label: 'Mon–Fri 8–5', value: 'Mon–Fri: 8am – 5pm\nSat–Sun: Closed' },
     { label: 'Mon–Sat', value: 'Mon–Fri: 8am – 5pm\nSat: 9am – 1pm\nSun: Closed' },
@@ -360,6 +406,7 @@ export class SetupWizardComponent implements OnInit {
       email: v.email || '',
       phone: v.phone || '',
       serviceArea: v.serviceArea || '',
+      ...(v.template ? { template: v.template } : {}),
     };
   }
 
@@ -431,7 +478,7 @@ export class SetupWizardComponent implements OnInit {
   selectedTypeLabel(): string {
     const type = this.form.get('type')?.value;
     if (!type) return '';
-    return getPreset(type as BusinessType)?.label || 'Other';
+    return businessTypeLabel(type) || 'Other';
   }
 
   /**
@@ -518,7 +565,21 @@ export class SetupWizardComponent implements OnInit {
       // New sites price in NZ dollars incl. GST by default (changeable in Settings).
       this.dataService.updateProfile({ currency: 'NZD', pricesIncludeGst: true, ...profile });
 
-      if (preset) {
+      const template = getIndustryTemplate(val.template);
+      if (template) {
+        this.dataService.updateProfile({
+          heroCopy: template.heroCopy, ctaText: template.ctaText, toneOfVoice: template.tone,
+          trustBadges: template.trustBadges, enquiryFields: template.enquiryFields,
+          ...(profile.description === this.fallbackDescription(profile.name, profile.tagline) ? { description: template.description } : {}),
+        });
+        this.dataService.setServices(templateServices(template));
+        this.dataService.setFaqs(template.faqs);
+        const c = this.dataService.customization();
+        this.dataService.updateCustomization({
+          branding: { ...c.branding, primaryColor: template.colors.primary, secondaryColor: template.colors.secondary, backgroundColor: template.colors.background },
+          sections: applyTemplateSections(c.sections || [], template),
+        });
+      } else if (preset) {
         this.dataService.setServices(preset.suggestedServices);
         this.dataService.setFaqs(preset.suggestedFaqs);
       } else {
