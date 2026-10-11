@@ -9,7 +9,7 @@ import { SlugService } from './slug.service';
 import { FunnelService } from './funnel.service';
 import { BusinessType } from './types';
 import { MatIconModule } from '@angular/material/icon';
-import { BUSINESS_PRESETS, getPreset } from './presets';
+import { BUSINESS_PRESETS, getPreset, businessTypeLabel } from './presets';
 import { INDUSTRY_TEMPLATES, getIndustryTemplate, applyTemplateSections, templateServices } from './industry-templates';
 import { getStockImages } from './stock-images';
 import {
@@ -406,6 +406,7 @@ export class SetupWizardComponent implements OnInit {
       email: v.email || '',
       phone: v.phone || '',
       serviceArea: v.serviceArea || '',
+      ...(v.template ? { template: v.template } : {}),
     };
   }
 
@@ -477,7 +478,7 @@ export class SetupWizardComponent implements OnInit {
   selectedTypeLabel(): string {
     const type = this.form.get('type')?.value;
     if (!type) return '';
-    return getPreset(type as BusinessType)?.label || 'Other';
+    return businessTypeLabel(type) || 'Other';
   }
 
   /**
