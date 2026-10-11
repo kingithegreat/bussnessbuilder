@@ -53,4 +53,31 @@ export class SlugService {
     }
     return '';
   }
+
+  /**
+   * Claim an exact, owner-chosen address. Returns the slug on success or an
+   * error message the UI can show (taken, reserved, invalid, signed out).
+   */
+  async claimExact(slug: string): Promise<{ slug?: string; error?: string }> {
+    const user = this.auth.currentUser();
+    const token = user ? await this.auth.getIdToken() : null;
+    if (!user || !token) return { error: 'Please sign in again to change your address.' };
+    try {
+      const result = await firstValueFrom(
+        this.http.post<{ slug: string }>(
+          '/api/slugs/claim',
+          { uid: user.uid, slug },
+          { headers: { Authorization: `Bearer ${token}` } }
+        )
+      );
+      if (result?.slug) {
+        this.data.setSiteSlug(result.slug);
+        return { slug: result.slug };
+      }
+      return { error: 'Could not save that address — try again.' };
+    } catch (e: unknown) {
+      const msg = (e as { error?: { error?: string } })?.error?.error;
+      return { error: msg || 'Could not save that address — try again.' };
+    }
+  }
 }

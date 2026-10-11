@@ -148,7 +148,7 @@ export class AdminLayoutComponent implements OnInit {
     const user = this.authService.currentUser();
     if (!user) return '/public';
     const slug = this.dataService.siteSlug();
-    return slug ? `/site/${slug}` : `/site/${user.uid}`;
+    return slug ? `/s/${slug}` : `/site/${user.uid}`;
   });
   
   // Computed property simulation

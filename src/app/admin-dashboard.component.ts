@@ -34,14 +34,15 @@ import { HeadlineChatComponent } from './headline-chat.component';
                 <h2 class="text-xl md:text-2xl font-black tracking-tight mb-1">🎉 {{ businessName() || 'Your site' }} is live</h2>
                 <p class="text-blue-100 text-sm">Share this link and enquiries land straight in your inbox.</p>
               </div>
-              <button (click)="dismissPublished()" class="text-white/60 hover:text-white p-1 rounded-lg hover:bg-white/10 transition-colors shrink-0" title="Dismiss">
-                <mat-icon>close</mat-icon>
+              <button (click)="dismissPublished()" class="text-white/80 hover:text-white p-1 rounded-lg hover:bg-white/10 transition-colors shrink-0" title="Dismiss" aria-label="Dismiss">
+                <mat-icon aria-hidden="true">close</mat-icon>
               </button>
             </div>
 
             <div class="mt-5 flex flex-col sm:flex-row gap-3">
-              <div class="flex-1 bg-white/10 border border-white/20 rounded-xl px-4 py-3 font-mono text-sm truncate" [title]="siteUrl()">
-                {{ siteUrl() }}
+              <div class="flex-1 min-w-0">
+                <p class="text-xs font-semibold uppercase tracking-wide text-blue-100 mb-1">Your site address</p>
+                <p class="bg-white/10 border border-white/20 rounded-xl px-4 py-3 font-mono text-lg md:text-2xl font-bold break-all" data-testid="published-address">{{ siteUrl() }}</p>
               </div>
               <div class="flex gap-2 shrink-0">
                 <button (click)="copySiteUrl()" class="inline-flex items-center gap-1.5 bg-white text-blue-700 px-4 py-3 rounded-xl text-sm font-bold hover:bg-blue-50 transition-colors">
@@ -54,6 +55,12 @@ import { HeadlineChatComponent } from './headline-chat.component';
                 </a>
               </div>
             </div>
+            @if (qrDataUrl()) {
+              <div class="mt-4 flex items-center gap-4">
+                <img [src]="qrDataUrl()" width="112" height="112" alt="QR code for your site address" class="w-28 h-28 rounded-lg bg-white p-1">
+                <p class="text-sm text-blue-50">Print this QR code on flyers, vans or invoices so customers can scan straight to your site.</p>
+              </div>
+            }
           </div>
         </div>
       }
@@ -304,6 +311,7 @@ export class AdminDashboardComponent implements OnInit {
   /** Set by the setup wizard / first sign-in via ?welcome=1. */
   justPublished = signal(false);
   copied = signal(false);
+  qrDataUrl = signal<string | null>(null);
 
   businessName = computed(() => this.dataService.profile().name);
 
@@ -311,7 +319,7 @@ export class AdminDashboardComponent implements OnInit {
   siteUrl = computed(() => {
     const slug = this.dataService.siteSlug();
     const uid = this.authService.currentUser()?.uid || '';
-    const path = `/site/${slug || uid}`;
+    const path = slug ? `/s/${slug}` : `/site/${uid}`;
     if (!isPlatformBrowser(this.platformId)) return path;
     return `${window.location.origin}${path}`;
   });
@@ -331,6 +339,12 @@ export class AdminDashboardComponent implements OnInit {
       this.analyticsService.loadAnalytics(user.uid);
     }
     this.justPublished.set(this.route.snapshot.queryParamMap.get('welcome') === '1');
+    if (this.justPublished() && isPlatformBrowser(this.platformId)) {
+      import('qrcode')
+        .then((QRCode) => QRCode.toDataURL(this.siteUrl(), { width: 320, margin: 1 }))
+        .then((url) => this.qrDataUrl.set(url))
+        .catch(() => undefined);
+    }
   }
 
   dismissPublished() {
