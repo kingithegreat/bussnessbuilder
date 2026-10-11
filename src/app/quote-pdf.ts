@@ -1,5 +1,5 @@
 import { buildPdf, PdfLine, PdfText } from './pdf-lite';
-import { Quote, quoteTotals } from './quote-rules';
+import { Quote, quoteTotals, MAX_QUOTE_LINES } from './quote-rules';
 import { formatMoney } from './money';
 
 export interface QuoteBusiness { name: string; email?: string; phone?: string; address?: string; gstNumber?: string }
@@ -27,7 +27,7 @@ export function quotePdf(q: Quote, biz: QuoteBusiness): string {
   T.push({ x: 480, y, text: 'Amount', size: 9, bold: true });
   L.push({ x1: 50, y1: y - 6, x2: 545, y2: y - 6 });
   y -= 22;
-  for (const l of q.lines.slice(0, 25)) {
+  for (const l of q.lines.slice(0, MAX_QUOTE_LINES)) {
     T.push({ x: 50, y, text: l.description.slice(0, 55), size: 10 });
     T.push({ x: 340, y, text: String(l.quantity), size: 10 });
     T.push({ x: 390, y, text: money(l.unitPrice), size: 10 });
