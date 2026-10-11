@@ -60,11 +60,11 @@ import { DatePipe } from '@angular/common';
           </div>
           <div>
             <span class="block text-sm font-bold text-gray-700 mb-1">Phone</span>
-            <input type="tel" [(ngModel)]="profileForm.phone" placeholder="(555) 123-4567" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+            <input type="tel" [(ngModel)]="profileForm.phone" placeholder="021 123 4567" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm">
           </div>
           <div>
             <span class="block text-sm font-bold text-gray-700 mb-1">Service Area</span>
-            <input type="text" [(ngModel)]="profileForm.serviceArea" placeholder="e.g. Greater Seattle Area" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+            <input type="text" [(ngModel)]="profileForm.serviceArea" placeholder="e.g. Pyes Pa, Tauranga" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm">
           </div>
           <div>
             <span class="block text-sm font-bold text-gray-700 mb-1">Opening Hours</span>

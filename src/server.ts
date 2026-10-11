@@ -247,6 +247,24 @@ app.get(['/site/:uid/sitemap.xml', '/s/:uid/sitemap.xml'], async (req, res) => {
   }
 });
 
+/** SMTP env vars needed for new-enquiry email alerts. Names only — values are never exposed. */
+const SMTP_VARS = ['SMTP_HOST', 'SMTP_PORT', 'SMTP_USER', 'SMTP_PASS', 'SMTP_FROM'] as const;
+function missingSmtpVars(): string[] {
+  return SMTP_VARS.filter((name) => !process.env[name]);
+}
+if (missingSmtpVars().length) {
+  console.warn(`Email alerts are OFF: SMTP is not configured (missing ${missingSmtpVars().join(', ')}). Enquiries are still saved to owners' inboxes.`);
+}
+
+/**
+ * Public API: whether new-enquiry email alerts can be delivered at all. A bare
+ * boolean so the inbox can tell owners when alerts are off; no config leaks.
+ */
+app.get('/api/email-alerts/status', (_req, res) => {
+  res.setHeader('Cache-Control', 'no-store');
+  res.json({ enabled: missingSmtpVars().length === 0 });
+});
+
 class RateLimitStore {
   private store = new Map<string, { count: number; resetAt: number }>();
   private readonly maxEntries: number;
@@ -407,7 +425,10 @@ app.post('/api/site/:uid/enquiry', express.json(), async (req, res) => {
       const smtpUser = process.env['SMTP_USER'];
       const smtpPass = process.env['SMTP_PASS'];
       const smtpFrom = process.env['SMTP_FROM'];
-      if (!smtpHost || !smtpPort || !smtpUser || !smtpPass || !smtpFrom) return;
+      if (!smtpHost || !smtpPort || !smtpUser || !smtpPass || !smtpFrom) {
+        console.warn(`Enquiry email alert skipped for ${uid}: SMTP is not configured (set ${missingSmtpVars().join(', ')}). The enquiry is saved in the owner's inbox.`);
+        return;
+      }
 
       const nodemailer = await import('nodemailer');
       const transporter = nodemailer.default.createTransport({
