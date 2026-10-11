@@ -10,6 +10,7 @@ import { FunnelService } from './funnel.service';
 import { BusinessType } from './types';
 import { MatIconModule } from '@angular/material/icon';
 import { BUSINESS_PRESETS, getPreset } from './presets';
+import { getStockImages } from './stock-images';
 import {
   SETUP_DRAFT_KEY,
   PENDING_PUBLISH_KEY,
@@ -40,14 +41,14 @@ import {
                  </div>
                  <span class="font-bold text-gray-900 tracking-tight">BusinessFlow</span>
                </div>
-               <span class="text-xs font-bold text-gray-400 uppercase tracking-wider">Setup Wizard</span>
+               <span class="text-xs font-bold text-gray-600 uppercase tracking-wider">Setup Wizard</span>
              </div>
 
              <!-- Progress Indicator — reflects what's actually filled in -->
              <div>
                <div class="flex justify-between text-xs font-bold mb-2">
                  <span class="text-blue-600">Your details</span>
-                 <span class="text-gray-400">{{ progress() }}%</span>
+                 <span class="text-gray-600">{{ progress() }}%</span>
                </div>
                <div class="w-full bg-gray-200 rounded-full h-1.5">
                  <div class="bg-blue-600 h-1.5 rounded-full transition-all duration-300" [style.width.%]="progress()"></div>
@@ -66,18 +67,18 @@ import {
             <div class="space-y-6">
 
               <div>
-                <span class="block text-sm font-bold text-gray-900 mb-1">Business Name *</span>
-                <p class="text-[13px] text-gray-500 mb-2">What's the official name of your business?</p>
-                <input type="text" formControlName="name" class="w-full px-4 py-3 bg-[#F5F5F7] border border-transparent rounded-2xl focus:ring-2 focus:ring-blue-500 focus:bg-white focus:border-blue-500 outline-none transition-all" [class.border-red-300]="form.get('name')?.invalid && form.get('name')?.touched" placeholder="e.g. Apex Cleaners">
+                <label for="setup-name" class="block text-sm font-bold text-gray-900 mb-1">Business Name *</label>
+                <p id="setup-name-help" class="text-[13px] text-gray-600 mb-2">What's the official name of your business?</p>
+                <input type="text" id="setup-name" aria-describedby="setup-name-help" formControlName="name" class="w-full px-4 py-3 bg-[#F5F5F7] border border-transparent rounded-2xl focus:ring-2 focus:ring-blue-500 focus:bg-white focus:border-blue-500 outline-none transition-all" [class.border-red-300]="form.get('name')?.invalid && form.get('name')?.touched" placeholder="e.g. Apex Cleaners">
                 @if (form.get('name')?.invalid && form.get('name')?.touched) {
                    <p class="text-red-500 text-xs mt-1">Business name is required</p>
                 }
               </div>
 
               <div>
-                <span class="block text-sm font-bold text-gray-900 mb-1">Business Type *</span>
-                <p class="text-[13px] text-gray-500 mb-2">This helps us generate the right services and FAQs for you.</p>
-                <select formControlName="type" class="w-full px-4 py-3 bg-[#F5F5F7] border border-transparent rounded-2xl focus:ring-2 focus:ring-blue-500 focus:bg-white focus:border-blue-500 outline-none transition-all text-gray-900" [class.border-red-300]="form.get('type')?.invalid && form.get('type')?.touched">
+                <label for="setup-type" class="block text-sm font-bold text-gray-900 mb-1">Business Type *</label>
+                <p id="setup-type-help" class="text-[13px] text-gray-600 mb-2">This helps us generate the right services and FAQs for you.</p>
+                <select id="setup-type" aria-describedby="setup-type-help" formControlName="type" class="w-full px-4 py-3 bg-[#F5F5F7] border border-transparent rounded-2xl focus:ring-2 focus:ring-blue-500 focus:bg-white focus:border-blue-500 outline-none transition-all text-gray-900" [class.border-red-300]="form.get('type')?.invalid && form.get('type')?.touched">
                   <option value="" disabled>Select a type...</option>
                   @for (preset of presets; track preset.id) {
                     <option [value]="preset.id">{{ preset.label }}</option>
@@ -90,31 +91,68 @@ import {
               </div>
 
               <div>
-                <span class="block text-sm font-bold text-gray-900 mb-1">Tagline</span>
-                <p class="text-[13px] text-gray-500 mb-2">A short, catchy phrase summarizing what you do.</p>
-                <input type="text" formControlName="tagline" class="w-full px-4 py-3 bg-[#F5F5F7] border border-transparent rounded-2xl focus:ring-2 focus:ring-blue-500 focus:bg-white focus:border-blue-500 outline-none transition-all" placeholder="e.g. Professional cleaning you can trust.">
+                <label for="setup-tagline" class="block text-sm font-bold text-gray-900 mb-1">Tagline</label>
+                <p id="setup-tagline-help" class="text-[13px] text-gray-600 mb-2">A short, catchy phrase summarizing what you do.</p>
+                <input type="text" id="setup-tagline" aria-describedby="setup-tagline-help" formControlName="tagline" class="w-full px-4 py-3 bg-[#F5F5F7] border border-transparent rounded-2xl focus:ring-2 focus:ring-blue-500 focus:bg-white focus:border-blue-500 outline-none transition-all" placeholder="e.g. Professional cleaning you can trust.">
               </div>
 
               <div>
-                <span class="block text-sm font-bold text-gray-900 mb-1">Email Address *</span>
-                <p class="text-[13px] text-gray-500 mb-2">Where should we send new customer enquiries?</p>
-                <input type="email" formControlName="email" class="w-full px-4 py-3 bg-[#F5F5F7] border border-transparent rounded-2xl focus:ring-2 focus:ring-blue-500 focus:bg-white focus:border-blue-500 outline-none transition-all" [class.border-red-300]="form.get('email')?.invalid && form.get('email')?.touched" placeholder="hello@example.com">
+                <label for="setup-email" class="block text-sm font-bold text-gray-900 mb-1">Email Address *</label>
+                <p id="setup-email-help" class="text-[13px] text-gray-600 mb-2">Where should we send new customer enquiries?</p>
+                <input type="email" id="setup-email" aria-describedby="setup-email-help" formControlName="email" class="w-full px-4 py-3 bg-[#F5F5F7] border border-transparent rounded-2xl focus:ring-2 focus:ring-blue-500 focus:bg-white focus:border-blue-500 outline-none transition-all" [class.border-red-300]="form.get('email')?.invalid && form.get('email')?.touched" placeholder="hello@example.com">
                 @if (form.get('email')?.invalid && form.get('email')?.touched) {
                    <p class="text-red-500 text-xs mt-1">Please enter a valid email</p>
                 }
               </div>
 
               <div>
-                <span class="block text-sm font-bold text-gray-900 mb-1">Phone Number</span>
-                <p class="text-[13px] text-gray-500 mb-2">Optional. Customers can use this to call you directly.</p>
-                <input type="tel" formControlName="phone" class="w-full px-4 py-3 bg-[#F5F5F7] border border-transparent rounded-2xl focus:ring-2 focus:ring-blue-500 focus:bg-white focus:border-blue-500 outline-none transition-all" placeholder="021 123 4567">
+                <label for="setup-phone" class="block text-sm font-bold text-gray-900 mb-1">Phone Number</label>
+                <p id="setup-phone-help" class="text-[13px] text-gray-600 mb-2">Optional. Customers can use this to call you directly.</p>
+                <input type="tel" id="setup-phone" aria-describedby="setup-phone-help" formControlName="phone" class="w-full px-4 py-3 bg-[#F5F5F7] border border-transparent rounded-2xl focus:ring-2 focus:ring-blue-500 focus:bg-white focus:border-blue-500 outline-none transition-all" placeholder="021 123 4567">
               </div>
 
               <div>
-                <span class="block text-sm font-bold text-gray-900 mb-1">Service Area / Location</span>
-                <p class="text-[13px] text-gray-500 mb-2">The city or neighborhood where you operate.</p>
-                <input type="text" formControlName="serviceArea" class="w-full px-4 py-3 bg-[#F5F5F7] border border-transparent rounded-2xl focus:ring-2 focus:ring-blue-500 focus:bg-white focus:border-blue-500 outline-none transition-all" placeholder="e.g. Pyes Pa, Tauranga">
+                <label for="setup-serviceArea" class="block text-sm font-bold text-gray-900 mb-1">Service Area / Location</label>
+                <p id="setup-serviceArea-help" class="text-[13px] text-gray-600 mb-2">The city or neighborhood where you operate.</p>
+                <input type="text" id="setup-serviceArea" aria-describedby="setup-serviceArea-help" formControlName="serviceArea" class="w-full px-4 py-3 bg-[#F5F5F7] border border-transparent rounded-2xl focus:ring-2 focus:ring-blue-500 focus:bg-white focus:border-blue-500 outline-none transition-all" placeholder="e.g. Pyes Pa, Tauranga">
               </div>
+
+              <!-- Optional: opening hours + a photo (both skippable) -->
+              <details class="rounded-2xl border border-gray-200 bg-white" [open]="extrasOpen()" (toggle)="extrasOpen.set($any($event.target).open)">
+                <summary class="cursor-pointer select-none px-4 py-3 text-sm font-bold text-gray-900 flex items-center gap-2">
+                  <mat-icon class="text-[18px] text-blue-600" aria-hidden="true">add_circle</mat-icon>
+                  Add opening hours &amp; a photo <span class="font-normal text-gray-600">(optional)</span>
+                </summary>
+                <div class="px-4 pb-4 space-y-5">
+                  <div>
+                    <label for="setup-openingHours" class="block text-sm font-bold text-gray-900 mb-1">Opening hours</label>
+                    <p id="setup-openingHours-help" class="text-[13px] text-gray-600 mb-2">One line per day or group of days. Leave blank if you'd rather not show hours.</p>
+                    <div class="flex flex-wrap gap-2 mb-2">
+                      @for (preset of hoursPresets; track preset.label) {
+                        <button type="button" (click)="form.patchValue({ openingHours: preset.value })" class="px-3 py-1.5 rounded-full text-xs font-bold bg-blue-50 text-blue-700 hover:bg-blue-100">{{ preset.label }}</button>
+                      }
+                    </div>
+                    <textarea id="setup-openingHours" aria-describedby="setup-openingHours-help" formControlName="openingHours" rows="3" class="w-full px-4 py-3 bg-[#F5F5F7] border border-transparent rounded-2xl focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none text-sm" placeholder="Mon–Fri: 7:30am – 5pm&#10;Sat: 8am – 1pm"></textarea>
+                  </div>
+                  <fieldset>
+                    <legend class="block text-sm font-bold text-gray-900 mb-1">Main photo</legend>
+                    <p class="text-[13px] text-gray-600 mb-2">Pick a starter photo for the top of your site. You can upload your own from the dashboard later.</p>
+                    @if (photoChoices().length) {
+                      <div class="grid grid-cols-3 gap-2">
+                        @for (photo of photoChoices(); track photo.url) {
+                          <label class="relative block rounded-xl overflow-hidden cursor-pointer ring-offset-2 has-[:checked]:ring-2 has-[:checked]:ring-blue-600 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-blue-400">
+                            <input type="radio" class="sr-only" formControlName="heroImageUrl" [value]="photo.url" [attr.aria-label]="photo.alt">
+                            <img [src]="photo.url" [alt]="photo.alt" loading="lazy" referrerpolicy="no-referrer" class="w-full h-20 object-cover">
+                          </label>
+                        }
+                      </div>
+                      <button type="button" (click)="form.patchValue({ heroImageUrl: '' })" class="mt-2 text-xs font-bold text-gray-700 underline">No photo for now</button>
+                    } @else {
+                      <p class="text-[13px] text-gray-600 italic">Choose your business type above to see photo suggestions.</p>
+                    }
+                  </fieldset>
+                </div>
+              </details>
             </div>
 
             <div class="pt-6 mt-4 flex flex-col-reverse items-stretch gap-3 border-t border-gray-100">
@@ -256,6 +294,22 @@ export class SetupWizardComponent implements OnInit {
     email: ['', [Validators.required, Validators.email]],
     phone: [''],
     serviceArea: [''],
+    // Optional extras (not part of the saved draft).
+    openingHours: [''],
+    heroImageUrl: [''],
+  });
+
+  extrasOpen = signal(false);
+  readonly hoursPresets = [
+    { label: 'Mon–Fri 8–5', value: 'Mon–Fri: 8am – 5pm\nSat–Sun: Closed' },
+    { label: 'Mon–Sat', value: 'Mon–Fri: 8am – 5pm\nSat: 9am – 1pm\nSun: Closed' },
+    { label: '7 days', value: 'Mon–Sun: 8am – 6pm' },
+    { label: 'By appointment', value: 'By appointment — call or enquire online' },
+  ];
+  private selectedType = signal('');
+  photoChoices = computed(() => {
+    const type = this.selectedType();
+    return type ? getStockImages(type, 'hero').slice(0, 6) : [];
   });
 
   /**
@@ -282,7 +336,9 @@ export class SetupWizardComponent implements OnInit {
       this.saveDraft();
     });
 
+    this.selectedType.set(this.form.get('type')?.value || '');
     this.form.get('type')?.valueChanges.subscribe(type => {
+      this.selectedType.set(type || '');
       // Re-fill the tagline whenever it is still OUR auto-fill, and clear it
       // when the new type has no preset. Previously it only ever filled a blank
       // field, so changing type after the first pick left the previous trade's
@@ -437,7 +493,7 @@ export class SetupWizardComponent implements OnInit {
         // "Mon-Fri: 9am - 5pm" told every cafe, salon and weekend trader's
         // customers in writing that it was shut on Saturday. All three render
         // sites already guard on a non-empty value.
-        openingHours: '',
+        openingHours: (val.openingHours || '').trim(),
         toneOfVoice: preset?.suggestedTone || 'Professional yet friendly',
         brandColor: '#2563eb',
         heroCopy: preset?.suggestedHeroCopy || val.tagline || '',
@@ -468,6 +524,14 @@ export class SetupWizardComponent implements OnInit {
         const presetServices = this.aiService.getPresetServices(profile.type);
         this.dataService.setServices(presetServices);
         this.dataService.setFaqs([]);
+      }
+
+      const heroImageUrl = (val.heroImageUrl || '').trim();
+      if (heroImageUrl) {
+        const sections = this.dataService.customization().sections || [];
+        this.dataService.updateCustomization({
+          sections: sections.map(sec => (sec.id === 'hero' ? { ...sec, imageUrl: heroImageUrl } : sec)),
+        });
       }
 
       this.dataService.completeSetup();
