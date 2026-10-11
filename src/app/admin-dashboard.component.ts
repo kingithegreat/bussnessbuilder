@@ -112,7 +112,7 @@ import { HeadlineChatComponent } from './headline-chat.component';
             <div class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
               <mat-icon class="text-sm">mail</mat-icon>
             </div>
-            <span class="text-xs font-bold text-gray-400 uppercase tracking-wider">Total Enquiries</span>
+            <span class="text-xs font-bold text-gray-500 uppercase tracking-wider">Total Enquiries</span>
           </div>
           <div class="flex items-end justify-between">
             <span class="text-3xl font-bold text-gray-900">{{ enquiries().length }}</span>
@@ -126,7 +126,7 @@ import { HeadlineChatComponent } from './headline-chat.component';
             <div class="w-8 h-8 rounded-lg bg-green-50 text-green-600 flex items-center justify-center">
               <mat-icon class="text-sm">new_releases</mat-icon>
             </div>
-            <span class="text-xs font-bold text-gray-400 uppercase tracking-wider">New Enquiries</span>
+            <span class="text-xs font-bold text-gray-500 uppercase tracking-wider">New Enquiries</span>
           </div>
           <div class="flex items-end justify-between">
             <span class="text-3xl font-bold text-gray-900">{{ newEnquiries() }}</span>
@@ -140,7 +140,7 @@ import { HeadlineChatComponent } from './headline-chat.component';
             <div class="w-8 h-8 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center">
               <mat-icon class="text-sm">visibility</mat-icon>
             </div>
-            <span class="text-xs font-bold text-gray-400 uppercase tracking-wider">Page Views</span>
+            <span class="text-xs font-bold text-gray-500 uppercase tracking-wider">Page Views</span>
           </div>
           <div class="flex items-end justify-between">
             <span class="text-3xl font-bold text-gray-900">{{ analyticsService.data().totalViews }}</span>
@@ -168,7 +168,7 @@ import { HeadlineChatComponent } from './headline-chat.component';
       <!-- Views Chart -->
       <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
         <div class="flex justify-between items-center mb-4">
-          <h3 class="font-bold text-sm text-gray-900 flex items-center gap-2"><mat-icon class="text-[18px] text-gray-400">analytics</mat-icon> Page Views (14 days)</h3>
+          <h3 class="font-bold text-sm text-gray-900 flex items-center gap-2"><mat-icon class="text-[18px] text-gray-500">analytics</mat-icon> Page Views (14 days)</h3>
           <span class="text-xs text-gray-500 font-bold">{{ analyticsService.viewsLast30Days() }} views this month</span>
         </div>
         <div class="flex items-end gap-1 h-24">
@@ -178,7 +178,7 @@ import { HeadlineChatComponent } from './headline-chat.component';
             </div>
           }
         </div>
-        <div class="flex justify-between mt-1 text-[9px] text-gray-400">
+        <div class="flex justify-between mt-1 text-[9px] text-gray-500">
           <span>14 days ago</span>
           <span>Today</span>
         </div>
@@ -190,11 +190,11 @@ import { HeadlineChatComponent } from './headline-chat.component';
         <!-- Recent Activity Timeline -->
         <div class="bg-white rounded-2xl shadow-sm border border-gray-100 flex flex-col h-96">
           <div class="p-5 border-b border-gray-100 flex justify-between items-center bg-gray-50/50 rounded-t-2xl">
-            <h3 class="font-bold text-sm text-gray-900 flex items-center gap-2"><mat-icon class="text-[18px] text-gray-400">history</mat-icon> Recent Activity</h3>
+            <h3 class="font-bold text-sm text-gray-900 flex items-center gap-2"><mat-icon class="text-[18px] text-gray-500">history</mat-icon> Recent Activity</h3>
           </div>
           <div class="flex-1 overflow-y-auto p-5">
             @if (activities().length === 0) {
-              <div class="h-full flex items-center justify-center text-gray-400 text-sm">No recent activity</div>
+              <div class="h-full flex items-center justify-center text-gray-500 text-sm">No recent activity</div>
             } @else {
               <div class="space-y-6">
                 @for (activity of activities(); track activity.id) {
@@ -210,7 +210,7 @@ import { HeadlineChatComponent } from './headline-chat.component';
                     <div>
                       <h4 class="text-sm font-bold text-gray-900">{{ activity.title }}</h4>
                       <p class="text-xs text-gray-500 mt-1">{{ activity.description }}</p>
-                      <p class="text-[10px] text-gray-400 mt-2">{{ activity.date | date:'short' }}</p>
+                      <p class="text-[10px] text-gray-500 mt-2">{{ activity.date | date:'short' }}</p>
                     </div>
                   </div>
                 }
@@ -222,7 +222,7 @@ import { HeadlineChatComponent } from './headline-chat.component';
         <!-- Most Requested Services Chart -->
         <div class="bg-white rounded-2xl shadow-sm border border-gray-100 flex flex-col h-96">
           <div class="p-5 border-b border-gray-100 flex justify-between items-center bg-gray-50/50 rounded-t-2xl">
-            <h3 class="font-bold text-sm text-gray-900 flex items-center gap-2"><mat-icon class="text-[18px] text-gray-400">bar_chart</mat-icon> Most Requested Services</h3>
+            <h3 class="font-bold text-sm text-gray-900 flex items-center gap-2"><mat-icon class="text-[18px] text-gray-500">bar_chart</mat-icon> Most Requested Services</h3>
           </div>
           <div class="flex-1 p-5 flex flex-col justify-end gap-4">
             @for (item of topServices(); track item.name) {
@@ -237,7 +237,7 @@ import { HeadlineChatComponent } from './headline-chat.component';
               </div>
             }
             @if (topServices().length === 0) {
-              <div class="h-full flex items-center justify-center text-gray-400 text-sm pb-10">Not enough data</div>
+              <div class="h-full flex items-center justify-center text-gray-500 text-sm pb-10">Not enough data</div>
             }
           </div>
         </div>
@@ -257,7 +257,7 @@ import { HeadlineChatComponent } from './headline-chat.component';
             </div>
           } @else {
             <table class="w-full text-left">
-              <thead class="bg-gray-50 text-[10px] uppercase text-gray-400 font-bold">
+              <thead class="bg-gray-50 text-[10px] uppercase text-gray-500 font-bold">
                 <tr>
                   <th class="px-6 py-3">Client</th>
                   <th class="px-6 py-3">Service</th>

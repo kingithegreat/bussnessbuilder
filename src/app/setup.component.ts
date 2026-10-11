@@ -178,7 +178,7 @@ import {
                <div class="w-3 h-3 rounded-full bg-yellow-400"></div>
                <div class="w-3 h-3 rounded-full bg-green-400"></div>
              </div>
-             <div class="mx-auto bg-white px-3 py-1 rounded-md text-xs font-medium text-gray-400 shadow-sm border border-gray-100">Live Preview</div>
+             <div class="mx-auto bg-white px-3 py-1 rounded-md text-xs font-medium text-gray-500 shadow-sm border border-gray-100">Live Preview</div>
              <div class="w-10"></div>
           </div>
           <div class="flex-grow overflow-y-auto bg-white relative">
@@ -208,7 +208,7 @@ import {
                </div>
 
                <!-- Preview Badges -->
-               <div class="border-y border-gray-100 py-6 bg-gray-50 flex justify-center gap-6 text-gray-400 text-xs font-medium">
+               <div class="border-y border-gray-100 py-6 bg-gray-50 flex justify-center gap-6 text-gray-500 text-xs font-medium">
                  @for(badge of getPreviewBadges(); track badge) {
                    <div class="flex items-center gap-1.5">
                      <mat-icon class="text-[14px]">verified</mat-icon>

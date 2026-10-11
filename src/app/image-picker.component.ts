@@ -26,7 +26,7 @@ import { ImageSection, getStockImages } from './stock-images';
           </div>
         </div>
       } @else {
-        <button (click)="showPicker.set(true)" class="w-full h-32 border-2 border-dashed border-gray-200 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors flex flex-col items-center justify-center gap-2 text-gray-400 hover:text-gray-600">
+        <button (click)="showPicker.set(true)" class="w-full h-32 border-2 border-dashed border-gray-200 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors flex flex-col items-center justify-center gap-2 text-gray-500 hover:text-gray-600">
           <mat-icon>add_photo_alternate</mat-icon>
           <span class="text-xs font-bold">Add Image</span>
         </button>
@@ -38,8 +38,8 @@ import { ImageSection, getStockImages } from './stock-images';
           <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[80vh] flex flex-col overflow-hidden">
             <div class="p-5 border-b border-gray-100 flex items-center justify-between shrink-0">
               <h3 class="text-lg font-black text-gray-900">Choose Image</h3>
-              <button (click)="showPicker.set(false)" class="text-gray-400 hover:text-gray-600 p-1 rounded-lg hover:bg-gray-100">
-                <mat-icon>close</mat-icon>
+              <button (click)="showPicker.set(false)" class="text-gray-500 hover:text-gray-600 p-1 rounded-lg hover:bg-gray-100" aria-label="Close">
+                <mat-icon aria-hidden="true">close</mat-icon>
               </button>
             </div>
 
@@ -71,7 +71,7 @@ import { ImageSection, getStockImages } from './stock-images';
                   }
                 </div>
                 @if (stockImages().length === 0) {
-                  <div class="text-center py-10 text-gray-400 text-sm">
+                  <div class="text-center py-10 text-gray-500 text-sm">
                     No stock images available for this section.
                   </div>
                 }
@@ -79,10 +79,10 @@ import { ImageSection, getStockImages } from './stock-images';
 
               @if (activeTab() === 'upload') {
                 <div class="space-y-4">
-                  <label for="imageUploadInput" class="block w-full h-40 border-2 border-dashed border-gray-200 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors cursor-pointer flex flex-col items-center justify-center gap-2 text-gray-400 hover:text-gray-600">
+                  <label for="imageUploadInput" class="block w-full h-40 border-2 border-dashed border-gray-200 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors cursor-pointer flex flex-col items-center justify-center gap-2 text-gray-500 hover:text-gray-600">
                     <mat-icon class="text-3xl">cloud_upload</mat-icon>
                     <span class="text-sm font-bold">Click to upload</span>
-                    <span class="text-xs text-gray-400">JPG, PNG, WebP up to 5MB</span>
+                    <span class="text-xs text-gray-500">JPG, PNG, WebP up to 5MB</span>
                     <input id="imageUploadInput" type="file" class="hidden" accept="image/jpeg,image/png,image/webp" (change)="onFileSelected($event)">
                   </label>
 

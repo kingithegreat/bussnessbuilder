@@ -85,10 +85,10 @@ interface Metrics {
               <div class="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center">
                 <mat-icon class="text-blue-600 text-[16px]">people</mat-icon>
               </div>
-              <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Users</span>
+              <span class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Users</span>
             </div>
             <p class="text-2xl font-black text-gray-900">{{ metrics()?.totalUsers || 0 }}</p>
-            <p class="text-xs text-gray-400 mt-1">{{ metrics()?.setupComplete || 0 }} live sites</p>
+            <p class="text-xs text-gray-500 mt-1">{{ metrics()?.setupComplete || 0 }} live sites</p>
           </div>
 
           <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
@@ -96,10 +96,10 @@ interface Metrics {
               <div class="w-8 h-8 rounded-lg bg-green-50 flex items-center justify-center">
                 <mat-icon class="text-green-600 text-[16px]">mail</mat-icon>
               </div>
-              <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Enquiries</span>
+              <span class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Enquiries</span>
             </div>
             <p class="text-2xl font-black text-gray-900">{{ metrics()?.totalEnquiries || 0 }}</p>
-            <p class="text-xs text-gray-400 mt-1">across all sites</p>
+            <p class="text-xs text-gray-500 mt-1">across all sites</p>
           </div>
 
           <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
@@ -107,10 +107,10 @@ interface Metrics {
               <div class="w-8 h-8 rounded-lg bg-purple-50 flex items-center justify-center">
                 <mat-icon class="text-purple-600 text-[16px]">inventory_2</mat-icon>
               </div>
-              <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Services</span>
+              <span class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Services</span>
             </div>
             <p class="text-2xl font-black text-gray-900">{{ metrics()?.totalServices || 0 }}</p>
-            <p class="text-xs text-gray-400 mt-1">listed by users</p>
+            <p class="text-xs text-gray-500 mt-1">listed by users</p>
           </div>
 
           <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
@@ -118,10 +118,10 @@ interface Metrics {
               <div class="w-8 h-8 rounded-lg bg-orange-50 flex items-center justify-center">
                 <mat-icon class="text-orange-600 text-[16px]">content_copy</mat-icon>
               </div>
-              <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Content</span>
+              <span class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Content</span>
             </div>
             <p class="text-2xl font-black text-gray-900">{{ (metrics()?.totalTestimonials || 0) + (metrics()?.totalFaqs || 0) }}</p>
-            <p class="text-xs text-gray-400 mt-1">{{ metrics()?.totalTestimonials || 0 }} reviews, {{ metrics()?.totalFaqs || 0 }} FAQs</p>
+            <p class="text-xs text-gray-500 mt-1">{{ metrics()?.totalTestimonials || 0 }} reviews, {{ metrics()?.totalFaqs || 0 }} FAQs</p>
           </div>
         </div>
 
@@ -130,7 +130,7 @@ interface Metrics {
           <!-- Signups Chart -->
           <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
             <h3 class="font-bold text-sm text-gray-900 flex items-center gap-2 mb-4">
-              <mat-icon class="text-[18px] text-gray-400">trending_up</mat-icon> User Signups (30 days)
+              <mat-icon class="text-[18px] text-gray-500">trending_up</mat-icon> User Signups (30 days)
             </h3>
             <div class="flex items-end gap-[3px] h-28">
               @for (day of signupChart(); track day.date) {
@@ -141,7 +141,7 @@ interface Metrics {
                 </div>
               }
             </div>
-            <div class="flex justify-between mt-2 text-[9px] text-gray-400">
+            <div class="flex justify-between mt-2 text-[9px] text-gray-500">
               <span>30 days ago</span>
               <span>Today</span>
             </div>
@@ -150,7 +150,7 @@ interface Metrics {
           <!-- Enquiries Chart -->
           <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
             <h3 class="font-bold text-sm text-gray-900 flex items-center gap-2 mb-4">
-              <mat-icon class="text-[18px] text-gray-400">email</mat-icon> Enquiries (30 days)
+              <mat-icon class="text-[18px] text-gray-500">email</mat-icon> Enquiries (30 days)
             </h3>
             <div class="flex items-end gap-[3px] h-28">
               @for (day of enquiryChart(); track day.date) {
@@ -161,7 +161,7 @@ interface Metrics {
                 </div>
               }
             </div>
-            <div class="flex justify-between mt-2 text-[9px] text-gray-400">
+            <div class="flex justify-between mt-2 text-[9px] text-gray-500">
               <span>30 days ago</span>
               <span>Today</span>
             </div>
@@ -173,13 +173,13 @@ interface Metrics {
           <!-- Tier Breakdown -->
           <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
             <h3 class="font-bold text-sm text-gray-900 flex items-center gap-2 mb-5">
-              <mat-icon class="text-[18px] text-gray-400">pie_chart</mat-icon> Plan Breakdown
+              <mat-icon class="text-[18px] text-gray-500">pie_chart</mat-icon> Plan Breakdown
             </h3>
             <div class="space-y-4">
               <div>
                 <div class="flex justify-between text-xs font-bold mb-1.5">
                   <span class="text-gray-600">Free</span>
-                  <span class="text-gray-400">{{ metrics()?.tierBreakdown?.free || 0 }}</span>
+                  <span class="text-gray-500">{{ metrics()?.tierBreakdown?.free || 0 }}</span>
                 </div>
                 <div class="w-full bg-gray-100 rounded-full h-3">
                   <div class="bg-gray-400 h-3 rounded-full transition-all" [style.width.%]="tierPercent('free')"></div>
@@ -188,7 +188,7 @@ interface Metrics {
               <div>
                 <div class="flex justify-between text-xs font-bold mb-1.5">
                   <span class="text-blue-600">Pro — US$14/mo</span>
-                  <span class="text-gray-400">{{ metrics()?.proUsers || 0 }}</span>
+                  <span class="text-gray-500">{{ metrics()?.proUsers || 0 }}</span>
                 </div>
                 <div class="w-full bg-gray-100 rounded-full h-3">
                   <div class="bg-blue-500 h-3 rounded-full transition-all" [style.width.%]="tierPercent('pro')"></div>
@@ -197,7 +197,7 @@ interface Metrics {
               <div>
                 <div class="flex justify-between text-xs font-bold mb-1.5">
                   <span class="text-purple-600">Business — US$22/mo</span>
-                  <span class="text-gray-400">{{ metrics()?.businessUsers || 0 }}</span>
+                  <span class="text-gray-500">{{ metrics()?.businessUsers || 0 }}</span>
                 </div>
                 <div class="w-full bg-gray-100 rounded-full h-3">
                   <div class="bg-purple-500 h-3 rounded-full transition-all" [style.width.%]="tierPercent('business')"></div>
@@ -210,12 +210,12 @@ interface Metrics {
           <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 lg:col-span-2">
             <div class="flex items-center justify-between mb-4">
               <h3 class="font-bold text-sm text-gray-900 flex items-center gap-2">
-                <mat-icon class="text-[18px] text-gray-400">person_add</mat-icon> Recent Signups
+                <mat-icon class="text-[18px] text-gray-500">person_add</mat-icon> Recent Signups
               </h3>
               <a routerLink="/app-admin/users" class="text-xs text-blue-600 font-bold hover:underline">View all</a>
             </div>
             @if ((metrics()?.recentUsers || []).length === 0) {
-              <p class="text-gray-400 text-sm py-6 text-center">No users yet.</p>
+              <p class="text-gray-500 text-sm py-6 text-center">No users yet.</p>
             } @else {
               <div class="space-y-3">
                 @for (user of metrics()?.recentUsers || []; track user.uid) {
@@ -227,7 +227,7 @@ interface Metrics {
                       </div>
                       <div class="min-w-0">
                         <p class="text-sm font-bold text-gray-900 truncate">{{ user.displayName || 'No name' }}</p>
-                        <p class="text-xs text-gray-400 truncate">{{ user.businessName || user.email }}</p>
+                        <p class="text-xs text-gray-500 truncate">{{ user.businessName || user.email }}</p>
                       </div>
                     </div>
                     <div class="flex items-center gap-3 shrink-0">
@@ -240,7 +240,7 @@ interface Metrics {
                             [class]="user.tier === 'free' ? 'bg-gray-100 text-gray-500' : user.tier === 'pro' ? 'bg-blue-100 text-blue-600' : 'bg-purple-100 text-purple-600'">
                         {{ user.tier }}
                       </span>
-                      <span class="text-[10px] text-gray-400 hidden md:inline">{{ user.createdAt | date:'shortDate' }}</span>
+                      <span class="text-[10px] text-gray-500 hidden md:inline">{{ user.createdAt | date:'shortDate' }}</span>
                     </div>
                   </div>
                 }

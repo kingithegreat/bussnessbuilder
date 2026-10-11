@@ -42,7 +42,7 @@ import { MatIconModule } from '@angular/material/icon';
       <div class="px-8 py-5 border-b border-gray-200 bg-white flex justify-between items-center shrink-0">
         <h2 class="text-xl font-bold tracking-tight text-gray-900">Enquiries</h2>
         <div class="relative">
-          <mat-icon class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">search</mat-icon>
+          <mat-icon class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">search</mat-icon>
           <input type="search" aria-label="Search enquiries" placeholder="Search..." [ngModel]="searchQuery()" (ngModelChange)="searchQuery.set($event)" class="pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none w-64 shadow-sm bg-gray-50">
         </div>
       </div>
@@ -81,7 +81,7 @@ import { MatIconModule } from '@angular/material/icon';
                    (click)="selectEnquiry(enquiry)">
                 <div class="flex justify-between items-start mb-1">
                   <span class="font-bold text-gray-900">{{ enquiry.name }}</span>
-                  <span class="text-[10px] font-bold text-gray-400">{{ enquiry.date | date:'shortTime' }}</span>
+                  <span class="text-[10px] font-bold text-gray-500">{{ enquiry.date | date:'shortTime' }}</span>
                 </div>
                 <div class="text-sm text-gray-500 truncate mb-3">{{ enquiry.serviceInterest }}</div>
                 <div class="flex gap-2 items-center">
@@ -126,30 +126,30 @@ import { MatIconModule } from '@angular/material/icon';
 
               <div class="grid grid-cols-2 gap-6 mb-8">
                 <div class="bg-gray-50 p-4 rounded-xl border border-gray-100">
-                  <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Service Interest</p>
+                  <p class="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Service Interest</p>
                   <p class="font-bold text-gray-900">{{ enquiry.serviceInterest }}</p>
                 </div>
                 <div class="bg-gray-50 p-4 rounded-xl border border-gray-100">
-                  <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Preferred Time</p>
+                  <p class="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Preferred Time</p>
                   <p class="font-bold text-gray-900">{{ enquiry.preferredDateTime || 'Anytime' }}</p>
                 </div>
                 <div class="bg-gray-50 p-4 rounded-xl border border-gray-100">
-                  <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Suggested Next Action</p>
-                  <input type="text" [ngModel]="enquiry.nextAction" (ngModelChange)="updateField(enquiry.id, 'nextAction', $event)" class="w-full bg-transparent border-b border-gray-200 focus:border-blue-500 outline-none font-bold text-blue-600 text-sm py-1" placeholder="What's next?">
+                  <p class="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Suggested Next Action</p>
+                  <input aria-label="What's next?" type="text" [ngModel]="enquiry.nextAction" (ngModelChange)="updateField(enquiry.id, 'nextAction', $event)" class="w-full bg-transparent border-b border-gray-200 focus:border-blue-500 outline-none font-bold text-blue-600 text-sm py-1" placeholder="What's next?">
                 </div>
                 <div class="bg-gray-50 p-4 rounded-xl border border-gray-100">
-                  <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Follow-up Date</p>
+                  <p class="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Follow-up Date</p>
                   <input type="date" [ngModel]="enquiry.followUpDate" (ngModelChange)="updateField(enquiry.id, 'followUpDate', $event)" class="w-full bg-transparent outline-none font-bold text-gray-900 text-sm py-1 cursor-pointer">
                 </div>
               </div>
 
               <div class="grid grid-cols-2 gap-6 mb-8">
                 <div class="bg-gray-50 p-4 rounded-xl border border-gray-100">
-                  <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Last Contacted</p>
+                  <p class="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Last Contacted</p>
                   <input type="date" [ngModel]="enquiry.lastContactedDate" (ngModelChange)="updateField(enquiry.id, 'lastContactedDate', $event)" class="w-full bg-transparent outline-none font-bold text-gray-900 text-sm py-1 cursor-pointer">
                 </div>
                 <div class="bg-gray-50 p-4 rounded-xl border border-gray-100">
-                  <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Lead Temperature</p>
+                  <p class="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Lead Temperature</p>
                   <select [ngModel]="enquiry.leadScore" (ngModelChange)="updateField(enquiry.id, 'leadScore', $event)" class="w-full bg-transparent border-b border-gray-200 focus:border-blue-500 outline-none font-bold text-sm py-1">
                     @for (q of customization().rules.leadQualities; track q) {
                       <option [value]="q">{{ q }}</option>
@@ -161,7 +161,7 @@ import { MatIconModule } from '@angular/material/icon';
               @if (enquiry.formData) {
                 <div class="mb-8">
                   <div class="flex items-center justify-between mb-2">
-                    <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Custom Form Data</p>
+                    <p class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Custom Form Data</p>
                     <button (click)="copyCustomerDetails(enquiry)" class="text-[10px] bg-gray-100 hover:bg-gray-200 px-2 py-1 rounded text-gray-600 font-bold flex items-center gap-1 transition-colors">
                       <mat-icon class="text-[12px]">content_copy</mat-icon> Copy Details
                     </button>
@@ -178,15 +178,15 @@ import { MatIconModule } from '@angular/material/icon';
               }
 
               <div class="mb-8">
-                <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Message</p>
+                <p class="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">Message</p>
                 <div class="bg-white border border-gray-100 p-5 rounded-xl text-gray-600 whitespace-pre-wrap text-sm leading-relaxed shadow-sm">{{ enquiry.message }}</div>
               </div>
               
               <div class="mb-8">
-                <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-1">
+                <p class="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2 flex items-center gap-1">
                    <mat-icon class="text-[14px]">edit_note</mat-icon> Customer Notes
                 </p>
-                <textarea rows="3" [ngModel]="enquiry.customerNotes" (ngModelChange)="updateField(enquiry.id, 'customerNotes', $event)" class="w-full p-4 border border-yellow-200 bg-yellow-50 rounded-xl focus:ring-2 focus:ring-yellow-400 outline-none text-gray-700 font-sans text-sm shadow-inner" placeholder="Add private notes about this lead..."></textarea>
+                <textarea aria-label="Add private notes about this lead" rows="3" [ngModel]="enquiry.customerNotes" (ngModelChange)="updateField(enquiry.id, 'customerNotes', $event)" class="w-full p-4 border border-yellow-200 bg-yellow-50 rounded-xl focus:ring-2 focus:ring-yellow-400 outline-none text-gray-700 font-sans text-sm shadow-inner" placeholder="Add private notes about this lead..."></textarea>
               </div>
 
               <div class="border-t border-gray-100 pt-8 mt-auto">
@@ -226,13 +226,13 @@ import { MatIconModule } from '@angular/material/icon';
                   </div>
                 } @else {
                   <div class="bg-gray-50 border border-dashed border-gray-200 rounded-xl p-6 text-center">
-                    <p class="text-sm text-gray-400 font-medium">Click generate to create an AI-powered reply based on your business profile and this enquiry.</p>
+                    <p class="text-sm text-gray-500 font-medium">Click generate to create an AI-powered reply based on your business profile and this enquiry.</p>
                   </div>
                 }
               </div>
             </div>
           } @else {
-            <div class="h-full flex items-center justify-center text-gray-400 flex-col gap-4">
+            <div class="h-full flex items-center justify-center text-gray-500 flex-col gap-4">
               <div class="w-16 h-16 bg-white rounded-2xl shadow-sm border border-gray-100 flex items-center justify-center">
                 <mat-icon class="text-3xl text-gray-300">inbox</mat-icon>
               </div>

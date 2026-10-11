@@ -33,7 +33,7 @@ interface Discount {
       <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
         <div class="p-6 border-b border-gray-100 bg-gray-50/50">
           <h2 class="font-bold text-gray-900 flex items-center gap-2">
-            <mat-icon class="text-[18px] text-gray-400">add_circle</mat-icon> Create Discount
+            <mat-icon class="text-[18px] text-gray-500">add_circle</mat-icon> Create Discount
           </h2>
         </div>
         <div class="p-6 space-y-4">
@@ -95,9 +95,9 @@ interface Discount {
                 </div>
               </div>
               <div class="flex items-center gap-3">
-                <span class="text-xs text-gray-400">{{ discount.createdAt | date:'mediumDate' }}</span>
-                <button (click)="deleteDiscount(discount.code)" class="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
-                  <mat-icon class="text-[18px]">delete</mat-icon>
+                <span class="text-xs text-gray-500">{{ discount.createdAt | date:'mediumDate' }}</span>
+                <button (click)="deleteDiscount(discount.code)" class="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" aria-label="Delete">
+                  <mat-icon aria-hidden="true" class="text-[18px]">delete</mat-icon>
                 </button>
               </div>
             </div>

@@ -200,7 +200,7 @@ import { ImagePickerComponent } from './image-picker.component';
                     <span class="text-xs font-bold">Split Hero</span>
                   </button>
                 </div>
-                <p class="text-xs text-gray-400 mt-2">Also editable per-section, with two more options (Minimal, Premium), from the Sections tab in the Page Builder.</p>
+                <p class="text-xs text-gray-500 mt-2">Also editable per-section, with two more options (Minimal, Premium), from the Sections tab in the Page Builder.</p>
               </div>
               
               <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -215,12 +215,12 @@ import { ImagePickerComponent } from './image-picker.component';
                  </div>
                  <div>
                    <span class="block text-sm font-bold text-gray-700 mb-2">Main CTA Text</span>
-                   <input type="text" [(ngModel)]="localCust.branding.ctaText" placeholder="Get a Quote" class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+                   <input aria-label="Get a Quote" type="text" [(ngModel)]="localCust.branding.ctaText" placeholder="Get a Quote" class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm">
                  </div>
                  <div class="md:col-span-2">
                    <span class="block text-sm font-bold text-gray-700 mb-2">Trust badges</span>
-                   <input type="text" [ngModel]="trustBadgesInput" (ngModelChange)="trustBadgesInput = $event" placeholder="e.g. Fully Insured, 5-Star Rated, Locally Owned" class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm">
-                   <p class="text-xs text-gray-400 mt-1">Comma separated. These are the small reassurance pills under your hero — not the location pill (that's in Text &amp; Labels).</p>
+                   <input aria-label="e.g. Fully Insured, 5-Star Rated, Locally Owned" type="text" [ngModel]="trustBadgesInput" (ngModelChange)="trustBadgesInput = $event" placeholder="e.g. Fully Insured, 5-Star Rated, Locally Owned" class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+                   <p class="text-xs text-gray-500 mt-1">Comma separated. These are the small reassurance pills under your hero — not the location pill (that's in Text &amp; Labels).</p>
                    @if (parsedTrustBadges().length) {
                      <div class="flex flex-wrap gap-2 mt-2">
                        @for (badge of parsedTrustBadges(); track badge) {
@@ -244,7 +244,7 @@ import { ImagePickerComponent } from './image-picker.component';
                     <mat-icon class="text-[14px]">delete</mat-icon> Remove Background Image
                   </button>
                 }
-                <p class="text-xs text-gray-400 mt-2">Adds a full-page background image behind all content. Works alongside your colour/gradient settings as a fallback.</p>
+                <p class="text-xs text-gray-500 mt-2">Adds a full-page background image behind all content. Works alongside your colour/gradient settings as a fallback.</p>
               </div>
             </div>
           </div>
@@ -255,7 +255,7 @@ import { ImagePickerComponent } from './image-picker.component';
           <div class="p-0">
             <div class="px-6 py-4 border-b border-gray-100 bg-gray-50/50 flex justify-between items-center">
                <p class="text-sm text-gray-500">Toggle sections on or off for your public page, and edit their titles.</p>
-               <div class="text-xs font-bold text-gray-400 uppercase tracking-wider">{{ localCust.sections.length }} Sections</div>
+               <div class="text-xs font-bold text-gray-500 uppercase tracking-wider">{{ localCust.sections.length }} Sections</div>
             </div>
             
             <div class="divide-y divide-gray-100">
@@ -263,11 +263,11 @@ import { ImagePickerComponent } from './image-picker.component';
                 <div class="p-4 sm:p-6 flex flex-col sm:flex-row gap-4 items-start sm:items-center hover:bg-gray-50 transition-colors">
                   <div class="flex items-center gap-3 w-full sm:w-1/3 shrink-0">
                     <div class="flex flex-col">
-                      <button (click)="moveSectionUp(i)" [disabled]="i === 0" class="text-gray-400 hover:text-gray-700 disabled:opacity-30" title="Move up">
-                        <mat-icon class="text-[18px]">keyboard_arrow_up</mat-icon>
+                      <button (click)="moveSectionUp(i)" [disabled]="i === 0" class="text-gray-500 hover:text-gray-700 disabled:opacity-30" title="Move up" aria-label="Move up">
+                        <mat-icon aria-hidden="true" class="text-[18px]">keyboard_arrow_up</mat-icon>
                       </button>
-                      <button (click)="moveSectionDown(i)" [disabled]="i === localCust.sections.length - 1" class="text-gray-400 hover:text-gray-700 disabled:opacity-30" title="Move down">
-                        <mat-icon class="text-[18px]">keyboard_arrow_down</mat-icon>
+                      <button (click)="moveSectionDown(i)" [disabled]="i === localCust.sections.length - 1" class="text-gray-500 hover:text-gray-700 disabled:opacity-30" title="Move down" aria-label="Move down">
+                        <mat-icon aria-hidden="true" class="text-[18px]">keyboard_arrow_down</mat-icon>
                       </button>
                     </div>
                     <label class="relative inline-flex items-center cursor-pointer shrink-0">
@@ -282,10 +282,10 @@ import { ImagePickerComponent } from './image-picker.component';
                   
                   <div class="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
                     <div>
-                      <input type="text" [(ngModel)]="section.heading" placeholder="Heading..." class="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm" [disabled]="!section.visible" [class.opacity-50]="!section.visible">
+                      <input aria-label="Heading" type="text" [(ngModel)]="section.heading" placeholder="Heading..." class="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm" [disabled]="!section.visible" [class.opacity-50]="!section.visible">
                     </div>
                     <div>
-                      <input type="text" [(ngModel)]="section.subheading" placeholder="Subheading..." class="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm" [disabled]="!section.visible" [class.opacity-50]="!section.visible">
+                      <input aria-label="Subheading" type="text" [(ngModel)]="section.subheading" placeholder="Subheading..." class="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm" [disabled]="!section.visible" [class.opacity-50]="!section.visible">
                     </div>
                   </div>
                 </div>
@@ -315,7 +315,7 @@ import { ImagePickerComponent } from './image-picker.component';
                   <input type="text" [(ngModel)]="textSettings.navContact" [placeholder]="defaults.navContact" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
                 </div>
               </div>
-              <p class="text-xs text-gray-400 mt-2">Menu links automatically hide when you hide their section on the Page Sections tab.</p>
+              <p class="text-xs text-gray-500 mt-2">Menu links automatically hide when you hide their section on the Page Sections tab.</p>
             </div>
 
             <div>
@@ -323,15 +323,15 @@ import { ImagePickerComponent } from './image-picker.component';
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <span class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Location pill (above the headline)</span>
-                  <input type="text" [(ngModel)]="textSettings.heroBadge" placeholder="Auto: business type • service area" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
-                  <p class="text-xs text-gray-400 mt-1">e.g. "Welcome to {{ profile().name || 'your business' }}". Blank shows your business type and service area. Not the trust badges &mdash; those are in Branding.</p>
+                  <input aria-label="Auto: business type • service area" type="text" [(ngModel)]="textSettings.heroBadge" placeholder="Auto: business type • service area" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+                  <p class="text-xs text-gray-500 mt-1">e.g. "Welcome to {{ profile().name || 'your business' }}". Blank shows your business type and service area. Not the trust badges &mdash; those are in Branding.</p>
                 </div>
                 <div>
                   <span class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Second hero button</span>
                   <input type="text" [(ngModel)]="textSettings.secondaryCta" [placeholder]="defaults.secondaryCta" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
                 </div>
               </div>
-              <p class="text-xs text-gray-400 mt-2">The main headline and welcome paragraph come from your Tagline and Description in Settings → Business Profile — you can also click them directly in the Page Builder preview to edit.</p>
+              <p class="text-xs text-gray-500 mt-2">The main headline and welcome paragraph come from your Tagline and Description in Settings → Business Profile — you can also click them directly in the Page Builder preview to edit.</p>
             </div>
 
             <div>
@@ -340,7 +340,7 @@ import { ImagePickerComponent } from './image-picker.component';
                 <div>
                   <span class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Price label</span>
                   <input type="text" [(ngModel)]="textSettings.priceLabel" [placeholder]="defaults.priceLabel" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
-                  <p class="text-xs text-gray-400 mt-1">Shown above each service price, e.g. "From" or "Only".</p>
+                  <p class="text-xs text-gray-500 mt-1">Shown above each service price, e.g. "From" or "Only".</p>
                 </div>
               </div>
             </div>
@@ -405,18 +405,18 @@ import { ImagePickerComponent } from './image-picker.component';
             </div>
             <div>
               <span class="block text-sm font-bold text-gray-700 mb-2">SEO Title</span>
-              <input type="text" [(ngModel)]="localCust.branding.seoTitle" placeholder="Your Business — Tagline" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm">
-              <p class="text-xs text-gray-400 mt-1">Appears in browser tabs and search results. Leave blank to auto-generate from your business name.</p>
+              <input aria-label="Your Business — Tagline" type="text" [(ngModel)]="localCust.branding.seoTitle" placeholder="Your Business — Tagline" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+              <p class="text-xs text-gray-500 mt-1">Appears in browser tabs and search results. Leave blank to auto-generate from your business name.</p>
             </div>
             <div>
               <span class="block text-sm font-bold text-gray-700 mb-2">Meta Description</span>
-              <textarea [(ngModel)]="localCust.branding.seoDescription" rows="3" placeholder="A brief description of your business for search engines..." class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm"></textarea>
-              <p class="text-xs text-gray-400 mt-1">{{ (localCust.branding.seoDescription || '').length }}/160 characters recommended.</p>
+              <textarea aria-label="A brief description of your business for search engines" [(ngModel)]="localCust.branding.seoDescription" rows="3" placeholder="A brief description of your business for search engines..." class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm"></textarea>
+              <p class="text-xs text-gray-500 mt-1">{{ (localCust.branding.seoDescription || '').length }}/160 characters recommended.</p>
             </div>
             <div>
               <span class="block text-sm font-bold text-gray-700 mb-2">Social Share Image (Open Graph)</span>
-              <input type="text" [(ngModel)]="localCust.branding.ogImageUrl" placeholder="https://..." class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm">
-              <p class="text-xs text-gray-400 mt-1">Image shown when your page is shared on social media. Recommended: 1200x630px.</p>
+              <input aria-label="https://" type="text" [(ngModel)]="localCust.branding.ogImageUrl" placeholder="https://..." class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+              <p class="text-xs text-gray-500 mt-1">Image shown when your page is shared on social media. Recommended: 1200x630px.</p>
             </div>
 
             <div class="bg-gray-50 rounded-xl border border-gray-200 p-4">
@@ -441,7 +441,7 @@ import { ImagePickerComponent } from './image-picker.component';
             <div class="space-y-4">
               @for (field of localCust.formFields; track field.id; let i = $index) {
                 <div class="p-4 border border-gray-200 rounded-xl bg-gray-50 flex flex-col md:flex-row gap-4 md:items-center">
-                  <div class="w-8 flex justify-center text-gray-400">
+                  <div class="w-8 flex justify-center text-gray-500">
                     <mat-icon class="cursor-grab">drag_indicator</mat-icon>
                   </div>
                   
@@ -466,7 +466,7 @@ import { ImagePickerComponent } from './image-picker.component';
                   @if (field.type === 'dropdown') {
                     <div class="flex-1">
                       <span class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Options (comma separated)</span>
-                      <input type="text" [(ngModel)]="field.options" placeholder="Option 1, Option 2" class="w-full px-3 py-2 border border-gray-200 rounded-lg outline-none text-sm">
+                      <input aria-label="Option 1, Option 2" type="text" [(ngModel)]="field.options" placeholder="Option 1, Option 2" class="w-full px-3 py-2 border border-gray-200 rounded-lg outline-none text-sm">
                     </div>
                   }
 
@@ -475,8 +475,8 @@ import { ImagePickerComponent } from './image-picker.component';
                       <input type="checkbox" [(ngModel)]="field.required" class="rounded text-blue-600 focus:ring-blue-500">
                       <span class="text-sm font-bold text-gray-700">Required</span>
                     </label>
-                    <button (click)="removeField(i)" class="text-red-500 hover:text-red-700 p-2 rounded-lg hover:bg-red-50 transition-colors">
-                      <mat-icon class="text-[20px]">delete</mat-icon>
+                    <button (click)="removeField(i)" class="text-red-500 hover:text-red-700 p-2 rounded-lg hover:bg-red-50 transition-colors" aria-label="Delete">
+                      <mat-icon aria-hidden="true" class="text-[20px]">delete</mat-icon>
                     </button>
                   </div>
                 </div>

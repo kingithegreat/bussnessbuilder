@@ -24,7 +24,7 @@ import { PaymentSettings } from './types';
       <!-- Stripe Connect -->
       <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
         <div class="p-6 border-b border-gray-100 bg-gray-50/50">
-          <h2 class="font-bold text-gray-900 flex items-center gap-2"><mat-icon class="text-[18px] text-gray-400">account_balance</mat-icon> Payment Gateway</h2>
+          <h2 class="font-bold text-gray-900 flex items-center gap-2"><mat-icon class="text-[18px] text-gray-500">account_balance</mat-icon> Payment Gateway</h2>
         </div>
         <div class="p-6 space-y-4">
           <div class="flex items-center justify-between">
@@ -42,7 +42,7 @@ import { PaymentSettings } from './types';
             <div>
               <label for="stripeId" class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Stripe Account ID</label>
               <input id="stripeId" type="text" [(ngModel)]="settings.stripeAccountId" placeholder="acct_..." class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm font-mono">
-              <p class="text-xs text-gray-400 mt-1">Connect your Stripe account to receive payments. <a href="https://stripe.com" target="_blank" class="text-blue-600 hover:underline">Create a Stripe account</a></p>
+              <p class="text-xs text-gray-500 mt-1">Connect your Stripe account to receive payments. <a href="https://stripe.com" target="_blank" class="text-blue-600 hover:underline">Create a Stripe account</a></p>
             </div>
           }
         </div>
@@ -52,7 +52,7 @@ import { PaymentSettings } from './types';
       @if (settings.enabled) {
         <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
           <div class="p-6 border-b border-gray-100 bg-gray-50/50 flex items-center justify-between">
-            <h2 class="font-bold text-gray-900 flex items-center gap-2"><mat-icon class="text-[18px] text-gray-400">payments</mat-icon> Payment Links</h2>
+            <h2 class="font-bold text-gray-900 flex items-center gap-2"><mat-icon class="text-[18px] text-gray-500">payments</mat-icon> Payment Links</h2>
             <button (click)="addLink()" class="text-blue-600 text-sm font-bold hover:underline flex items-center gap-1">
               <mat-icon class="text-[16px]">add</mat-icon> Add Link
             </button>
@@ -63,7 +63,7 @@ import { PaymentSettings } from './types';
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div>
                     <label [for]="'pn_'+link.id" class="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Name</label>
-                    <input [id]="'pn_'+link.id" type="text" [(ngModel)]="link.name" placeholder="e.g. Standard Clean" class="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+                    <input aria-label="e.g. Standard Clean" [id]="'pn_'+link.id" type="text" [(ngModel)]="link.name" placeholder="e.g. Standard Clean" class="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
                   </div>
                   <div>
                     <label [for]="'pa_'+link.id" class="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Amount</label>
@@ -75,32 +75,32 @@ import { PaymentSettings } from './types';
                         <option value="AUD">A$</option>
                         <option value="NZD">NZ$</option>
                       </select>
-                      <input [id]="'pa_'+link.id" type="number" [(ngModel)]="link.amount" placeholder="0.00" min="0" step="0.01" class="flex-1 px-3 py-2 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+                      <input aria-label="0.00" [id]="'pa_'+link.id" type="number" [(ngModel)]="link.amount" placeholder="0.00" min="0" step="0.01" class="flex-1 px-3 py-2 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
                     </div>
                   </div>
                   <div>
                     <label [for]="'pl_'+link.id" class="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Stripe Payment Link</label>
-                    <input [id]="'pl_'+link.id" type="text" [(ngModel)]="link.stripePaymentLink" placeholder="https://buy.stripe.com/..." class="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm font-mono">
+                    <input aria-label="https://buy.stripe.com/" [id]="'pl_'+link.id" type="text" [(ngModel)]="link.stripePaymentLink" placeholder="https://buy.stripe.com/..." class="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm font-mono">
                   </div>
                 </div>
                 <div class="flex items-center justify-between">
                   <div>
-                    <input [id]="'pd_'+link.id" type="text" [(ngModel)]="link.description" placeholder="Brief description..." class="px-3 py-1.5 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-xs w-64">
+                    <input aria-label="Brief description" [id]="'pd_'+link.id" type="text" [(ngModel)]="link.description" placeholder="Brief description..." class="px-3 py-1.5 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-xs w-64">
                   </div>
                   <div class="flex items-center gap-3">
                     <label class="flex items-center gap-2 cursor-pointer">
                       <input type="checkbox" [(ngModel)]="link.active" class="rounded text-blue-600 focus:ring-blue-500">
                       <span class="text-xs font-bold text-gray-700">Active</span>
                     </label>
-                    <button (click)="removeLink(i)" class="text-red-500 hover:bg-red-50 p-1.5 rounded-lg transition-colors">
-                      <mat-icon class="text-[16px]">delete</mat-icon>
+                    <button (click)="removeLink(i)" class="text-red-500 hover:bg-red-50 p-1.5 rounded-lg transition-colors" aria-label="Delete">
+                      <mat-icon aria-hidden="true" class="text-[16px]">delete</mat-icon>
                     </button>
                   </div>
                 </div>
               </div>
             }
             @if (settings.paymentLinks.length === 0) {
-              <div class="p-8 text-center text-gray-400 text-sm">
+              <div class="p-8 text-center text-gray-500 text-sm">
                 No payment links yet. Add one to start accepting payments.
               </div>
             }

@@ -37,7 +37,7 @@ import { ImagePickerComponent } from './image-picker.component';
                    (keydown.enter)="expandedSection === section.id ? expandedSection = null : expandedSection = section.id"
                    (click)="expandedSection === section.id ? expandedSection = null : expandedSection = section.id">
                 <div class="flex items-center gap-3">
-                  <mat-icon class="text-gray-400 cursor-move">drag_indicator</mat-icon>
+                  <mat-icon class="text-gray-500 cursor-move">drag_indicator</mat-icon>
                   <div>
                     <h3 class="font-bold text-gray-900 text-sm flex items-center gap-2">
                       {{ getSectionName(section) }}
@@ -48,13 +48,13 @@ import { ImagePickerComponent } from './image-picker.component';
                   </div>
                 </div>
                 <div class="flex items-center gap-2">
-                   <button (click)="moveUp(i); $event.stopPropagation()" [disabled]="i === 0" class="text-gray-400 hover:text-gray-700 disabled:opacity-30">
-                     <mat-icon class="text-[18px]">keyboard_arrow_up</mat-icon>
+                   <button (click)="moveUp(i); $event.stopPropagation()" [disabled]="i === 0" class="text-gray-500 hover:text-gray-700 disabled:opacity-30" aria-label="Move up">
+                     <mat-icon aria-hidden="true" class="text-[18px]">keyboard_arrow_up</mat-icon>
                    </button>
-                   <button (click)="moveDown(i); $event.stopPropagation()" [disabled]="i === localCust.sections.length - 1" class="text-gray-400 hover:text-gray-700 disabled:opacity-30">
-                     <mat-icon class="text-[18px]">keyboard_arrow_down</mat-icon>
+                   <button (click)="moveDown(i); $event.stopPropagation()" [disabled]="i === localCust.sections.length - 1" class="text-gray-500 hover:text-gray-700 disabled:opacity-30" aria-label="Move down">
+                     <mat-icon aria-hidden="true" class="text-[18px]">keyboard_arrow_down</mat-icon>
                    </button>
-                   <mat-icon class="text-gray-400 text-[20px] transition-transform" [class.rotate-180]="expandedSection === section.id">
+                   <mat-icon class="text-gray-500 text-[20px] transition-transform" [class.rotate-180]="expandedSection === section.id">
                      expand_more
                    </mat-icon>
                 </div>
@@ -83,7 +83,7 @@ import { ImagePickerComponent } from './image-picker.component';
                   @if (renderType(section) === 'custom') {
                     <div>
                       <label [for]="'content_'+section.id" class="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Content</label>
-                      <textarea [id]="'content_'+section.id" rows="5" [(ngModel)]="section.content" (ngModelChange)="onPreviewChange()" placeholder="Write the text for this section…" class="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm text-gray-700"></textarea>
+                      <textarea aria-label="Write the text for this section…" [id]="'content_'+section.id" rows="5" [(ngModel)]="section.content" (ngModelChange)="onPreviewChange()" placeholder="Write the text for this section…" class="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm text-gray-700"></textarea>
                     </div>
                   }
 
@@ -139,22 +139,22 @@ import { ImagePickerComponent } from './image-picker.component';
       <div class="flex-grow flex flex-col h-full min-h-0 min-w-0 bg-[#E5E5EA]">
         <div class="h-14 border-b border-gray-200 bg-white flex items-center justify-between px-4 shrink-0">
           <div class="flex items-center gap-1">
-            <button (click)="undo()" [disabled]="!canUndo()" class="p-2 rounded-lg text-gray-500 hover:text-gray-900 disabled:opacity-30 transition-colors" title="Undo">
-              <mat-icon class="text-[20px]">undo</mat-icon>
+            <button (click)="undo()" [disabled]="!canUndo()" class="p-2 rounded-lg text-gray-500 hover:text-gray-900 disabled:opacity-30 transition-colors" title="Undo" aria-label="Undo">
+              <mat-icon aria-hidden="true" class="text-[20px]">undo</mat-icon>
             </button>
-            <button (click)="redo()" [disabled]="!canRedo()" class="p-2 rounded-lg text-gray-500 hover:text-gray-900 disabled:opacity-30 transition-colors" title="Redo">
-              <mat-icon class="text-[20px]">redo</mat-icon>
+            <button (click)="redo()" [disabled]="!canRedo()" class="p-2 rounded-lg text-gray-500 hover:text-gray-900 disabled:opacity-30 transition-colors" title="Redo" aria-label="Redo">
+              <mat-icon aria-hidden="true" class="text-[20px]">redo</mat-icon>
             </button>
           </div>
           <div class="flex items-center gap-2">
-            <button (click)="previewMode = 'desktop'" [class.bg-gray-100]="previewMode === 'desktop'" [class.text-blue-600]="previewMode === 'desktop'" class="p-2 rounded-lg text-gray-500 hover:text-gray-900 transition-colors">
-              <mat-icon class="text-[20px]">desktop_mac</mat-icon>
+            <button (click)="previewMode = 'desktop'" [class.bg-gray-100]="previewMode === 'desktop'" [class.text-blue-600]="previewMode === 'desktop'" class="p-2 rounded-lg text-gray-500 hover:text-gray-900 transition-colors" aria-label="Desktop preview">
+              <mat-icon aria-hidden="true" class="text-[20px]">desktop_mac</mat-icon>
             </button>
-            <button (click)="previewMode = 'tablet'" [class.bg-gray-100]="previewMode === 'tablet'" [class.text-blue-600]="previewMode === 'tablet'" class="p-2 rounded-lg text-gray-500 hover:text-gray-900 transition-colors">
-              <mat-icon class="text-[20px]">tablet_mac</mat-icon>
+            <button (click)="previewMode = 'tablet'" [class.bg-gray-100]="previewMode === 'tablet'" [class.text-blue-600]="previewMode === 'tablet'" class="p-2 rounded-lg text-gray-500 hover:text-gray-900 transition-colors" aria-label="Tablet preview">
+              <mat-icon aria-hidden="true" class="text-[20px]">tablet_mac</mat-icon>
             </button>
-            <button (click)="previewMode = 'mobile'" [class.bg-gray-100]="previewMode === 'mobile'" [class.text-blue-600]="previewMode === 'mobile'" class="p-2 rounded-lg text-gray-500 hover:text-gray-900 transition-colors">
-              <mat-icon class="text-[20px]">smartphone</mat-icon>
+            <button (click)="previewMode = 'mobile'" [class.bg-gray-100]="previewMode === 'mobile'" [class.text-blue-600]="previewMode === 'mobile'" class="p-2 rounded-lg text-gray-500 hover:text-gray-900 transition-colors" aria-label="Mobile preview">
+              <mat-icon aria-hidden="true" class="text-[20px]">smartphone</mat-icon>
             </button>
           </div>
           @if (canPreview()) {
@@ -162,7 +162,7 @@ import { ImagePickerComponent } from './image-picker.component';
               <mat-icon class="text-[16px]">open_in_new</mat-icon> Preview Site
             </a>
           } @else {
-            <button type="button" disabled title="Complete setup to preview your site" class="flex items-center gap-1.5 bg-gray-100 text-gray-400 px-4 py-1.5 rounded-lg text-xs font-bold cursor-not-allowed">
+            <button type="button" disabled title="Complete setup to preview your site" class="flex items-center gap-1.5 bg-gray-100 text-gray-500 px-4 py-1.5 rounded-lg text-xs font-bold cursor-not-allowed">
               <mat-icon class="text-[16px]">open_in_new</mat-icon> Complete setup to preview
             </button>
           }

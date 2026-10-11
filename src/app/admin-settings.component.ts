@@ -32,13 +32,13 @@ import { DatePipe } from '@angular/common';
       <!-- Business Profile -->
       <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
         <div class="p-6 border-b border-gray-100 bg-gray-50/50">
-          <h2 class="font-bold text-gray-900 flex items-center gap-2"><mat-icon class="text-[18px] text-gray-400">store</mat-icon> Business Profile</h2>
+          <h2 class="font-bold text-gray-900 flex items-center gap-2"><mat-icon class="text-[18px] text-gray-500">store</mat-icon> Business Profile</h2>
           <p class="text-xs text-gray-500 mt-1">These details were set during setup — you can change them any time.</p>
         </div>
         <div class="p-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div class="sm:col-span-2">
             <span class="block text-sm font-bold text-gray-700 mb-1">Business Name</span>
-            <input type="text" [(ngModel)]="profileForm.name" placeholder="e.g. Apex Cleaners" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+            <input aria-label="e.g. Apex Cleaners" type="text" [(ngModel)]="profileForm.name" placeholder="e.g. Apex Cleaners" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm">
           </div>
           <div>
             <span class="block text-sm font-bold text-gray-700 mb-1">Business Type</span>
@@ -52,31 +52,31 @@ import { DatePipe } from '@angular/common';
           </div>
           <div>
             <span class="block text-sm font-bold text-gray-700 mb-1">Tagline</span>
-            <input type="text" [(ngModel)]="profileForm.tagline" placeholder="A short, catchy phrase" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+            <input aria-label="A short, catchy phrase" type="text" [(ngModel)]="profileForm.tagline" placeholder="A short, catchy phrase" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm">
           </div>
           <div>
             <span class="block text-sm font-bold text-gray-700 mb-1">Contact Email</span>
-            <input type="email" [(ngModel)]="profileForm.email" placeholder="hello@example.com" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+            <input aria-label="hello@example.com" type="email" [(ngModel)]="profileForm.email" placeholder="hello@example.com" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm">
           </div>
           <div>
             <span class="block text-sm font-bold text-gray-700 mb-1">Phone</span>
-            <input type="tel" [(ngModel)]="profileForm.phone" placeholder="021 123 4567" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+            <input aria-label="021 123 4567" type="tel" [(ngModel)]="profileForm.phone" placeholder="021 123 4567" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm">
           </div>
           <div>
             <span class="block text-sm font-bold text-gray-700 mb-1">Service Area</span>
-            <input type="text" [(ngModel)]="profileForm.serviceArea" placeholder="e.g. Pyes Pa, Tauranga" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+            <input aria-label="e.g. Pyes Pa, Tauranga" type="text" [(ngModel)]="profileForm.serviceArea" placeholder="e.g. Pyes Pa, Tauranga" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm">
           </div>
           <div>
             <span class="block text-sm font-bold text-gray-700 mb-1">Opening Hours</span>
-            <input type="text" [(ngModel)]="profileForm.openingHours" placeholder="Mon-Fri: 9am - 5pm" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+            <input aria-label="Mon-Fri: 9am - 5pm" type="text" [(ngModel)]="profileForm.openingHours" placeholder="Mon-Fri: 9am - 5pm" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm">
           </div>
           <div class="sm:col-span-2">
             <span class="block text-sm font-bold text-gray-700 mb-1">Address</span>
-            <input type="text" [(ngModel)]="profileForm.address" placeholder="Street address (optional)" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+            <input aria-label="Street address (optional)" type="text" [(ngModel)]="profileForm.address" placeholder="Street address (optional)" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm">
           </div>
           <div class="sm:col-span-2">
             <span class="block text-sm font-bold text-gray-700 mb-1">Business Description</span>
-            <textarea [(ngModel)]="profileForm.description" rows="3" placeholder="A short description of your business" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm"></textarea>
+            <textarea aria-label="A short description of your business" [(ngModel)]="profileForm.description" rows="3" placeholder="A short description of your business" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm"></textarea>
           </div>
           <div class="sm:col-span-2 flex justify-end">
             <button (click)="saveProfile()" class="bg-blue-600 text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow-sm hover:bg-blue-700 transition-colors flex items-center gap-2">
@@ -89,7 +89,7 @@ import { DatePipe } from '@angular/common';
       <!-- Public Site Link -->
       <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
         <div class="p-6 border-b border-gray-100 bg-gray-50/50">
-          <h2 class="font-bold text-gray-900 flex items-center gap-2"><mat-icon class="text-[18px] text-gray-400">language</mat-icon> Your Public Site</h2>
+          <h2 class="font-bold text-gray-900 flex items-center gap-2"><mat-icon class="text-[18px] text-gray-500">language</mat-icon> Your Public Site</h2>
         </div>
         <div class="p-6">
           <p class="text-sm text-gray-500 mb-3">Share this link with customers so they can view your site and submit enquiries.</p>
@@ -124,7 +124,7 @@ import { DatePipe } from '@angular/common';
           @if (showQrPanel) {
             <div class="mt-4 pt-4 border-t border-gray-100 flex flex-col items-center gap-3">
               @if (generatingQr) {
-                <p class="text-xs text-gray-400">Generating…</p>
+                <p class="text-xs text-gray-500">Generating…</p>
               } @else if (qrError) {
                 <p class="text-xs text-red-600 font-medium flex items-center gap-1">
                   <mat-icon class="text-[14px]">error</mat-icon> {{ qrError }}
@@ -144,7 +144,7 @@ import { DatePipe } from '@angular/common';
       <!-- Subscription -->
       <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
         <div class="p-6 border-b border-gray-100 bg-gray-50/50">
-          <h2 class="font-bold text-gray-900 flex items-center gap-2"><mat-icon class="text-[18px] text-gray-400">credit_card</mat-icon> Subscription</h2>
+          <h2 class="font-bold text-gray-900 flex items-center gap-2"><mat-icon class="text-[18px] text-gray-500">credit_card</mat-icon> Subscription</h2>
         </div>
         <div class="p-6">
           <div class="flex items-center justify-between mb-4">
@@ -171,8 +171,8 @@ import { DatePipe } from '@angular/common';
       <!-- Site Templates -->
       <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
         <div class="p-6 border-b border-gray-100 bg-gray-50/50 flex items-center justify-between">
-          <h2 class="font-bold text-gray-900 flex items-center gap-2"><mat-icon class="text-[18px] text-gray-400">layers</mat-icon> Site Templates</h2>
-          <span class="text-xs font-bold text-gray-400">{{ dataService.templates().length }} / 3</span>
+          <h2 class="font-bold text-gray-900 flex items-center gap-2"><mat-icon class="text-[18px] text-gray-500">layers</mat-icon> Site Templates</h2>
+          <span class="text-xs font-bold text-gray-500">{{ dataService.templates().length }} / 3</span>
         </div>
         <div class="p-6 space-y-4">
           <p class="text-sm text-gray-500">Save up to 3 versions of your site. Only the active template is shown on your public page.</p>
@@ -189,35 +189,35 @@ import { DatePipe } from '@angular/common';
                   </div>
                 } @else {
                   <div class="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center shrink-0">
-                    <mat-icon class="text-gray-400 text-[16px]">web</mat-icon>
+                    <mat-icon class="text-gray-500 text-[16px]">web</mat-icon>
                   </div>
                 }
                 <div class="min-w-0">
                   <p class="font-bold text-sm text-gray-900 truncate">{{ template.name }}</p>
-                  <p class="text-[10px] text-gray-400">Updated {{ template.updatedAt | date:'medium' }}</p>
+                  <p class="text-[10px] text-gray-500">Updated {{ template.updatedAt | date:'medium' }}</p>
                 </div>
               </div>
               <div class="flex items-center gap-1 shrink-0">
                 @if (dataService.activeTemplateId() !== template.id) {
                   <button (click)="deployTemplate(template.id)" class="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-bold hover:bg-blue-700 transition-colors">Deploy</button>
-                  <button (click)="loadTemplate(template.id)" class="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Edit this template">
-                    <mat-icon class="text-[16px]">edit</mat-icon>
+                  <button (click)="loadTemplate(template.id)" class="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Edit this template" aria-label="Edit this template">
+                    <mat-icon aria-hidden="true" class="text-[16px]">edit</mat-icon>
                   </button>
                 } @else {
                   <span class="px-3 py-1.5 bg-blue-100 text-blue-600 rounded-lg text-xs font-bold">Live</span>
-                  <button (click)="updateCurrentTemplate()" class="p-1.5 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors" title="Save current changes to this template">
-                    <mat-icon class="text-[16px]">save</mat-icon>
+                  <button (click)="updateCurrentTemplate()" class="p-1.5 text-gray-500 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors" title="Save current changes to this template" aria-label="Save current changes to this template">
+                    <mat-icon aria-hidden="true" class="text-[16px]">save</mat-icon>
                   </button>
                 }
-                <button (click)="deleteTemplate(template.id, template.name)" class="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Delete">
-                  <mat-icon class="text-[16px]">delete</mat-icon>
+                <button (click)="deleteTemplate(template.id, template.name)" class="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Delete" aria-label="Delete">
+                  <mat-icon aria-hidden="true" class="text-[16px]">delete</mat-icon>
                 </button>
               </div>
             </div>
           }
 
           @if (dataService.templates().length === 0) {
-            <div class="text-center py-8 text-gray-400 border-2 border-dashed border-gray-200 rounded-xl">
+            <div class="text-center py-8 text-gray-500 border-2 border-dashed border-gray-200 rounded-xl">
               <mat-icon class="text-3xl mb-2">web</mat-icon>
               <p class="text-sm font-medium">No saved templates yet</p>
               <p class="text-xs mt-1">Save your current site as a template to get started</p>
@@ -226,7 +226,7 @@ import { DatePipe } from '@angular/common';
 
           @if (dataService.templates().length < 3) {
             <div class="flex gap-2">
-              <input type="text" [(ngModel)]="newTemplateName" placeholder="Template name..." class="flex-1 px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+              <input aria-label="Template name" type="text" [(ngModel)]="newTemplateName" placeholder="Template name..." class="flex-1 px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm">
               <button (click)="saveAsTemplate()" [disabled]="!newTemplateName.trim()" class="px-4 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-bold hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center gap-1.5 shrink-0">
                 <mat-icon class="text-[16px]">add</mat-icon> Save Current Site
               </button>
@@ -243,7 +243,7 @@ import { DatePipe } from '@angular/common';
       <!-- Custom Domain -->
       <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
         <div class="p-6 border-b border-gray-100 bg-gray-50/50">
-          <h2 class="font-bold text-gray-900 flex items-center gap-2"><mat-icon class="text-[18px] text-gray-400">language</mat-icon> Custom Domain</h2>
+          <h2 class="font-bold text-gray-900 flex items-center gap-2"><mat-icon class="text-[18px] text-gray-500">language</mat-icon> Custom Domain</h2>
           <p class="text-xs text-gray-500 mt-1">Connect a domain you own and we'll point it at your public site.</p>
         </div>
         <div class="p-6 space-y-4">
@@ -289,8 +289,8 @@ import { DatePipe } from '@angular/common';
                         <td class="px-3 py-2 font-mono text-gray-700">{{ rec.host }}</td>
                         <td class="px-3 py-2 font-mono text-gray-700 break-all">{{ rec.value }}</td>
                         <td class="px-3 py-2 text-right">
-                          <button (click)="copyValue(rec.value)" class="text-blue-600 hover:text-blue-800 inline-flex items-center" title="Copy value">
-                            <mat-icon class="text-[16px]">content_copy</mat-icon>
+                          <button (click)="copyValue(rec.value)" class="text-blue-600 hover:text-blue-800 inline-flex items-center" title="Copy value" aria-label="Copy value">
+                            <mat-icon aria-hidden="true" class="text-[16px]">content_copy</mat-icon>
                           </button>
                         </td>
                       </tr>
@@ -298,7 +298,7 @@ import { DatePipe } from '@angular/common';
                   </tbody>
                 </table>
               </div>
-              <p class="text-xs text-gray-400 mt-2">Apex domains use A records; subdomains use a CNAME. The TXT record proves you own the domain. DNS changes can take up to 48 hours.</p>
+              <p class="text-xs text-gray-500 mt-2">Apex domains use A records; subdomains use a CNAME. The TXT record proves you own the domain. DNS changes can take up to 48 hours.</p>
             </div>
           }
 
@@ -332,8 +332,8 @@ import { DatePipe } from '@angular/common';
                           <td class="px-3 py-2 font-mono text-gray-700">{{ ownershipRecord.host }}</td>
                           <td class="px-3 py-2 font-mono text-gray-700 break-all">{{ ownershipRecord.value }}</td>
                           <td class="px-3 py-2 text-right">
-                            <button (click)="copyValue(ownershipRecord.value)" class="text-blue-600 hover:text-blue-800 inline-flex items-center" title="Copy value">
-                              <mat-icon class="text-[16px]">content_copy</mat-icon>
+                            <button (click)="copyValue(ownershipRecord.value)" class="text-blue-600 hover:text-blue-800 inline-flex items-center" title="Copy value" aria-label="Copy value">
+                              <mat-icon aria-hidden="true" class="text-[16px]">content_copy</mat-icon>
                             </button>
                           </td>
                         </tr>
@@ -356,8 +356,8 @@ import { DatePipe } from '@angular/common';
                               <td class="px-3 py-2 font-mono text-gray-700">{{ rec.host }}</td>
                               <td class="px-3 py-2 font-mono text-gray-700 break-all">{{ rec.value }}</td>
                               <td class="px-3 py-2 text-right">
-                                <button (click)="copyValue(rec.value)" class="text-blue-600 hover:text-blue-800 inline-flex items-center" title="Copy value">
-                                  <mat-icon class="text-[16px]">content_copy</mat-icon>
+                                <button (click)="copyValue(rec.value)" class="text-blue-600 hover:text-blue-800 inline-flex items-center" title="Copy value" aria-label="Copy value">
+                                  <mat-icon aria-hidden="true" class="text-[16px]">content_copy</mat-icon>
                                 </button>
                               </td>
                             </tr>
@@ -400,7 +400,7 @@ import { DatePipe } from '@angular/common';
       <!-- Email Notifications -->
       <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
         <div class="p-6 border-b border-gray-100 bg-gray-50/50">
-          <h2 class="font-bold text-gray-900 flex items-center gap-2"><mat-icon class="text-[18px] text-gray-400">notifications</mat-icon> Email Notifications</h2>
+          <h2 class="font-bold text-gray-900 flex items-center gap-2"><mat-icon class="text-[18px] text-gray-500">notifications</mat-icon> Email Notifications</h2>
         </div>
         <div class="p-6 space-y-4">
           <div class="flex items-center justify-between">

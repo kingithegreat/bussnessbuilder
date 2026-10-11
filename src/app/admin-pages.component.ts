@@ -43,7 +43,7 @@ import { ContentPage } from './types';
                 </p>
               </div>
             </div>
-            <mat-icon class="text-gray-400 text-[20px] transition-transform" [class.rotate-180]="expanded === page.id">expand_more</mat-icon>
+            <mat-icon class="text-gray-500 text-[20px] transition-transform" [class.rotate-180]="expanded === page.id">expand_more</mat-icon>
           </button>
 
           @if (expanded === page.id) {
@@ -60,7 +60,7 @@ import { ContentPage } from './types';
               </div>
               <div>
                 <label [for]="'pc_'+page.id" class="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Content</label>
-                <textarea [id]="'pc_'+page.id" rows="12" [(ngModel)]="page.content" placeholder="Write your page content here. You can use basic formatting." class="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm leading-relaxed font-mono"></textarea>
+                <textarea aria-label="Write your page content here. You can use basic formatting" [id]="'pc_'+page.id" rows="12" [(ngModel)]="page.content" placeholder="Write your page content here. You can use basic formatting." class="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm leading-relaxed font-mono"></textarea>
               </div>
               <div class="flex items-center justify-between">
                 <label class="flex items-center gap-2 cursor-pointer">

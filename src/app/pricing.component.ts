@@ -54,7 +54,7 @@ import { ToastService } from './toast.service';
               <li class="flex items-start gap-2"><mat-icon class="text-green-500 text-[18px] shrink-0 mt-0.5">check_circle</mat-icon> Payment links (Stripe)</li>
               <li class="flex items-start gap-2"><mat-icon class="text-green-500 text-[18px] shrink-0 mt-0.5">check_circle</mat-icon> Up to 3 services</li>
               <li class="flex items-start gap-2"><mat-icon class="text-green-500 text-[18px] shrink-0 mt-0.5">check_circle</mat-icon> Up to 10 enquiries</li>
-              <li class="flex items-start gap-2"><mat-icon class="text-gray-300 text-[18px] shrink-0 mt-0.5">cancel</mat-icon> <span class="text-gray-400">AI content tools (templates only)</span></li>
+              <li class="flex items-start gap-2"><mat-icon class="text-gray-300 text-[18px] shrink-0 mt-0.5">cancel</mat-icon> <span class="text-gray-500">AI content tools (templates only)</span></li>
             </ul>
             @if (subService.tier() === 'free') {
               <div class="bg-gray-100 text-gray-500 text-center py-3 rounded-xl text-sm font-bold">Current Plan</div>
@@ -123,7 +123,7 @@ import { ToastService } from './toast.service';
         </div>
       </main>
 
-      <footer class="py-8 text-center text-gray-400 text-sm border-t border-gray-200">
+      <footer class="py-8 text-center text-gray-500 text-sm border-t border-gray-200">
         <div class="flex items-center justify-center gap-4 mb-3">
           <a routerLink="/privacy" class="hover:text-gray-600 transition-colors">Privacy Policy</a>
           <span class="text-gray-300">|</span>

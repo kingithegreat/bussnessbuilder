@@ -103,12 +103,12 @@ type Tab = 'services' | 'testimonials' | 'faqs';
                 </div>
                 <div class="grid grid-cols-2 gap-4">
                   <div>
-                    <label [for]="'sp_'+item.id" class="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Price <span class="text-gray-400 normal-case">(optional)</span></label>
-                    <input [id]="'sp_'+item.id" type="text" [(ngModel)]="item.price" placeholder="e.g. $120" class="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm text-gray-700">
+                    <label [for]="'sp_'+item.id" class="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Price <span class="text-gray-500 normal-case">(optional)</span></label>
+                    <input aria-label="e.g. $120" [id]="'sp_'+item.id" type="text" [(ngModel)]="item.price" placeholder="e.g. $120" class="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm text-gray-700">
                   </div>
                   <div>
-                    <label [for]="'su_'+item.id" class="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Duration <span class="text-gray-400 normal-case">(optional)</span></label>
-                    <input [id]="'su_'+item.id" type="text" [(ngModel)]="item.duration" placeholder="e.g. 2 hours" class="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm text-gray-700">
+                    <label [for]="'su_'+item.id" class="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Duration <span class="text-gray-500 normal-case">(optional)</span></label>
+                    <input aria-label="e.g. 2 hours" [id]="'su_'+item.id" type="text" [(ngModel)]="item.duration" placeholder="e.g. 2 hours" class="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm text-gray-700">
                   </div>
                 </div>
                 <app-image-picker
@@ -152,7 +152,7 @@ type Tab = 'services' | 'testimonials' | 'faqs';
                 <mat-icon class="text-gray-300">format_quote</mat-icon>
                 <div class="min-w-0">
                   <h3 class="font-bold text-gray-900 text-sm truncate">{{ item.author || 'Anonymous' }}</h3>
-                  <p class="text-xs text-amber-500 truncate">{{ stars(item.rating) }} <span class="text-gray-400">{{ item.role }}</span></p>
+                  <p class="text-xs text-amber-500 truncate">{{ stars(item.rating) }} <span class="text-gray-500">{{ item.role }}</span></p>
                 </div>
               </div>
               <ng-container *ngTemplateOutlet="rowActions; context: { i: i, id: item.id, len: testimonials.length }"></ng-container>
@@ -165,8 +165,8 @@ type Tab = 'services' | 'testimonials' | 'faqs';
                     <input [id]="'ta_'+item.id" type="text" [(ngModel)]="item.author" class="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm text-gray-700">
                   </div>
                   <div>
-                    <label [for]="'tr_'+item.id" class="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Role / location <span class="text-gray-400 normal-case">(optional)</span></label>
-                    <input [id]="'tr_'+item.id" type="text" [(ngModel)]="item.role" placeholder="e.g. Homeowner" class="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm text-gray-700">
+                    <label [for]="'tr_'+item.id" class="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Role / location <span class="text-gray-500 normal-case">(optional)</span></label>
+                    <input aria-label="e.g. Homeowner" [id]="'tr_'+item.id" type="text" [(ngModel)]="item.role" placeholder="e.g. Homeowner" class="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm text-gray-700">
                   </div>
                 </div>
                 <div>
@@ -221,13 +221,13 @@ type Tab = 'services' | 'testimonials' | 'faqs';
     <!-- Shared row action buttons (move up/down + expand chevron) -->
     <ng-template #rowActions let-i="i" let-id="id" let-len="len">
       <div class="flex items-center gap-2 shrink-0">
-        <button (click)="moveUp(i); $event.stopPropagation()" [disabled]="i === 0" class="text-gray-400 hover:text-gray-700 disabled:opacity-30" aria-label="Move up">
+        <button (click)="moveUp(i); $event.stopPropagation()" [disabled]="i === 0" class="text-gray-500 hover:text-gray-700 disabled:opacity-30" aria-label="Move up">
           <mat-icon class="text-[18px]">keyboard_arrow_up</mat-icon>
         </button>
-        <button (click)="moveDown(i); $event.stopPropagation()" [disabled]="i === len - 1" class="text-gray-400 hover:text-gray-700 disabled:opacity-30" aria-label="Move down">
+        <button (click)="moveDown(i); $event.stopPropagation()" [disabled]="i === len - 1" class="text-gray-500 hover:text-gray-700 disabled:opacity-30" aria-label="Move down">
           <mat-icon class="text-[18px]">keyboard_arrow_down</mat-icon>
         </button>
-        <mat-icon class="text-gray-400 text-[20px] transition-transform" [class.rotate-180]="expanded === id">expand_more</mat-icon>
+        <mat-icon class="text-gray-500 text-[20px] transition-transform" [class.rotate-180]="expanded === id">expand_more</mat-icon>
       </div>
     </ng-template>
 
