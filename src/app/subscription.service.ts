@@ -88,14 +88,14 @@ export class SubscriptionService {
     }
   }
 
-  async createCheckoutSession(uid: string, tier: 'pro' | 'business', discountCode?: string): Promise<string | null> {
+  async createCheckoutSession(uid: string, tier: 'pro' | 'business', discountCode?: string, currency?: 'nzd'): Promise<string | null> {
     try {
       const headers = await this.authHeaders();
       if (!headers) return null;
       const resp = await fetch('/api/stripe/create-checkout-session', {
         method: 'POST',
         headers,
-        body: JSON.stringify({ uid, tier, discountCode }),
+        body: JSON.stringify({ uid, tier, discountCode, ...(currency ? { currency } : {}) }),
       });
       const data = await resp.json();
       return data.url || null;

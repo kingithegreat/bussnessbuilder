@@ -1,4 +1,5 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, signal, OnInit, PLATFORM_ID } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { AuthService } from './auth.service';
@@ -71,7 +72,7 @@ import { ToastService } from './toast.service';
               <p class="text-gray-500 text-sm">For growing businesses</p>
             </div>
             <div class="mb-6">
-              <span class="text-4xl font-black text-gray-900">US$14</span>
+              <span class="text-4xl font-black text-gray-900">{{ symbol() }}{{ pricing().pro }}</span>
               <span class="text-gray-500 text-sm">/month</span>
             </div>
             <ul class="space-y-3 mb-8 flex-grow text-sm text-gray-600">
@@ -98,7 +99,7 @@ import { ToastService } from './toast.service';
               <p class="text-gray-500 text-sm">For serious professionals</p>
             </div>
             <div class="mb-6">
-              <span class="text-4xl font-black text-gray-900">US$22</span>
+              <span class="text-4xl font-black text-gray-900">{{ symbol() }}{{ pricing().business }}</span>
               <span class="text-gray-500 text-sm">/month</span>
             </div>
             <ul class="space-y-3 mb-8 flex-grow text-sm text-gray-600">
@@ -119,7 +120,11 @@ import { ToastService } from './toast.service';
 
         <div class="mt-16 text-center">
           <p class="text-gray-500 text-sm mb-2">All plans include full site customisation — branding, layouts, fonts, colours, and all section types.</p>
-          <p class="text-gray-600 text-xs">All prices are in US dollars (USD) and charged in USD by Stripe; your bank converts to NZD. Cancel anytime. No long-term contracts. Compare: Squarespace starts at $16/mo with no free tier.</p>
+          @if (pricing().currency === 'NZD') {
+            <p class="text-gray-600 text-xs">Prices are in New Zealand dollars (NZD){{ pricing().gstInclusive ? ', including GST' : '' }}, charged in NZD by Stripe. Cancel anytime. No long-term contracts.</p>
+          } @else {
+            <p class="text-gray-600 text-xs">All prices are in US dollars (USD) and charged in USD by Stripe; your bank converts to NZD. Cancel anytime. No long-term contracts. Compare: Squarespace starts at $16/mo with no free tier.</p>
+          }
         </div>
       </main>
 
@@ -134,8 +139,22 @@ import { ToastService } from './toast.service';
     </div>
   `
 })
-export class PricingComponent {
+export class PricingComponent implements OnInit {
   private router = inject(Router);
+  private platformId = inject(PLATFORM_ID);
+  /** USD by default; NZD only when the server has NZD Stripe price ids (docs/STRIPE_NZD.md). */
+  pricing = signal<{ currency: 'USD' | 'NZD'; pro: number; business: number; gstInclusive: boolean }>({ currency: 'USD', pro: 14, business: 22, gstInclusive: false });
+  symbol = () => (this.pricing().currency === 'NZD' ? 'NZ$' : 'US$');
+
+  async ngOnInit() {
+    if (!isPlatformBrowser(this.platformId)) return;
+    try {
+      const res = await fetch('/api/pricing');
+      if (!res.ok) return;
+      const p = await res.json();
+      if ((p?.currency === 'USD' || p?.currency === 'NZD') && Number(p.pro) > 0 && Number(p.business) > 0) this.pricing.set(p);
+    } catch { /* keep USD */ }
+  }
   auth = inject(AuthService);
   subService = inject(SubscriptionService);
   private toast = inject(ToastService);
@@ -147,7 +166,7 @@ export class PricingComponent {
     }
     const user = this.auth.currentUser();
     if (!user) return;
-    const url = await this.subService.createCheckoutSession(user.uid, tier);
+    const url = await this.subService.createCheckoutSession(user.uid, tier, undefined, this.pricing().currency === 'NZD' ? 'nzd' : undefined);
     if (url) {
       window.location.href = url;
     } else {

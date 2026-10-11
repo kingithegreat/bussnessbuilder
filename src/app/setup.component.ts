@@ -515,7 +515,8 @@ export class SetupWizardComponent implements OnInit {
         profile.description = this.fallbackDescription(profile.name, profile.tagline);
       }
 
-      this.dataService.updateProfile(profile);
+      // New sites price in NZ dollars incl. GST by default (changeable in Settings).
+      this.dataService.updateProfile({ currency: 'NZD', pricesIncludeGst: true, ...profile });
 
       if (preset) {
         this.dataService.setServices(preset.suggestedServices);
