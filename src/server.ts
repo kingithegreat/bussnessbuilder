@@ -33,6 +33,8 @@ import { validateSlug, avoidReserved } from './app/slug-rules';
 import { HostSiteResolver, DomainRecord } from './server-host-routing';
 import type { FeatureDeps } from './server-owner';
 import { sendEmailIfConfigured } from './server-email';
+import { smsConfigured, sendSmsIfConfigured, ownerSmsTarget } from './server-sms';
+import { enquiryAlert, bookingAlert } from './app/sms-rules';
 import { bookingsRouter } from './server-bookings-routes';
 import { reviewsRouter } from './server-reviews-routes';
 import { quotesRouter } from './server-quotes-routes';
@@ -376,6 +378,7 @@ app.post('/api/site/:uid/enquiry', express.json(), async (req, res) => {
     let wasFirstEnquiry = false;
     // Captured here so the notification below needs no extra read.
     let ownerEmail = '';
+    let ownerName = '';
     await db.runTransaction(async transaction => {
       const mainSnap = await transaction.get(mainRef);
       if (!mainSnap.exists) throw new Error('SITE_NOT_FOUND');
@@ -383,6 +386,7 @@ app.post('/api/site/:uid/enquiry', express.json(), async (req, res) => {
       const data = mainSnap.data() || {};
       const ownerProfile = (data['profile'] || {}) as Record<string, unknown>;
       ownerEmail = asTrimmedString(ownerProfile['email'], 320);
+      ownerName = asTrimmedString(ownerProfile['name'], 120);
       const existing = Array.isArray(data['enquiries']) ? data['enquiries'] : [];
       wasFirstEnquiry = existing.length === 0;
       transaction.set(mainRef, {
@@ -407,6 +411,16 @@ app.post('/api/site/:uid/enquiry', express.json(), async (req, res) => {
           flags: { first_enquiry: FieldValue.increment(1) },
         }, { merge: true });
       })().catch(e => console.warn('first_enquiry counter failed:', e));
+    }
+
+    // Fire-and-forget text alert (only if SMS env vars are set and the owner opted in).
+    if (smsConfigured(process.env)) {
+      (async () => {
+        const notif = await db.doc(`users/${uid}/businessData/notifications`).get();
+        const to = ownerSmsTarget(notif.exists ? notif.data() : undefined);
+        if (!to) return;
+        await sendSmsIfConfigured(process.env, to, enquiryAlert(ownerName || 'your site', name, asTrimmedString(enquiry.serviceInterest, 80)), { uid, isLimited: (k, m, w) => rateLimiter.isLimited(k, m, w) });
+      })().catch(e => console.warn('Enquiry SMS failed:', e));
     }
 
     // Fire-and-forget email notification
@@ -959,12 +973,27 @@ const featureDeps: FeatureDeps = {
   isLimited: (key, max, windowMs) => rateLimiter.isLimited(key, max, windowMs),
   resolveUid,
   sendEmail: (msg) => sendEmailIfConfigured(process.env, msg),
+  notifyOwnerSms: async (uid, kind, d) => {
+    if (!smsConfigured(process.env)) return;
+    const db = await getDb();
+    const notif = await db.doc(`users/${uid}/businessData/notifications`).get();
+    const to = ownerSmsTarget(notif.exists ? notif.data() : undefined);
+    if (!to) return;
+    const text = kind === 'booking' ? bookingAlert(d.business, d.name, d.service, d.when || '') : enquiryAlert(d.business, d.name, d.service);
+    await sendSmsIfConfigured(process.env, to, text, { uid, isLimited: (k, m, w) => rateLimiter.isLimited(k, m, w) });
+  },
   env: process.env,
 };
 app.use(bookingsRouter(featureDeps));
 app.use(reviewsRouter(featureDeps));
 app.use(quotesRouter(featureDeps));
 app.use(statsRouter(featureDeps));
+
+// Public: whether text alerts are switched on for this server (no details).
+app.get('/api/sms/status', (_req, res) => {
+  res.setHeader('Cache-Control', 'no-store');
+  res.json({ enabled: smsConfigured(process.env) });
+});
 
 app.use('/api/actions', siteActionRouter({
   getDb, verifyUser: verifyFirebaseUser,

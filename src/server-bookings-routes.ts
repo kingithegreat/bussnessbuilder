@@ -117,6 +117,7 @@ export function bookingsRouter(deps: FeatureDeps): express.Router {
         const biz = await businessInfo(uid);
         const when = formatSlot(booking.start, timezone);
         if (biz.email) await deps.sendEmail({ to: biz.email, replyTo: booking.email, subject: `New booking request: ${booking.serviceName}, ${when}`, text: `${booking.name} (${booking.email}${booking.phone ? ', ' + booking.phone : ''}) asked to book ${booking.serviceName} on ${when}.\n\nNotes: ${booking.notes || '—'}\n\nAccept or decline it in your BusinessFlow inbox.` });
+        if (deps.notifyOwnerSms) await deps.notifyOwnerSms(uid, 'booking', { business: biz.name, name: booking.name, service: booking.serviceName, when }).catch(() => undefined);
         await deps.sendEmail({ to: booking.email, replyTo: biz.email || undefined, subject: `Booking request received — ${biz.name}`, text: `Hi ${booking.name},\n\nThanks for your booking request for ${booking.serviceName} on ${when}. ${biz.name} will confirm shortly.\n`, attachments: [{ filename: 'booking.ics', content: buildIcs(booking, biz.name, biz.address), contentType: 'text/calendar' }] });
       })().catch(e => console.warn('Booking email failed:', e));
     } catch (e) {

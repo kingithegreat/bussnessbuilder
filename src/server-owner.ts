@@ -9,6 +9,8 @@ export interface FeatureDeps {
   isLimited: (key: string, max: number, windowMs: number) => boolean;
   resolveUid: (db: Firestore, identifier: string) => Promise<string>;
   sendEmail: (msg: OutboundEmail) => Promise<EmailResult>;
+  /** Optional text alert to the owner (no-op unless SMS is configured and they opted in). */
+  notifyOwnerSms?: (uid: string, kind: 'booking' | 'enquiry', d: { business: string; name: string; service: string; when?: string }) => Promise<void>;
   env: Record<string, string | undefined>;
   now?: () => Date;
 }
