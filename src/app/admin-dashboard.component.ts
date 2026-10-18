@@ -1,3 +1,4 @@
+import { AiActionsComponent } from './ai-actions.component';
 import { SiteStatsComponent } from './site-stats.component';
 import { SeoHelperComponent } from './seo-helper.component';
 import { Component, inject, OnInit, signal, computed, PLATFORM_ID } from '@angular/core';
@@ -19,7 +20,7 @@ import { HeadlineChatComponent } from './headline-chat.component';
 @Component({
   selector: 'app-admin-dashboard',
   standalone: true,
-  imports: [DatePipe, DecimalPipe, MatIconModule, OnboardingGuideComponent, RouterLink, HeadlineChatComponent, LaunchChecklistComponent, SeoHelperComponent, SiteStatsComponent],
+  imports: [DatePipe, DecimalPipe, MatIconModule, OnboardingGuideComponent, RouterLink, HeadlineChatComponent, LaunchChecklistComponent, SeoHelperComponent, SiteStatsComponent, AiActionsComponent],
   template: `
     <div class="flex flex-col gap-6">
       <!--
@@ -71,6 +72,7 @@ import { HeadlineChatComponent } from './headline-chat.component';
         <app-headline-chat></app-headline-chat>
         <app-launch-checklist></app-launch-checklist>
         <app-site-stats></app-site-stats>
+        <app-ai-actions></app-ai-actions>
         <app-seo-helper [compact]="true"></app-seo-helper>
         <section class="space-y-4" aria-label="Home action center">
           <div>
