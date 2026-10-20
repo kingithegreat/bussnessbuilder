@@ -81,7 +81,7 @@ import { ToastService } from './toast.service';
               <li class="flex items-start gap-2"><mat-icon class="text-green-500 text-[18px] shrink-0 mt-0.5">check_circle</mat-icon> Unlimited services</li>
               <li class="flex items-start gap-2"><mat-icon class="text-green-500 text-[18px] shrink-0 mt-0.5">check_circle</mat-icon> Unlimited enquiries</li>
               <li class="flex items-start gap-2"><mat-icon class="text-green-500 text-[18px] shrink-0 mt-0.5">check_circle</mat-icon> Data export &amp; import</li>
-              <li class="flex items-start gap-2"><mat-icon class="text-green-500 text-[18px] shrink-0 mt-0.5">check_circle</mat-icon> Email notifications</li>
+              <li class="flex items-start gap-2"><mat-icon class="text-green-500 text-[18px] shrink-0 mt-0.5">check_circle</mat-icon> Email notifications@if (emailAlertsOff()) {<span class="ml-1 text-xs font-semibold text-amber-700">(coming soon)</span>}</li>
             </ul>
             @if (subService.tier() === 'pro') {
               <div class="bg-blue-50 text-blue-600 text-center py-3 rounded-xl text-sm font-bold">Current Plan</div>
@@ -146,7 +146,13 @@ export class PricingComponent implements OnInit {
   pricing = signal<{ currency: 'USD' | 'NZD'; pro: number; business: number; gstInclusive: boolean }>({ currency: 'USD', pro: 14, business: 22, gstInclusive: false });
   symbol = () => (this.pricing().currency === 'NZD' ? 'NZ$' : 'US$');
 
+  /** True when the server reports email alerts aren't configured yet. */
+  emailAlertsOff = signal(false);
+
   async ngOnInit() {
+    if (typeof window !== 'undefined' && typeof fetch === 'function') {
+      fetch('/api/email-alerts/status').then(r => (r.ok ? r.json() : null)).then((j: { enabled?: boolean } | null) => this.emailAlertsOff.set(j?.enabled === false)).catch(() => undefined);
+    }
     if (!isPlatformBrowser(this.platformId)) return;
     try {
       const res = await fetch('/api/pricing');
