@@ -971,7 +971,7 @@ export class AdminSettingsComponent implements OnInit {
 
   async confirmDelete() {
     if (!confirm('Are you sure you want to delete your account? This action cannot be undone. All your data will be permanently removed.')) return;
-    if (!confirm('This is your last chance. Type your mind — are you absolutely sure?')) return;
+    if (!confirm('This is your last chance. Are you absolutely sure?')) return;
 
     const user = this.authService.currentUser();
     if (!user) return;
