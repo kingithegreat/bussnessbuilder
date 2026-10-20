@@ -117,6 +117,27 @@ import { FunnelService } from './funnel.service';
               <h3 class="text-lg font-bold text-gray-900 mb-2">Stock Photos & Uploads</h3>
               <p class="text-gray-500 text-sm leading-relaxed">Browse curated Unsplash images by business type or upload your own photos.</p>
             </div>
+            <div class="bg-white rounded-2xl p-6 md:p-8 border border-gray-100/80 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
+              <div class="w-12 h-12 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center mb-4">
+                <mat-icon>event_available</mat-icon>
+              </div>
+              <h3 class="text-lg font-bold text-gray-900 mb-2">Online Bookings</h3>
+              <p class="text-gray-500 text-sm leading-relaxed">Customers pick a time on your site. You accept or decline each request.</p>
+            </div>
+            <div class="bg-white rounded-2xl p-6 md:p-8 border border-gray-100/80 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
+              <div class="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center mb-4">
+                <mat-icon>request_quote</mat-icon>
+              </div>
+              <h3 class="text-lg font-bold text-gray-900 mb-2">Quotes & Invoices</h3>
+              <p class="text-gray-500 text-sm leading-relaxed">Build quotes and invoices with NZ GST, download a PDF and track whether they are accepted.</p>
+            </div>
+            <div class="bg-white rounded-2xl p-6 md:p-8 border border-gray-100/80 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
+              <div class="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center mb-4">
+                <mat-icon>travel_explore</mat-icon>
+              </div>
+              <h3 class="text-lg font-bold text-gray-900 mb-2">Reviews & Google</h3>
+              <p class="text-gray-500 text-sm leading-relaxed">Collect customer reviews, approve what shows, and follow a simple checklist to get found on Google.</p>
+            </div>
           </div>
         </section>
 

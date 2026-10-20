@@ -140,7 +140,7 @@ export class AdminPaymentsComponent implements OnInit {
       name: '',
       description: '',
       amount: 0,
-      currency: 'USD',
+      currency: 'NZD',
       active: true,
     });
   }

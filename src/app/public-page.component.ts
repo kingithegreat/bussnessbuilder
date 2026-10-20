@@ -404,7 +404,7 @@ import { ToastService } from './toast.service';
                               <div class="pt-4 border-t border-gray-50 mt-auto">
                                 @if (service.price) {
                           <p class="font-bold text-gray-900 flex items-center justify-between text-sm">
-                                  <span class="text-gray-400 text-[10px] uppercase tracking-wider">{{ t('priceLabel') }}</span>
+                                  @if (priceLabelFor(service.price); as pl) {<span class="text-gray-400 text-[10px] uppercase tracking-wider">{{ pl }}</span>}
                                   {{ price(service.price) }}
                                 </p>
                         }
@@ -425,7 +425,7 @@ import { ToastService } from './toast.service';
                               <div class="pt-4 border-t border-gray-50 mt-auto">
                                 @if (service.price) {
                           <p class="font-bold text-gray-900 flex items-center justify-between text-sm">
-                                  <span class="text-gray-400 text-[10px] uppercase tracking-wider">{{ t('priceLabel') }}</span>
+                                  @if (priceLabelFor(service.price); as pl) {<span class="text-gray-400 text-[10px] uppercase tracking-wider">{{ pl }}</span>}
                                   {{ price(service.price) }}
                                 </p>
                         }
@@ -455,7 +455,7 @@ import { ToastService } from './toast.service';
                           </div>
                           <div class="shrink-0 text-left md:text-right">
                             @if (service.price) {
-                              <span class="text-gray-400 text-[10px] uppercase tracking-wider block">{{ t('priceLabel') }}</span>
+                              @if (priceLabelFor(service.price); as pl) {<span class="text-gray-400 text-[10px] uppercase tracking-wider block">{{ pl }}</span>}
                               <p class="font-bold text-gray-900 text-lg">{{ price(service.price) }}</p>
                             }
                             @if (getPaymentLink(service.name); as payUrl) {
@@ -1081,9 +1081,9 @@ import { ToastService } from './toast.service';
                     <div [style.borderRadius]="cardRadius" class="glass-card p-8 md:p-10">
                       <p class="text-gray-700 leading-relaxed whitespace-pre-line">{{ section.content }}</p>
                     </div>
-                  } @else if (renderType(section) !== 'custom') {
+                  } @else if (editable() && renderType(section) !== 'custom') {
                     <div [style.borderRadius]="cardRadius" class="bg-gray-50 border border-gray-100 p-10 flex items-center justify-center text-gray-400 text-sm">
-                      {{ section.heading }} Content Coming Soon
+                      Add some text to this section — visitors won't see it until you do.
                     </div>
                   }
                 </div>
@@ -1426,6 +1426,13 @@ export class PublicPageComponent {
       head.appendChild(el);
     }
     el.textContent = jsonLdScript(data);
+  }
+
+  /** "Starting at" only reads right before a number; hide it for "Quoted", "POA", or prices that already say "from". */
+  priceLabelFor(raw: string | undefined | null): string {
+    const v = String(raw ?? '').trim();
+    if (!/\d/.test(v) || /^(from|starting|approx|about|around|up to)\b/i.test(v)) return '';
+    return this.t('priceLabel');
   }
 
   /** Owner price with their currency + GST wording (legacy sites unchanged). */
