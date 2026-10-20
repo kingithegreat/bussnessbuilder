@@ -55,6 +55,7 @@ import { ToastService } from './toast.service';
               <li class="flex items-start gap-2"><mat-icon class="text-green-500 text-[18px] shrink-0 mt-0.5">check_circle</mat-icon> Payment links (Stripe)</li>
               <li class="flex items-start gap-2"><mat-icon class="text-green-500 text-[18px] shrink-0 mt-0.5">check_circle</mat-icon> Up to 3 services</li>
               <li class="flex items-start gap-2"><mat-icon class="text-green-500 text-[18px] shrink-0 mt-0.5">check_circle</mat-icon> Up to 10 enquiries</li>
+              <li class="flex items-start gap-2"><mat-icon class="text-green-500 text-[18px] shrink-0 mt-0.5">check_circle</mat-icon> Visitor stats &amp; analytics</li>
               <li class="flex items-start gap-2"><mat-icon class="text-gray-300 text-[18px] shrink-0 mt-0.5">cancel</mat-icon> <span class="text-gray-500">AI content tools (templates only)</span></li>
             </ul>
             @if (subService.tier() === 'free') {
@@ -105,7 +106,6 @@ import { ToastService } from './toast.service';
             <ul class="space-y-3 mb-8 flex-grow text-sm text-gray-600">
               <li class="flex items-start gap-2"><mat-icon class="text-green-500 text-[18px] shrink-0 mt-0.5">check_circle</mat-icon> Everything in Pro</li>
               <li class="flex items-start gap-2"><mat-icon class="text-green-500 text-[18px] shrink-0 mt-0.5">check_circle</mat-icon> Custom domain support</li>
-              <li class="flex items-start gap-2"><mat-icon class="text-green-500 text-[18px] shrink-0 mt-0.5">check_circle</mat-icon> Analytics dashboard</li>
               <li class="flex items-start gap-2"><mat-icon class="text-green-500 text-[18px] shrink-0 mt-0.5">check_circle</mat-icon> Remove branding</li>
             </ul>
             @if (subService.tier() === 'business') {

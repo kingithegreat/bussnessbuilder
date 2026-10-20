@@ -30,6 +30,14 @@ import { MatIconModule } from '@angular/material/icon';
         </div>
       }
 
+      @if (!isLive()) {
+        <div class="bg-blue-50 border border-blue-100 rounded-2xl p-5 mb-6 text-sm text-blue-900" role="status">
+          <p class="font-bold mb-1">Using ready-made templates</p>
+          <p>The tools below fill in a template for your business that you can edit. Full AI writing is coming soon, with nothing for you to set up.</p>
+        </div>
+      }
+      <!-- Gemini API Key: only shown to owners who already saved one -->
+      @if (hasSavedKey()) {
       <!-- Gemini API Key -->
       <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mb-6">
         <div class="px-6 py-5 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
@@ -68,6 +76,7 @@ import { MatIconModule } from '@angular/material/icon';
           }
         </div>
       </div>
+      }
 
       <!-- Business Description -->
       <div class="bg-gray-900 rounded-2xl shadow-sm overflow-hidden flex flex-col mb-6">
@@ -177,6 +186,7 @@ export class AdminAiToolsComponent {
   keySaved = false;
 
   isLive = () => this.aiService.isLive();
+  hasSavedKey = () => !!this.dataService.geminiApiKey();
 
   saveApiKey() {
     this.dataService.setGeminiApiKey(this.apiKeyInput);
