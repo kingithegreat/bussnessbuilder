@@ -164,7 +164,7 @@ import { ToastService } from './toast.service';
                            {{ t('secondaryCta') }}
                          </a>
                       </div>
-                      @if(profile().trustBadges && profile().trustBadges.length) {
+                      @if(profile().trustBadges && profile().trustBadges.length && !badgesSectionVisible()) {
                         <div class="mt-12 pt-8 border-t border-gray-100 w-full flex flex-wrap justify-center gap-6 text-gray-400">
                           @for(badge of profile().trustBadges; track badge) {
                             <div class="flex items-center gap-2 text-sm font-medium">
@@ -195,7 +195,7 @@ import { ToastService } from './toast.service';
                              {{ ctaLabel() }}
                            </a>
                         </div>
-                        @if(profile().trustBadges && profile().trustBadges.length) {
+                        @if(profile().trustBadges && profile().trustBadges.length && !badgesSectionVisible()) {
                           <div class="mt-8 flex flex-wrap gap-4 text-gray-400">
                             @for(badge of profile().trustBadges; track badge) {
                               <div class="flex items-center gap-2 text-sm font-medium">
@@ -263,8 +263,10 @@ import { ToastService } from './toast.service';
               <section [id]="section.id" class="py-16 md:py-24">
                 <div class="max-w-5xl mx-auto px-6">
                   <div class="mb-8 md:mb-12">
-                    <h2 class="text-2xl md:text-3xl font-bold text-gray-900 mb-2" [appEditableText]="editable()" (textChange)="onTextEdit('section', 'heading', $event, section.id)">{{ section.heading }}</h2>
+                    <h2 class="text-2xl md:text-3xl font-bold text-gray-900 mb-2" [appEditableText]="editable()" (textChange)="onTextEdit('section', 'heading', $event, section.id)">{{ section.heading === 'Trust Badges' ? (section.subheading || 'Why choose us') : section.heading }}</h2>
+                    @if (section.heading !== 'Trust Badges') {
                     <p class="text-gray-500 font-medium" [appEditableText]="editable()" (textChange)="onTextEdit('section', 'subheading', $event, section.id)">{{ section.subheading }}</p>
+                    }
                   </div>
 
                   @if (!section.layoutVariant || section.layoutVariant === 'default') {
@@ -308,7 +310,7 @@ import { ToastService } from './toast.service';
                             </div>
                           </div>
                         }
-                        @if (profile().trustBadges && profile().trustBadges.length) {
+                        @if (false) {
                           <div [style.borderRadius]="cardRadius" class="bg-white p-6 border border-gray-100 shadow-sm">
                             <h4 class="font-bold text-gray-900 text-sm mb-3">{{ t('aboutWhyChoose') }}</h4>
                             <div class="space-y-2">
@@ -330,7 +332,7 @@ import { ToastService } from './toast.service';
                           <p [style.color]="customization().branding.primaryColor" class="text-sm font-bold uppercase tracking-widest mb-4">{{ profile().tagline }}</p>
                         }
                         <p class="text-base md:text-lg lg:text-xl text-gray-600 leading-relaxed" [appEditableText]="editable()" (textChange)="onTextEdit('profile', 'description', $event)">{{ profile().description }}</p>
-                        @if (profile().trustBadges && profile().trustBadges.length) {
+                        @if (false) {
                           <div class="mt-8 pt-6 border-t border-gray-100 flex flex-wrap justify-center gap-6">
                             @for (badge of profile().trustBadges; track badge) {
                               <div class="flex items-center gap-2 text-sm text-gray-500 font-medium">
@@ -404,7 +406,7 @@ import { ToastService } from './toast.service';
                               <div class="pt-4 border-t border-gray-50 mt-auto">
                                 @if (service.price) {
                           <p class="font-bold text-gray-900 flex items-center justify-between text-sm">
-                                  <span class="text-gray-400 text-[10px] uppercase tracking-wider">{{ t('priceLabel') }}</span>
+                                  @if (priceLabelFor(service.price); as pl) {<span class="text-gray-400 text-[10px] uppercase tracking-wider">{{ pl }}</span>}
                                   {{ price(service.price) }}
                                 </p>
                         }
@@ -425,7 +427,7 @@ import { ToastService } from './toast.service';
                               <div class="pt-4 border-t border-gray-50 mt-auto">
                                 @if (service.price) {
                           <p class="font-bold text-gray-900 flex items-center justify-between text-sm">
-                                  <span class="text-gray-400 text-[10px] uppercase tracking-wider">{{ t('priceLabel') }}</span>
+                                  @if (priceLabelFor(service.price); as pl) {<span class="text-gray-400 text-[10px] uppercase tracking-wider">{{ pl }}</span>}
                                   {{ price(service.price) }}
                                 </p>
                         }
@@ -455,7 +457,7 @@ import { ToastService } from './toast.service';
                           </div>
                           <div class="shrink-0 text-left md:text-right">
                             @if (service.price) {
-                              <span class="text-gray-400 text-[10px] uppercase tracking-wider block">{{ t('priceLabel') }}</span>
+                              @if (priceLabelFor(service.price); as pl) {<span class="text-gray-400 text-[10px] uppercase tracking-wider block">{{ pl }}</span>}
                               <p class="font-bold text-gray-900 text-lg">{{ price(service.price) }}</p>
                             }
                             @if (getPaymentLink(service.name); as payUrl) {
@@ -1081,9 +1083,9 @@ import { ToastService } from './toast.service';
                     <div [style.borderRadius]="cardRadius" class="glass-card p-8 md:p-10">
                       <p class="text-gray-700 leading-relaxed whitespace-pre-line">{{ section.content }}</p>
                     </div>
-                  } @else if (renderType(section) !== 'custom') {
+                  } @else if (editable() && renderType(section) !== 'custom') {
                     <div [style.borderRadius]="cardRadius" class="bg-gray-50 border border-gray-100 p-10 flex items-center justify-center text-gray-400 text-sm">
-                      {{ section.heading }} Content Coming Soon
+                      Add some text to this section — visitors won't see it until you do.
                     </div>
                   }
                 </div>
@@ -1142,6 +1144,9 @@ export class PublicPageComponent {
   customization = computed(() => {
     return this.previewCustomization() || this.dataService.customization();
   });
+
+  /** Trust badges show once: in their own section when it's on, otherwise in the hero. */
+  badgesSectionVisible = computed(() => this.customization().sections.some(s => s.id === 'badges' && s.visible));
 
   sortedSections = computed(() => {
     return [...this.customization().sections].sort((a, b) => a.order - b.order);
@@ -1426,6 +1431,13 @@ export class PublicPageComponent {
       head.appendChild(el);
     }
     el.textContent = jsonLdScript(data);
+  }
+
+  /** "Starting at" only reads right before a number; hide it for "Quoted", "POA", or prices that already say "from". */
+  priceLabelFor(raw: string | undefined | null): string {
+    const v = String(raw ?? '').trim();
+    if (!/\d/.test(v) || /^(from|starting|approx|about|around|up to)\b/i.test(v)) return '';
+    return this.t('priceLabel');
   }
 
   /** Owner price with their currency + GST wording (legacy sites unchanged). */

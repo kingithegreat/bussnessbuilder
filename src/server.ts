@@ -657,7 +657,11 @@ async function verifyAdmin(req: express.Request): Promise<string | null> {
 
 app.get('/api/admin/verify', async (req, res) => {
   const uid = await verifyAdmin(req);
-  if (!uid) { res.status(403).json({ error: 'Not authorized' }); return; }
+  if (!uid) {
+    // ?soft=1: the admin sidebar just asks "am I an admin?" — answer no without a 403 console error.
+    if (req.query['soft'] === '1') { res.json({ admin: false }); return; }
+    res.status(403).json({ error: 'Not authorized' }); return;
+  }
   res.json({ admin: true, uid });
 });
 

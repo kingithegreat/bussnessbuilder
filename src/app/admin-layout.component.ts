@@ -135,10 +135,10 @@ export class AdminLayoutComponent implements OnInit {
     }
     const token = await this.authService.getIdToken();
     if (token) {
-      this.http.get('/api/admin/verify', {
+      this.http.get<{ admin?: boolean }>('/api/admin/verify?soft=1', {
         headers: { Authorization: `Bearer ${token}` },
       }).subscribe({
-        next: () => this.isOwnerAdmin.set(true),
+        next: (r) => this.isOwnerAdmin.set(r?.admin === true),
         error: () => { /* non-admin user — leave isOwnerAdmin false */ },
       });
     }

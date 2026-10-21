@@ -49,6 +49,7 @@ import { DatePipe } from '@angular/common';
               @for (preset of presets; track preset.id) {
                 <option [value]="preset.id">{{ preset.label }}</option>
               }
+              <option value="cafe">Café / Restaurant</option>
               <option value="other">Other</option>
             </select>
           </div>
@@ -425,6 +426,9 @@ import { DatePipe } from '@angular/common';
             <div>
               <p class="text-sm font-bold text-gray-700">New Enquiry Notifications</p>
               <p class="text-xs text-gray-500">Get an email when someone submits an enquiry</p>
+              @if (emailAlertsOff()) {
+                <p class="text-xs text-amber-800 mt-1" role="status">Email sending isn't switched on for BusinessFlow yet. Your choice is saved and alerts will start once it's set up; enquiries still appear in your inbox.</p>
+              }
             </div>
             <label class="relative inline-flex items-center cursor-pointer">
               <input type="checkbox" [(ngModel)]="prefs.emailOnNewEnquiry" class="sr-only peer">
@@ -451,7 +455,7 @@ import { DatePipe } from '@angular/common';
               <mat-icon class="text-amber-700 shrink-0" aria-hidden="true">info</mat-icon>
               <div>
                 <p class="text-sm font-bold text-amber-900">Text alerts need setup</p>
-                <p class="text-xs text-amber-900">Texting isn't switched on for BusinessFlow yet. You can save your number now and alerts will start once it's set up. Email and the inbox still work as normal.</p>
+                <p class="text-xs text-amber-900">Texting isn't switched on for BusinessFlow yet. You can save your number now and alerts will start once it's set up. New enquiries and bookings still appear in your inbox.</p>
               </div>
             </div>
           }
@@ -574,6 +578,7 @@ export class AdminSettingsComponent implements OnInit {
     this.onDomainChange();
     this.smsNumberDraft = this.prefs.smsNumber || '';
     if (typeof window !== 'undefined' && typeof fetch === 'function') {
+      fetch('/api/email-alerts/status').then(r => (r.ok ? r.json() : null)).then((j: { enabled?: boolean } | null) => this.emailAlertsOff.set(j?.enabled === false)).catch(() => undefined);
       fetch('/api/sms/status').then(r => (r.ok ? r.json() : null)).then(j => this.smsEnabled.set(j ? j.enabled === true : null)).catch(() => undefined);
     }
     if (!this.prefs.notificationEmail) {
@@ -897,6 +902,8 @@ export class AdminSettingsComponent implements OnInit {
   }
 
   smsEnabled = signal<boolean | null>(null);
+  /** True when the server reports SMTP isn't configured. */
+  emailAlertsOff = signal(false);
   smsNumberDraft = '';
   smsNumberError = '';
 
@@ -964,7 +971,7 @@ export class AdminSettingsComponent implements OnInit {
 
   async confirmDelete() {
     if (!confirm('Are you sure you want to delete your account? This action cannot be undone. All your data will be permanently removed.')) return;
-    if (!confirm('This is your last chance. Type your mind — are you absolutely sure?')) return;
+    if (!confirm('This is your last chance. Are you absolutely sure?')) return;
 
     const user = this.authService.currentUser();
     if (!user) return;

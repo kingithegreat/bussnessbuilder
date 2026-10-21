@@ -17,11 +17,11 @@ interface Availability { enabled: boolean; timezone?: string; services?: Bookabl
       <section id="book" class="py-16 md:py-20" aria-labelledby="book-title">
         <div class="max-w-3xl mx-auto px-6">
           <h2 id="book-title" class="text-2xl md:text-3xl font-black text-gray-900 mb-2">Book online</h2>
-          <p class="text-gray-600 mb-6">Pick a service and a time. We'll confirm by email.</p>
+          <p class="text-gray-600 mb-6">Pick a service and a time. {{ emailOn() ? "We'll confirm by email." : "We'll be in touch to confirm." }}</p>
           @if (done(); as d) {
             <div class="rounded-2xl bg-green-50 border border-green-200 p-6" role="status">
               <p class="font-bold text-green-900">Thanks, {{ name }} — your request is in.</p>
-              <p class="text-green-900 mt-1">{{ d.serviceName }}, {{ fmt(d.start) }}. We'll email you to confirm.</p>
+              <p class="text-green-900 mt-1">{{ d.serviceName }}, {{ fmt(d.start) }}. {{ emailOn() ? "We'll email you to confirm." : "We'll be in touch to confirm." }}</p>
               <a [href]="d.icsUrl" download="booking.ics" class="inline-block mt-3 font-bold text-green-900 underline">Add to my calendar (.ics)</a>
             </div>
           } @else {
@@ -85,6 +85,8 @@ export class BookingWidgetComponent implements OnInit {
   loadingSlots = signal(false);
   chosen = signal('');
   submitting = signal(false);
+  /** Only promise an email when the server can actually send one. */
+  emailOn = signal(false);
   error = signal('');
   done = signal<{ serviceName: string; start: string; icsUrl: string } | null>(null);
   serviceId = '';
@@ -99,6 +101,7 @@ export class BookingWidgetComponent implements OnInit {
 
   async ngOnInit() {
     if (!isPlatformBrowser(this.platformId) || !this.siteId()) return;
+    firstValueFrom(this.http.get<{ enabled?: boolean }>('/api/email-alerts/status')).then(j => this.emailOn.set(j?.enabled === true)).catch(() => undefined);
     try {
       const info = await firstValueFrom(this.http.get<Availability>(`/api/site/${encodeURIComponent(this.siteId())}/booking`));
       this.info.set(info);

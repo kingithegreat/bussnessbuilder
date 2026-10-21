@@ -42,8 +42,8 @@ type Draft = Omit<Quote, 'id' | 'number' | 'status' | 'createdAt' | 'updatedAt'>
             @for (l of d.lines; track $index; let i = $index) {
               <div class="grid grid-cols-12 gap-2 mb-2 items-end">
                 <div class="col-span-12 sm:col-span-6"><label [for]="'ql-d' + i" class="text-xs text-gray-700">Description</label><input [id]="'ql-d' + i" [name]="'qld' + i" [(ngModel)]="l.description" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"></div>
-                <div class="col-span-3 sm:col-span-2"><label [for]="'ql-q' + i" class="text-xs text-gray-700">Qty</label><input [id]="'ql-q' + i" [name]="'qlq' + i" type="number" min="0" step="any" [(ngModel)]="l.quantity" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"></div>
-                <div class="col-span-5 sm:col-span-2"><label [for]="'ql-p' + i" class="text-xs text-gray-700">Unit price</label><input [id]="'ql-p' + i" [name]="'qlp' + i" type="number" step="0.01" [(ngModel)]="l.unitPrice" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"></div>
+                <div class="col-span-3 sm:col-span-2"><label [for]="'ql-q' + i" class="text-xs text-gray-700">Qty</label><input [id]="'ql-q' + i" [name]="'qlq' + i" type="number" min="0" step="any" [(ngModel)]="l.quantity" (ngModelChange)="bump()" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"></div>
+                <div class="col-span-5 sm:col-span-2"><label [for]="'ql-p' + i" class="text-xs text-gray-700">Unit price</label><input [id]="'ql-p' + i" [name]="'qlp' + i" type="number" step="0.01" [(ngModel)]="l.unitPrice" (ngModelChange)="bump()" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"></div>
                 <p class="col-span-3 sm:col-span-1 text-sm text-gray-900 py-2 text-right">{{ money((l.quantity || 0) * (l.unitPrice || 0)) }}</p>
                 <button type="button" (click)="d.lines.splice(i, 1)" class="col-span-1 py-2 text-red-700 font-bold" [attr.aria-label]="'Remove line ' + (i + 1)">✕</button>
               </div>
@@ -57,7 +57,7 @@ type Draft = Omit<Quote, 'id' | 'number' | 'status' | 'createdAt' | 'updatedAt'>
           <div class="grid sm:grid-cols-2 gap-4">
             <div [hidden]="d.currency !== 'NZD'">
               <label for="q-gst" class="text-xs font-semibold text-gray-700">GST</label>
-              <select id="q-gst" name="gst" [(ngModel)]="d.gstMode" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm">
+              <select id="q-gst" name="gst" [(ngModel)]="d.gstMode" (ngModelChange)="bump()" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm">
                 <option value="exclusive">Prices exclude GST — add 15%</option>
                 <option value="inclusive">Prices include GST (15%)</option>
                 <option value="none">No GST (not GST-registered)</option>
@@ -127,6 +127,8 @@ export class AdminQuotesComponent implements OnInit {
   message = signal('');
   isError = signal(false);
   private tick = signal(0);
+  /** Recompute totals on every keystroke. */
+  bump() { this.tick.update(n => n + 1); }
   totals = computed(() => { this.tick(); const d = this.draft(); return d ? quoteTotals(d) : { subtotal: 0, gst: 0, total: 0 }; });
 
   private currency(): SiteCurrency {
