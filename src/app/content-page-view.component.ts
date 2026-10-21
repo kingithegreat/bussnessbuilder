@@ -1,3 +1,4 @@
+import { TooltipDirective } from './tooltip.directive';
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { DataService } from './data.service';
@@ -6,7 +7,7 @@ import { ContentPage } from './types';
 @Component({
   selector: 'app-content-page-view',
   standalone: true,
-  imports: [RouterLink],
+  imports: [TooltipDirective, RouterLink],
   template: `
     <div class="min-h-screen bg-[#F5F5F7] font-sans text-gray-900">
       <header class="max-w-4xl mx-auto px-4 sm:px-6 py-6 flex items-center gap-3">

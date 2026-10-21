@@ -1,3 +1,4 @@
+import { TooltipDirective } from './tooltip.directive';
 import { Component, effect, inject, signal, PLATFORM_ID } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -16,7 +17,7 @@ import { BookingRequestsComponent } from './booking-requests.component';
 @Component({
   selector: 'app-admin-inbox',
   standalone: true,
-  imports: [DatePipe, FormsModule, EncodeUriComponentPipe, MatIconModule, RouterLink, BookingRequestsComponent],
+  imports: [TooltipDirective, DatePipe, FormsModule, EncodeUriComponentPipe, MatIconModule, RouterLink, BookingRequestsComponent],
   template: `
     <div class="h-full flex flex-col -m-8">
       @if (subService.tier() === 'free' && enquiriesCount() >= 10) {
@@ -51,7 +52,7 @@ import { BookingRequestsComponent } from './booking-requests.component';
       
       <div class="px-5 py-2.5 border-b border-gray-100 bg-white flex gap-1.5 flex-wrap shrink-0">
         @for (f of filters; track f.key) {
-          <button (click)="activeFilter.set(f.key)"
+          <button [bfTip]="'Shows only ' + f.label.toLowerCase() + ' enquiries.'" (click)="activeFilter.set(f.key)"
             class="px-3 py-1 rounded-full text-[11px] font-bold transition-colors"
             [class.bg-blue-600]="activeFilter() === f.key" [class.text-white]="activeFilter() === f.key"
             [class.bg-gray-100]="activeFilter() !== f.key" [class.text-gray-600]="activeFilter() !== f.key"
@@ -115,8 +116,8 @@ import { BookingRequestsComponent } from './booking-requests.component';
                 <div>
                   <h3 class="text-2xl font-black text-gray-900 mb-2">{{ enquiry.name }}</h3>
                   <div class="flex gap-4 text-sm text-gray-500 font-medium">
-                    <a [href]="'mailto:' + enquiry.email" class="flex items-center gap-1 hover:text-blue-600 transition-colors"><mat-icon class="text-[18px]">email</mat-icon> {{ enquiry.email }}</a>
-                    <a [href]="'tel:' + enquiry.phone" class="flex items-center gap-1 hover:text-blue-600 transition-colors"><mat-icon class="text-[18px]">phone</mat-icon> {{ enquiry.phone || 'N/A' }}</a>
+                    <a bfTip="Opens your email app to email this customer." [href]="'mailto:' + enquiry.email" class="flex items-center gap-1 hover:text-blue-600 transition-colors"><mat-icon class="text-[18px]">email</mat-icon> {{ enquiry.email }}</a>
+                    <a bfTip="Calls this customer (on a phone) or opens your calling app." [href]="'tel:' + enquiry.phone" class="flex items-center gap-1 hover:text-blue-600 transition-colors"><mat-icon class="text-[18px]">phone</mat-icon> {{ enquiry.phone || 'N/A' }}</a>
                   </div>
                 </div>
                 <select [ngModel]="enquiry.status" (ngModelChange)="updateStatus(enquiry.id, $event)" class="bg-gray-50 border border-gray-200 text-gray-700 text-xs font-bold rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2 outline-none uppercase tracking-wider">

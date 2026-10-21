@@ -1,3 +1,4 @@
+import { TooltipDirective } from './tooltip.directive';
 import { Component, inject, signal, computed, OnInit, PLATFORM_ID, DestroyRef } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -14,7 +15,7 @@ type Draft = Omit<Quote, 'id' | 'number' | 'status' | 'createdAt' | 'updatedAt'>
 @Component({
   selector: 'app-admin-quotes',
   standalone: true,
-  imports: [FormsModule],
+  imports: [TooltipDirective, FormsModule],
   template: `
     <div class="max-w-5xl mx-auto space-y-6">
       <div class="flex flex-wrap items-center justify-between gap-3">

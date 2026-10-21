@@ -1,3 +1,4 @@
+import { TooltipDirective } from './tooltip.directive';
 import { Component, inject, afterNextRender } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
@@ -8,7 +9,7 @@ import { ShowcaseLinksComponent } from './showcase-links.component';
 @Component({
   selector: 'app-landing',
   standalone: true,
-  imports: [RouterLink, MatIconModule, ShowcaseLinksComponent],
+  imports: [TooltipDirective, RouterLink, MatIconModule, ShowcaseLinksComponent],
   template: `
     <div class="min-h-screen bg-[#F5F5F7] text-gray-900 flex flex-col font-sans">
       <header class="sticky top-0 z-50 bg-[#F5F5F7]/80 backdrop-blur-xl border-b border-gray-200/40">

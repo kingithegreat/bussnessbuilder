@@ -1,3 +1,4 @@
+import { TooltipDirective } from './tooltip.directive';
 import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -9,7 +10,7 @@ import { FormFieldConfig, CustomizationSettings } from './types';
 @Component({
   selector: 'app-admin-form-builder',
   standalone: true,
-  imports: [CommonModule, FormsModule, MatIconModule],
+  imports: [TooltipDirective, CommonModule, FormsModule, MatIconModule],
   template: `
     <div class="h-full flex flex-col md:flex-row bg-[#F5F5F7]">
       <!-- Editor Sidebar -->

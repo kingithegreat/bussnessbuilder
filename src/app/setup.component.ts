@@ -1,3 +1,4 @@
+import { TooltipDirective } from './tooltip.directive';
 import { Component, inject, OnInit, signal, computed, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { Router } from '@angular/router';
@@ -27,7 +28,7 @@ import {
 @Component({
   selector: 'app-setup-wizard',
   standalone: true,
-  imports: [ReactiveFormsModule, MatIconModule],
+  imports: [TooltipDirective, ReactiveFormsModule, MatIconModule],
   template: `
     <div class="min-h-screen bg-[#F5F5F7] pt-8 pb-40 lg:pt-12 lg:pb-32 px-4 sm:px-6 lg:px-8 font-sans flex justify-center">
       <div class="max-w-6xl w-full grid grid-cols-1 lg:grid-cols-12 gap-8">
@@ -153,7 +154,7 @@ import {
                     <p id="setup-openingHours-help" class="text-[13px] text-gray-600 mb-2">One line per day or group of days. Leave blank if you'd rather not show hours.</p>
                     <div class="flex flex-wrap gap-2 mb-2">
                       @for (preset of hoursPresets; track preset.label) {
-                        <button type="button" (click)="form.patchValue({ openingHours: preset.value })" class="px-3 py-1.5 rounded-full text-xs font-bold bg-blue-50 text-blue-700 hover:bg-blue-100">{{ preset.label }}</button>
+                        <button bfTip="Fills in these opening hours for you. You can edit them after." type="button" (click)="form.patchValue({ openingHours: preset.value })" class="px-3 py-1.5 rounded-full text-xs font-bold bg-blue-50 text-blue-700 hover:bg-blue-100">{{ preset.label }}</button>
                       }
                     </div>
                     <textarea id="setup-openingHours" aria-describedby="setup-openingHours-help" formControlName="openingHours" rows="3" class="w-full px-4 py-3 bg-[#F5F5F7] border border-transparent rounded-2xl focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none text-sm" placeholder="Mon–Fri: 7:30am – 5pm&#10;Sat: 8am – 1pm"></textarea>
@@ -274,7 +275,7 @@ import {
               }
               <div class="flex flex-col-reverse sm:flex-row gap-3">
                 <button type="button" (click)="onBackToEdit()" [disabled]="isSubmitting()" class="flex-1 px-5 py-3 rounded-full font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 transition-colors disabled:opacity-50">Back to editing</button>
-                <button type="button" (click)="onConfirmPublish()" [disabled]="isSubmitting()" class="flex-1 px-5 py-3 rounded-full font-medium text-white bg-blue-600 hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
+                <button bfTip="publish" type="button" (click)="onConfirmPublish()" [disabled]="isSubmitting()" class="flex-1 px-5 py-3 rounded-full font-medium text-white bg-blue-600 hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
                   @if (isSubmitting()) {
                     <span class="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full"></span>
                     {{ isLoggedIn() ? 'Publishing...' : 'Saving...' }}

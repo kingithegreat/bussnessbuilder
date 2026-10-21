@@ -1,3 +1,4 @@
+import { TooltipDirective } from './tooltip.directive';
 import { Component, inject, input, signal, OnInit, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { RouterLink } from '@angular/router';
@@ -8,7 +9,7 @@ import { Booking, BookingSettings, buildIcs, formatSlot } from './booking-rules'
 @Component({
   selector: 'app-booking-requests',
   standalone: true,
-  imports: [RouterLink],
+  imports: [TooltipDirective, RouterLink],
   template: `
     @if (loaded() && compact() && !bookings().length) {
       <p class="text-sm text-gray-700 pb-2"><a routerLink="/admin/bookings" class="font-bold text-blue-700 hover:underline">Take bookings online →</a> Let customers pick a time on your site.</p>
