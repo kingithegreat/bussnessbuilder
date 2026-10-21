@@ -1,3 +1,4 @@
+import { TooltipDirective } from './tooltip.directive';
 import { Component, inject, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
@@ -8,7 +9,7 @@ import { ContentPage } from './types';
 @Component({
   selector: 'app-admin-pages',
   standalone: true,
-  imports: [FormsModule, MatIconModule],
+  imports: [TooltipDirective, FormsModule, MatIconModule],
   template: `
     <div class="max-w-3xl mx-auto space-y-6 pb-12">
       <div class="flex items-start justify-between">
@@ -30,7 +31,7 @@ import { ContentPage } from './types';
 
       @for (page of pages; track page.id; let i = $index) {
         <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-          <button type="button" class="w-full p-4 flex items-center justify-between text-left cursor-pointer hover:bg-gray-50 transition-colors"
+          <button bfTip="Opens this page so you can edit its title, address and content." type="button" class="w-full p-4 flex items-center justify-between text-left cursor-pointer hover:bg-gray-50 transition-colors"
                (click)="expanded === page.id ? expanded = null : expanded = page.id">
             <div class="flex items-center gap-3 min-w-0">
               <mat-icon class="text-gray-300">article</mat-icon>

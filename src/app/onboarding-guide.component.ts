@@ -1,3 +1,4 @@
+import { TooltipDirective } from './tooltip.directive';
 import { Component, inject, signal, computed, output, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { RouterLink } from '@angular/router';
@@ -20,7 +21,7 @@ export const LINK_SHARED_KEY = 'bf_link_shared';
 @Component({
   selector: 'app-onboarding-guide',
   standalone: true,
-  imports: [RouterLink, MatIconModule],
+  imports: [TooltipDirective, RouterLink, MatIconModule],
   template: `
     @if (!dismissed()) {
       <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mb-6">
@@ -63,7 +64,7 @@ export const LINK_SHARED_KEY = 'bf_link_shared';
                 }
               </h3>
               <p class="text-sm text-gray-500 leading-relaxed">{{ current().description }}</p>
-              <a [routerLink]="current().route" [queryParams]="current().queryParams || {}"
+              <a bfTip="Takes you to the place to complete this setup step." [routerLink]="current().route" [queryParams]="current().queryParams || {}"
                  class="inline-flex items-center gap-1.5 mt-3 px-4 py-2 bg-blue-600 text-white rounded-lg text-xs font-bold hover:bg-blue-700 transition-colors shadow-sm">
                 {{ current().action }}
                 <mat-icon class="text-[14px]">arrow_forward</mat-icon>
@@ -75,7 +76,7 @@ export const LINK_SHARED_KEY = 'bf_link_shared';
           <div class="flex items-center justify-between border-t border-gray-100 pt-4">
             <div class="flex gap-3 overflow-x-auto pb-1">
               @for (step of steps(); track step.id; let i = $index) {
-                <button (click)="focused.set(i)"
+                <button [bfTip]="step.done ? 'Done! Click to review this step.' : 'Shows what to do for this step.'" (click)="focused.set(i)"
                         class="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap"
                         [class]="i === focusedIndex() ? 'bg-gray-100 text-gray-900' : 'text-gray-500 hover:text-gray-600 hover:bg-gray-50'">
                   <div class="w-5 h-5 rounded-md flex items-center justify-center text-white text-[10px]"

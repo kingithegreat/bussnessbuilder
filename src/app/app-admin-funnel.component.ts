@@ -1,3 +1,4 @@
+import { TooltipDirective } from './tooltip.directive';
 import { Component, inject, OnInit, signal, computed } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { MatIconModule } from '@angular/material/icon';
@@ -36,7 +37,7 @@ const ABANDON_LABELS: { key: keyof FunnelReport['abandon']; label: string; hint:
 @Component({
   selector: 'app-admin-funnel',
   standalone: true,
-  imports: [MatIconModule],
+  imports: [TooltipDirective, MatIconModule],
   template: `
     <div class="flex items-center justify-between mb-6">
       <div>

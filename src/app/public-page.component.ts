@@ -1,3 +1,4 @@
+import { TooltipDirective } from './tooltip.directive';
 import { AttachmentInput, attachmentFileError, ATTACHMENT_MAX_FILES } from './enquiry-attachments';
 import { Component, inject, computed, input, output, effect, signal } from '@angular/core';
 import { DataService } from './data.service';
@@ -25,7 +26,7 @@ import { ToastService } from './toast.service';
 @Component({
   selector: 'app-public-page',
   standalone: true,
-  imports: [ReactiveFormsModule, MatIconModule, NgTemplateOutlet, RouterLink, EditableTextDirective, BookingWidgetComponent, ReviewFormComponent],
+  imports: [TooltipDirective, ReactiveFormsModule, MatIconModule, NgTemplateOutlet, RouterLink, EditableTextDirective, BookingWidgetComponent, ReviewFormComponent],
   styles: [`
     :host { display: block; }
     .dark-mode {
@@ -103,17 +104,17 @@ import { ToastService } from './toast.service';
           </div>
           <div class="hidden md:flex gap-8 text-sm font-semibold text-gray-500">
              @if (navSectionVisible('services')) {
-               <a href="#services" (click)="scrollTo('services', $event)" class="hover:opacity-80 transition-colors cursor-pointer">{{ t('navServices') }}</a>
+               <a bfTip="public:services" href="#services" (click)="scrollTo('services', $event)" class="hover:opacity-80 transition-colors cursor-pointer">{{ t('navServices') }}</a>
              }
              @if (navSectionVisible('about')) {
-               <a href="#about" (click)="scrollTo('about', $event)" class="hover:opacity-80 transition-colors cursor-pointer">{{ t('navAbout') }}</a>
+               <a bfTip="public:about" href="#about" (click)="scrollTo('about', $event)" class="hover:opacity-80 transition-colors cursor-pointer">{{ t('navAbout') }}</a>
              }
              @if (navSectionVisible('contact')) {
-               <a href="#contact" (click)="scrollTo('contact', $event)" class="hover:opacity-80 transition-colors cursor-pointer">{{ t('navContact') }}</a>
+               <a bfTip="public:contact" href="#contact" (click)="scrollTo('contact', $event)" class="hover:opacity-80 transition-colors cursor-pointer">{{ t('navContact') }}</a>
              }
           </div>
           <div class="flex items-center gap-2">
-            <a href="#contact" (click)="scrollTo('contact', $event)" [style.backgroundColor]="customization().branding.primaryColor" [style.borderRadius]="buttonRadius" class="text-white px-3 py-2 md:px-5 md:py-2.5 text-xs md:text-sm font-bold shadow-md hover:opacity-90 transition-opacity whitespace-nowrap cursor-pointer">
+            <a bfTip="public:contact" href="#contact" (click)="scrollTo('contact', $event)" [style.backgroundColor]="customization().branding.primaryColor" [style.borderRadius]="buttonRadius" class="text-white px-3 py-2 md:px-5 md:py-2.5 text-xs md:text-sm font-bold shadow-md hover:opacity-90 transition-opacity whitespace-nowrap cursor-pointer">
               {{ ctaLabel() }}
             </a>
             <button (click)="mobileMenuOpen.set(!mobileMenuOpen())" class="md:hidden p-2 rounded-lg text-gray-500 hover:bg-gray-100 transition-colors" [attr.aria-label]="mobileMenuOpen() ? 'Close menu' : 'Open menu'" [attr.aria-expanded]="mobileMenuOpen()">
@@ -125,13 +126,13 @@ import { ToastService } from './toast.service';
           <div class="md:hidden border-t border-gray-100 shadow-lg" [style.backgroundColor]="customization().branding.backgroundColor">
             <div class="max-w-5xl mx-auto px-4 py-3 flex flex-col gap-1">
               @if (navSectionVisible('services')) {
-                <a href="#services" (click)="scrollTo('services', $event); mobileMenuOpen.set(false)" class="px-4 py-3 rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer">{{ t('navServices') }}</a>
+                <a bfTip="public:services" href="#services" (click)="scrollTo('services', $event); mobileMenuOpen.set(false)" class="px-4 py-3 rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer">{{ t('navServices') }}</a>
               }
               @if (navSectionVisible('about')) {
-                <a href="#about" (click)="scrollTo('about', $event); mobileMenuOpen.set(false)" class="px-4 py-3 rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer">{{ t('navAbout') }}</a>
+                <a bfTip="public:about" href="#about" (click)="scrollTo('about', $event); mobileMenuOpen.set(false)" class="px-4 py-3 rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer">{{ t('navAbout') }}</a>
               }
               @if (navSectionVisible('contact')) {
-                <a href="#contact" (click)="scrollTo('contact', $event); mobileMenuOpen.set(false)" class="px-4 py-3 rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer">{{ t('navContact') }}</a>
+                <a bfTip="public:contact" href="#contact" (click)="scrollTo('contact', $event); mobileMenuOpen.set(false)" class="px-4 py-3 rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer">{{ t('navContact') }}</a>
               }
             </div>
           </div>
@@ -158,10 +159,10 @@ import { ToastService } from './toast.service';
                         {{ truncated(profile().description, 120) }}
                       </p>
                       <div class="flex gap-3">
-                         <a href="#contact" (click)="scrollTo('contact', $event)" [style.backgroundColor]="customization().branding.primaryColor" [style.borderRadius]="buttonRadius" class="text-white px-8 py-3.5 text-sm font-semibold shadow-sm hover:shadow-md hover:scale-[1.02] transition-all duration-200 cursor-pointer">
+                         <a bfTip="public:contact" href="#contact" (click)="scrollTo('contact', $event)" [style.backgroundColor]="customization().branding.primaryColor" [style.borderRadius]="buttonRadius" class="text-white px-8 py-3.5 text-sm font-semibold shadow-sm hover:shadow-md hover:scale-[1.02] transition-all duration-200 cursor-pointer">
                            {{ ctaLabel() }}
                          </a>
-                         <a href="#services" (click)="scrollTo('services', $event)" [style.borderRadius]="buttonRadius" class="bg-gray-100/80 text-gray-900 px-8 py-3.5 text-sm font-semibold hover:bg-gray-200/80 transition-all duration-200 cursor-pointer">
+                         <a bfTip="public:services" href="#services" (click)="scrollTo('services', $event)" [style.borderRadius]="buttonRadius" class="bg-gray-100/80 text-gray-900 px-8 py-3.5 text-sm font-semibold hover:bg-gray-200/80 transition-all duration-200 cursor-pointer">
                            {{ t('secondaryCta') }}
                          </a>
                       </div>
@@ -192,7 +193,7 @@ import { ToastService } from './toast.service';
                           {{ truncated(profile().description, 120) }}
                         </p>
                         <div class="flex flex-wrap gap-4">
-                           <a href="#contact" (click)="scrollTo('contact', $event)" [style.backgroundColor]="customization().branding.primaryColor" [style.borderRadius]="buttonRadius" class="text-white px-8 py-4 text-sm font-bold shadow-lg hover:opacity-90 transition-opacity cursor-pointer">
+                           <a bfTip="public:contact" href="#contact" (click)="scrollTo('contact', $event)" [style.backgroundColor]="customization().branding.primaryColor" [style.borderRadius]="buttonRadius" class="text-white px-8 py-4 text-sm font-bold shadow-lg hover:opacity-90 transition-opacity cursor-pointer">
                              {{ ctaLabel() }}
                            </a>
                         </div>
@@ -226,7 +227,7 @@ import { ToastService } from './toast.service';
                       <p class="text-xl text-gray-500 mb-10 font-medium">
                         {{ truncated(profile().description, 150) }}
                       </p>
-                      <a href="#contact" (click)="scrollTo('contact', $event)" [style.color]="customization().branding.primaryColor" class="inline-flex items-center gap-2 text-lg font-bold hover:opacity-80 transition-opacity cursor-pointer">
+                      <a bfTip="public:contact" href="#contact" (click)="scrollTo('contact', $event)" [style.color]="customization().branding.primaryColor" class="inline-flex items-center gap-2 text-lg font-bold hover:opacity-80 transition-opacity cursor-pointer">
                         <span>{{ ctaLabel() }}</span>
                         <mat-icon>arrow_forward</mat-icon>
                       </a>
@@ -247,10 +248,10 @@ import { ToastService } from './toast.service';
                         {{ truncated(profile().description, 120) }}
                       </p>
                       <div class="flex flex-col sm:flex-row gap-4">
-                         <a href="#contact" (click)="scrollTo('contact', $event)" [style.backgroundColor]="customization().branding.primaryColor" [style.borderRadius]="buttonRadius" class="text-white px-8 py-4 text-sm font-bold shadow-lg hover:opacity-90 transition-opacity cursor-pointer">
+                         <a bfTip="public:contact" href="#contact" (click)="scrollTo('contact', $event)" [style.backgroundColor]="customization().branding.primaryColor" [style.borderRadius]="buttonRadius" class="text-white px-8 py-4 text-sm font-bold shadow-lg hover:opacity-90 transition-opacity cursor-pointer">
                            {{ ctaLabel() }}
                          </a>
-                         <a href="#services" (click)="scrollTo('services', $event)" [style.borderRadius]="buttonRadius" class="bg-white/10 text-white border border-white/20 px-8 py-4 text-sm font-bold hover:bg-white/20 transition-colors cursor-pointer">
+                         <a bfTip="public:services" href="#services" (click)="scrollTo('services', $event)" [style.borderRadius]="buttonRadius" class="bg-white/10 text-white border border-white/20 px-8 py-4 text-sm font-bold hover:bg-white/20 transition-colors cursor-pointer">
                            {{ t('secondaryCta') }}
                          </a>
                       </div>
@@ -740,7 +741,7 @@ import { ToastService } from './toast.service';
                         </div>
                         <h4 class="text-xl font-black mb-2">{{ t('contactSuccessTitle') }}</h4>
                         <p class="text-green-700 mb-8 text-sm">{{ t('contactSuccessMessage') }}</p>
-                        <button (click)="submitSuccess = false" [style.backgroundColor]="customization().branding.primaryColor" [style.borderRadius]="buttonRadius" class="text-white px-6 py-2.5 font-bold text-sm shadow-md hover:opacity-90 transition-opacity">{{ t('contactSendAnother') }}</button>
+                        <button bfTip="public:send-another" (click)="submitSuccess = false" [style.backgroundColor]="customization().branding.primaryColor" [style.borderRadius]="buttonRadius" class="text-white px-6 py-2.5 font-bold text-sm shadow-md hover:opacity-90 transition-opacity">{{ t('contactSendAnother') }}</button>
                       </div>
                     } @else {
                       <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-6">
@@ -825,7 +826,7 @@ import { ToastService } from './toast.service';
                           <input type="text" name="website" tabindex="-1" autocomplete="off" #honeypot>
                         </div>
 
-                        <button type="submit" [disabled]="form.invalid" [style.backgroundColor]="customization().branding.primaryColor" [style.borderRadius]="buttonRadius" class="w-full text-white px-6 py-4 text-sm font-bold shadow-md disabled:opacity-50 hover:opacity-90 transition-opacity mt-2">
+                        <button bfTip="public:submit" type="submit" [disabled]="form.invalid" [style.backgroundColor]="customization().branding.primaryColor" [style.borderRadius]="buttonRadius" class="w-full text-white px-6 py-4 text-sm font-bold shadow-md disabled:opacity-50 hover:opacity-90 transition-opacity mt-2">
                           {{ t('contactSubmit') }}
                         </button>
                       </form>
@@ -893,7 +894,7 @@ import { ToastService } from './toast.service';
                             <mat-icon class="text-[16px]">payment</mat-icon> Pay Now
                           </a>
                         } @else {
-                          <a href="#contact" (click)="scrollTo('contact', $event)" [style.borderColor]="customization().branding.primaryColor" [style.color]="customization().branding.primaryColor" [style.borderRadius]="buttonRadius" class="inline-flex items-center justify-center border-2 px-6 py-2.5 text-sm font-bold hover:opacity-80 transition-opacity cursor-pointer">
+                          <a bfTip="public:contact" href="#contact" (click)="scrollTo('contact', $event)" [style.borderColor]="customization().branding.primaryColor" [style.color]="customization().branding.primaryColor" [style.borderRadius]="buttonRadius" class="inline-flex items-center justify-center border-2 px-6 py-2.5 text-sm font-bold hover:opacity-80 transition-opacity cursor-pointer">
                             Get Started
                           </a>
                         }
@@ -1062,7 +1063,7 @@ import { ToastService } from './toast.service';
                   <div [style.borderRadius]="cardRadius" [style.background]="'linear-gradient(135deg, ' + customization().branding.primaryColor + ', color-mix(in srgb, ' + customization().branding.primaryColor + ' 70%, black))'" class="p-10 md:p-16 text-center shadow-lg">
                     <h2 class="text-2xl md:text-4xl font-black text-white mb-3" [appEditableText]="editable()" (textChange)="onTextEdit('section', 'heading', $event, section.id)">{{ section.heading }}</h2>
                     <p class="text-white/80 font-medium mb-8 max-w-xl mx-auto" [appEditableText]="editable()" (textChange)="onTextEdit('section', 'subheading', $event, section.id)">{{ section.subheading }}</p>
-                    <a href="#contact" (click)="scrollTo('contact', $event)" [style.color]="customization().branding.primaryColor" [style.borderRadius]="buttonRadius" class="inline-flex items-center gap-2 bg-white px-8 py-3.5 text-sm font-bold shadow-md hover:scale-[1.03] transition-transform cursor-pointer">
+                    <a bfTip="public:contact" href="#contact" (click)="scrollTo('contact', $event)" [style.color]="customization().branding.primaryColor" [style.borderRadius]="buttonRadius" class="inline-flex items-center gap-2 bg-white px-8 py-3.5 text-sm font-bold shadow-md hover:scale-[1.03] transition-transform cursor-pointer">
                       {{ ctaLabel() }}
                       <mat-icon class="text-[18px]">arrow_forward</mat-icon>
                     </a>
@@ -1104,9 +1105,9 @@ import { ToastService } from './toast.service';
       <footer class="mt-auto py-8 border-t border-gray-200/60 text-center text-gray-400 text-xs">
          <div class="max-w-5xl mx-auto px-6">
            <div class="flex items-center justify-center gap-4 mb-3">
-             <a routerLink="/privacy" class="hover:text-gray-600 transition-colors text-[12px] font-medium">Privacy</a>
+             <a bfTip="privacy policy" routerLink="/privacy" class="hover:text-gray-600 transition-colors text-[12px] font-medium">Privacy</a>
              <span class="text-gray-300">|</span>
-             <a routerLink="/terms" class="hover:text-gray-600 transition-colors text-[12px] font-medium">Terms</a>
+             <a bfTip="terms" routerLink="/terms" class="hover:text-gray-600 transition-colors text-[12px] font-medium">Terms</a>
            </div>
            <p class="text-[11px] text-gray-400">&copy; {{ currentYear }} {{ profile().name }}. @if (!hideBranding()) {Powered by BusinessFlow Studio.}</p>
          </div>
