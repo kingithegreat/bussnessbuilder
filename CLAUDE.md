@@ -271,6 +271,34 @@ complete. Other intents direct owners to the existing Website editors.
 
 ## Known issues / TODO
 
+### Demo companion review — 2026-10-21
+
+- Reviewed fresh main `aa401c5` including Grokbot's PR #43. Added only a
+  GET-only `scripts/demo-smoke.mjs`, `docs/DEMO_ACCEPTANCE.md`, and dated public
+  preflight evidence in `docs/evidence/demo-public-preflight-2026-10-21.json`.
+  Application behavior, secrets, provider settings and active work were untouched.
+- Isolated branch `codex/demo-readiness-20261021` deliberately avoids the
+  `claude/**` automatic merge/deploy path while another agent is working.
+  This is a review handoff, not a production release receipt.
+- Verification A (executed): lint, production SSR build and all 564 tests in
+  74 files passed. Initial concurrent build/test processes were killed by
+  resource limits; separate runs with two build workers and a temporary Vitest
+  config (`maxWorkers: 2`, `fileParallelism: false`) passed. No runner config
+  or dependency changes were committed. Public preflight passed all 11 checks;
+  local fixture checks proved malformed health fails with exit 1 and all
+  requests use GET.
+- Cloud browser proved landing → anonymous wizard → edited fictional business
+  → review, plus draft persistence after refresh. No account was created and
+  nothing was published. Verification B (not executed): signed-in publishing,
+  inbox/booking persistence, two-owner isolation, mobile, restore and provider
+  delivery/payment/domain acceptance. Do not call the whole demo accepted.
+- Public service observed healthy, self-service USD14/USD22, email/SMS off.
+  A reachable service is not evidence of its exact deployed source commit.
+  The managed-service proposal is separate from the app's self-service tariffs;
+  do not alter prices or make untested integration promises to align them.
+- Notion mirror pending: no connected Notion capability was available for this
+  session. Generated brain/playbook snapshots were left unchanged.
+
 - Custom domains — the connect flow (`src/app/domain-verification.ts` + settings
   UI: validated domain input, copyable A/CNAME/TXT records, live DNS-over-HTTPS
   status badge) **and** automated Cloud Run domain **mapping** are now both
