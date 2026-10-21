@@ -16,7 +16,7 @@ import type { AppState, Enquiry, Service } from './app/types';
 import type { Booking, BookingSettings } from './app/booking-rules';
 import type { Quote } from './app/quote-rules';
 
-export const SHOWCASE_VERSION = 1;
+export const SHOWCASE_VERSION = 2;
 
 export interface ShowcaseDef {
   id: string;
@@ -78,9 +78,9 @@ function quote(now: Date, q: Omit<Quote, 'currency' | 'gstMode' | 'createdAt' | 
 function mechanicState(): AppState {
   const s = clone(defaultState);
   const services: Service[] = [
-    { id: 'mm-wof', name: 'WOF prep check', description: 'Full pre-WOF inspection at your place: lights, tyres, brakes, wipers, seatbelts and leaks. You get a written list of anything that would fail, before you book your WOF.', price: '$79', duration: '45 min', imageUrl: img('1487754180451-c456f719905b') },
+    { id: 'mm-wof', name: 'WOF prep check', description: 'Full pre-WOF inspection at your place: lights, tyres, brakes, wipers, seatbelts and leaks. You get a written list of anything that would fail, before you book your WOF.', price: '$79', duration: '45 min', imageUrl: img('1504222490345-c075b6008014') },
     { id: 'mm-oil', name: 'Oil & filter service', description: 'Quality oil to your manufacturer spec, new oil filter, fluid top-ups and a 20-point safety check. Most petrol cars and utes.', price: '$169', duration: '1 hr', imageUrl: img('1486262715619-67b85e0b08d3') },
-    { id: 'mm-brake', name: 'Front brake pads', description: 'Supply and fit quality front pads, inspect rotors and calipers, test drive. Rotors quoted separately if needed.', price: 'from $249', duration: '1.5 hr', imageUrl: img('1530046339160-ce3e530c7d2b') },
+    { id: 'mm-brake', name: 'Front brake pads', description: 'Supply and fit quality front pads, inspect rotors and calipers, test drive. Rotors quoted separately if needed.', price: 'from $249', duration: '1.5 hr', imageUrl: img('1625047509168-a7026f36de04') },
     { id: 'mm-diag', name: 'Diagnostics & warning lights', description: 'Engine light on? We scan the fault codes, test the likely cause and explain the fix in plain English before any work.', price: '$95', duration: '45 min', imageUrl: img('1619642751034-765dfdf7c58e') },
     { id: 'mm-batt', name: 'Battery test & replacement', description: 'Free battery and charging test with any visit. Replacement battery supplied and fitted, old one recycled.', price: 'from $229', duration: '30 min', imageUrl: img('1622186477895-f2af6a0f5a97') },
   ];
@@ -135,12 +135,12 @@ function lawnState(): AppState {
     enquiryFields: ['Section size', 'How often?'], currency: 'NZD', pricesIncludeGst: true,
   };
   s.services = [
-    { id: 'lc-s', name: 'Small section mow', description: 'Up to about 300 m² (most townhouses and units). Mow, edges trimmed, paths blown clean.', price: '$45', duration: '30 min', imageUrl: img('1564429238961-71748ccc7d38') },
+    { id: 'lc-s', name: 'Small section mow', description: 'Up to about 300 m² (most townhouses and units). Mow, edges trimmed, paths blown clean.', price: '$45', duration: '30 min', imageUrl: img('1585320806297-9794b3e4eeae') },
     { id: 'lc-m', name: 'Medium section mow', description: '300–700 m², the typical Tauranga house section. Mow, edges and paths.', price: '$60', duration: '45 min', imageUrl: img('1558904541-efa843a96f01') },
     { id: 'lc-l', name: 'Large section mow', description: '700 m² and up, including lifestyle-style front lawns. Ride-on where it fits.', price: '$85', duration: '1 hr', imageUrl: img('1592417817098-8fd3d9eb14a5') },
     { id: 'lc-edge', name: 'Edging & tidy-up', description: 'Crisp edges along paths, gardens and driveways, with weeds pulled from the edges.', price: '$30', duration: '20 min', imageUrl: img('1416879595882-3373a0480b5b') },
-    { id: 'lc-gw', name: 'Green-waste removal', description: 'Clippings, prunings and garden waste taken away and composted. Per trailer load.', price: '$40', duration: '15 min', imageUrl: img('1585320806297-9794b3e4eeae') },
-    { id: 'lc-plan', name: 'Fortnightly lawn plan', description: 'A medium-section mow with edging every two weeks, clippings included. Skip a visit any time; no contract.', price: '$55 per visit', duration: '45 min', imageUrl: img('1500382017468-9049fed747ef') },
+    { id: 'lc-gw', name: 'Green-waste removal', description: 'Clippings, prunings and garden waste taken away and composted. Per trailer load.', price: '$40', duration: '15 min', imageUrl: img('1500382017468-9049fed747ef') },
+    { id: 'lc-plan', name: 'Fortnightly lawn plan', description: 'A medium-section mow with edging every two weeks, clippings included. Skip a visit any time; no contract.', price: '$55 per visit', duration: '45 min', imageUrl: img('1558904541-efa843a96f01') },
   ];
   s.testimonials = [
     { id: 'lt1', author: 'Sarah K., Papamoa', rating: 5, text: 'On the fortnightly plan for a year. Never missed a visit, and the edges are always sharp.' },
