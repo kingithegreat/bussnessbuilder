@@ -105,7 +105,11 @@ function isoDay(value?: string): string {
  * stay out of search results. When an origin is known we advertise it as the
  * Host so canonicalisation is unambiguous.
  */
-export function buildRobotsTxt(origin: string): string {
+export function buildRobotsTxt(origin: string, indexing = true): string {
+  if (!indexing) {
+    // Invite-only beta: nothing is crawlable.
+    return 'User-agent: *\nDisallow: /\n';
+  }
   const lines = [
     'User-agent: *',
     'Allow: /',
@@ -120,4 +124,12 @@ export function buildRobotsTxt(origin: string): string {
     lines.push(`Host: ${origin}`);
   }
   return lines.join('\n') + '\n';
+}
+
+/**
+ * Search indexing is OFF during the invite-only beta. Going public is one
+ * switch: set SEARCH_INDEXING=on on the Cloud Run service.
+ */
+export function searchIndexingEnabled(env: Record<string, string | undefined>): boolean {
+  return (env['SEARCH_INDEXING'] || '').toLowerCase() === 'on';
 }

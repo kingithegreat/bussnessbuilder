@@ -16,11 +16,12 @@ import { LaunchChecklistComponent } from './launch-checklist.component';
 import { businessActions } from './action-center';
 import { localDateKey } from './inbox-workflow';
 import { HeadlineChatComponent } from './headline-chat.component';
+import { ShowcaseLinksComponent } from './showcase-links.component';
 
 @Component({
   selector: 'app-admin-dashboard',
   standalone: true,
-  imports: [DatePipe, DecimalPipe, MatIconModule, OnboardingGuideComponent, RouterLink, HeadlineChatComponent, LaunchChecklistComponent, SeoHelperComponent, SiteStatsComponent, AiActionsComponent],
+  imports: [DatePipe, DecimalPipe, MatIconModule, OnboardingGuideComponent, RouterLink, HeadlineChatComponent, LaunchChecklistComponent, SeoHelperComponent, SiteStatsComponent, AiActionsComponent, ShowcaseLinksComponent],
   template: `
     <div class="flex flex-col gap-6">
       <!--
@@ -71,6 +72,7 @@ import { HeadlineChatComponent } from './headline-chat.component';
       @if (!analyticsOnly) {
         <app-headline-chat></app-headline-chat>
         <app-launch-checklist></app-launch-checklist>
+        <app-showcase-links></app-showcase-links>
         <app-site-stats></app-site-stats>
         <app-ai-actions></app-ai-actions>
         <app-seo-helper [compact]="true"></app-seo-helper>

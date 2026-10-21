@@ -4,6 +4,7 @@ import {
   buildSiteSitemap,
   buildRobotsTxt,
   SitemapPage,
+  searchIndexingEnabled,
 } from './server-seo';
 
 describe('escapeXml', () => {
@@ -86,5 +87,18 @@ describe('buildRobotsTxt', () => {
 
   it('omits the Host line when origin is unknown', () => {
     expect(buildRobotsTxt('')).not.toContain('Host:');
+  });
+});
+
+describe('invite-only beta indexing', () => {
+  it('is off unless SEARCH_INDEXING=on', () => {
+    expect(searchIndexingEnabled({})).toBe(false);
+    expect(searchIndexingEnabled({ SEARCH_INDEXING: 'off' })).toBe(false);
+    expect(searchIndexingEnabled({ SEARCH_INDEXING: 'ON' })).toBe(true);
+  });
+
+  it('robots.txt disallows everything while indexing is off', () => {
+    expect(buildRobotsTxt('https://example.com', false)).toBe('User-agent: *\nDisallow: /\n');
+    expect(buildRobotsTxt('https://example.com', true)).toContain('Allow: /');
   });
 });

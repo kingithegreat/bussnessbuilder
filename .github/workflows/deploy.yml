@@ -111,6 +111,7 @@ jobs:
           source: .
           env_vars: |-
             NG_ALLOWED_HOSTS=*
+            DEMO_OWNER_PASSWORD=${{ secrets.DEMO_OWNER_PASSWORD }}
           # Explicit (it's also the action default): merge with — never overwrite —
           # env vars set directly on the service. The live Stripe keys / price IDs
           # are configured on Cloud Run outside this workflow (see
