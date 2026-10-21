@@ -334,6 +334,8 @@ export interface PaymentSettings {
 
 export interface PublicSiteData {
   profile: BusinessProfile;
+  /** Server-owned marker for seeded, fictional shared demonstration businesses. */
+  showcase?: boolean;
   services?: Service[];
   testimonials?: Testimonial[];
   faqs?: FAQ[];

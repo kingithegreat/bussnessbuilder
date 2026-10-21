@@ -27,6 +27,12 @@ describe('buildPublicSiteData', () => {
     expect(buildPublicSiteData(undefined, null, null)).toBeNull();
   });
 
+  it('preserves the server showcase marker without treating profile copy as a demo flag', () => {
+    expect(buildPublicSiteData({ ...main, showcase: true }, null, null)?.showcase).toBe(true);
+    expect(buildPublicSiteData({ ...main, showcase: 'true' }, null, null)?.showcase).toBeUndefined();
+    expect(buildPublicSiteData({ ...main, profile: { name: 'Demo', showcase: true } }, null, null)?.showcase).toBeUndefined();
+  });
+
   it('restores branding when a Business subscription is unpaid or has no status', () => {
     for (const status of ['past_due', 'unpaid', 'canceled', 'incomplete', undefined]) {
       expect(buildPublicSiteData(main, null, { tier: 'business', status })!.hideBranding).toBe(false);

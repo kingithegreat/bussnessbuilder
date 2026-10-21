@@ -271,6 +271,40 @@ complete. Other intents direct owners to the existing Website editors.
 
 ## Known issues / TODO
 
+### Demo companion review — 2026-10-21
+
+- PR #45 complements Grokbot's PR #43 (`aa401c5`) and PR #44 (`afc85d7`).
+  Its branch `codex/demo-readiness-20261021` deliberately avoids the
+  `claude/**` auto-merge/deploy path. No provider settings, credentials or
+  Grokbot branch were altered. Main was reconciled locally after PR #44 landed.
+- Added GET-only `scripts/demo-smoke.mjs`, `docs/DEMO_ACCEPTANCE.md` linked to
+  the existing `docs/DEMO_WALKTHROUGH.md`, and dated public evidence. Extended
+  probes check showcase listings, published data and booking service readiness.
+- The seeded server-owned `showcase` marker now survives public JSON and
+  SSR/TransferState. Public showcase pages display a fictional-business/reviews/
+  qualifications/prices notice and warn that entries may be visible to other
+  testers. Ordinary sites do not display it. This is a prepared application
+  change; do not claim it is deployed without a release receipt.
+- Verification A (executed): lint, production SSR build, and 577 tests in 76
+  files passed after reconciliation, including disclosure rendering, transfer
+  and route switching. Initial concurrent build/test processes hit resource
+  limits; sequential bounded-worker runs passed without committed runner changes.
+  Fixture probes proved healthy/invalid-health exit codes and GET-only behavior.
+- Cloud browser proved landing → anonymous wizard → fictional edits → review,
+  plus draft persistence after refresh. No account was created or site published.
+  Verification B (not executed): signed-in publishing, inbox/booking persistence,
+  two-owner isolation, mobile, restore, and live payment/provider delivery.
+- Earlier live preflight passed 11 checks: liveness, six HTML routes, pricing,
+  email/SMS status and unauthenticated owner-bookings rejection. Email/SMS were
+  off; app prices USD14/USD22. Main PR #44 was newer than that observed release;
+  the first showcase-listing read returned an HTML app shell, not valid JSON.
+  Retest after its existing deployment completes; do not start a competing deploy.
+- Managed service pricing and the app's self-service tariffs remain distinct.
+  Seeded examples do not validate customer demand. Keep private benefit/bank/
+  identity/funding evidence out of this public repository.
+- Notion mirror pending: no connected capability was available; generated
+  brain/playbook snapshots remain untouched.
+
 - Custom domains — the connect flow (`src/app/domain-verification.ts` + settings
   UI: validated domain input, copyable A/CNAME/TXT records, live DNS-over-HTTPS
   status badge) **and** automated Cloud Run domain **mapping** are now both
