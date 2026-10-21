@@ -36,6 +36,7 @@ async function check(path, validate, expectedStatus = 200, kind = 'json') {
     const detail = validate(body);
     if (!detail) throw new Error('Unexpected response shape or missing app shell');
     evidence.checks.push({ path, status: 'PASS', detail });
+    return body;
   } catch (error) {
     failures++;
     evidence.checks.push({ path, status: 'FAIL', detail: error.message });
@@ -55,6 +56,16 @@ for (const path of ['/api/email-alerts/status', '/api/sms/status']) {
     { configured: b.enabled, deliveryTested: false });
 }
 await check('/api/bookings?uid=demo-smoke', b => typeof b?.error === 'string' && 'unauthenticated owner request rejected', 401);
+const showcases = await check('/api/showcases', b =>
+  Array.isArray(b?.showcases) && b.showcases.length <= 4 &&
+  b.showcases.every(s => typeof s?.slug === 'string' && s.slug.length > 0 && s.slug.length <= 200) &&
+  { listed: b.showcases.length, note: 'Zero means no showcase is available for the walkthrough' });
+for (const site of showcases?.showcases || []) {
+  const path = `/api/site/${encodeURIComponent(site.slug)}`;
+  await check(path, b => typeof b?.profile?.name === 'string' && Array.isArray(b?.services) && 'listed showcase is published');
+  await check(`${path}/booking`, b => b?.enabled === true && Array.isArray(b?.services) &&
+    b.services.length > 0 && typeof b?.timezone === 'string' && 'showcase booking services are available; no request submitted');
+}
 if (process.env.BF_DEMO_SITE_ID) {
   await check(`/api/site/${encodeURIComponent(process.env.BF_DEMO_SITE_ID)}`, b =>
     typeof b?.profile?.name === 'string' && Array.isArray(b?.services) && 'published site data readable');

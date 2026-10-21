@@ -33,7 +33,7 @@ import { MatIconModule } from '@angular/material/icon';
       @if (!isLive()) {
         <div class="bg-blue-50 border border-blue-100 rounded-2xl p-5 mb-6 text-sm text-blue-900" role="status">
           <p class="font-bold mb-1">Using ready-made templates</p>
-          <p>The tools below fill in a template for your business that you can edit. Full AI writing is coming soon, with nothing for you to set up.</p>
+          <p>The tools below fill in a template for your business that you can edit. Every tool works today: it writes a draft from your business details, clearly marked as a template, that you can edit before saving. Full AI writing switches on later in the beta, with nothing for you to set up.</p>
         </div>
       }
       <!-- Gemini API Key: only shown to owners who already saved one -->

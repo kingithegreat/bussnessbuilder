@@ -40,6 +40,8 @@ import { reviewsRouter } from './server-reviews-routes';
 import { quotesRouter } from './server-quotes-routes';
 import { statsRouter } from './server-stats-routes';
 import { businessTypeLabel } from './app/presets';
+import { SHOWCASES, seedShowcases, showcaseBySlugOrUid } from './server-showcase';
+import { searchIndexingEnabled } from './server-seo';
 import {
   buildFunnelDeltas,
   buildFunnelReport,
@@ -133,6 +135,9 @@ app.use((_req, res, next) => {
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
   // Cloud Run always serves over HTTPS, so HSTS is safe to assert.
   res.setHeader('Strict-Transport-Security', 'max-age=15552000; includeSubDomains');
+  // Invite-only beta: keep every page out of search engines until launch
+  // (set SEARCH_INDEXING=on on Cloud Run to go public).
+  if (!searchIndexingEnabled(process.env)) res.setHeader('X-Robots-Tag', 'noindex, nofollow');
   next();
 });
 
@@ -216,7 +221,7 @@ app.get('/robots.txt', (req, res) => {
     forwardedHost: req.header('x-forwarded-host') ?? undefined,
     host: req.header('host') ?? undefined,
   });
-  res.type('text/plain').send(buildRobotsTxt(origin));
+  res.type('text/plain').send(buildRobotsTxt(origin, searchIndexingEnabled(process.env)));
 });
 
 /**
@@ -269,6 +274,12 @@ if (missingSmtpVars().length) {
  * Public API: whether new-enquiry email alerts can be delivered at all. A bare
  * boolean so the inbox can tell owners when alerts are off; no config leaks.
  */
+/** Public: the demo showcase sites, for the "See it working for" links. */
+app.get('/api/showcases', (_req, res) => {
+  if ((process.env['SHOWCASE_SEED'] || '').toLowerCase() === 'off') { res.json({ showcases: [] }); return; }
+  res.json({ showcases: SHOWCASES.map((s) => ({ id: s.id, label: s.label, name: s.state.profile.name, slug: s.slug, path: `/s/${s.slug}` })) });
+});
+
 app.get('/api/email-alerts/status', (_req, res) => {
   res.setHeader('Cache-Control', 'no-store');
   res.json({ enabled: missingSmtpVars().length === 0 });
@@ -938,6 +949,10 @@ app.delete('/api/account/:uid', async (req, res) => {
       res.status(401).json({ error: 'Unauthorized' });
       return;
     }
+    if (showcaseBySlugOrUid(uid)) {
+      res.status(403).json({ error: 'This is a shared demo account and cannot be deleted.' });
+      return;
+    }
 
     const db = await getDb();
 
@@ -1461,6 +1476,10 @@ app.get('/api/pricing', async (_req, res) => {
 
 app.post('/api/stripe/create-checkout-session', express.json(), async (req, res) => {
   try {
+    if (!process.env['STRIPE_SECRET_KEY']) {
+      res.status(503).json({ error: 'payments_off', message: 'Paid plans open after the beta. Everything on the Free plan keeps working.' });
+      return;
+    }
     const stripe = await getStripe();
     const { uid, tier, currency } = req.body;
     const priceId = checkoutPriceId(tier, currency, process.env);
@@ -2025,6 +2044,17 @@ if (isMainModule(import.meta.url) || process.env['pm_id']) {
     }
 
     console.log(`Node Express server listening on http://0.0.0.0:${port}`);
+    // Idempotent demo showcase seed (no-op when already current or SHOWCASE_SEED=off).
+    void (async () => {
+      try {
+        const db = await getDb();
+        const auth = await import('firebase-admin/auth');
+        const written = await seedShowcases(db, process.env, auth.getAuth());
+        if (written.length) console.log(`Seeded showcases: ${written.join(', ')}`);
+      } catch (e) {
+        console.warn('Showcase seed skipped:', e);
+      }
+    })();
   });
 }
 

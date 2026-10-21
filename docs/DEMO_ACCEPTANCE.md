@@ -42,6 +42,20 @@ Do not use a green preflight as a sales or funding readiness certificate.
 
 ## Prepare a controlled demonstration
 
+Grokbot's [showcase walkthrough](DEMO_WALKTHROUGH.md) is the click-by-click
+guide for the seeded mechanic/lawn examples added in main `afc85d7` (PR #44).
+This document complements it with acceptance gates and the managed-service
+scope. Those examples demonstrate product capabilities; they do not validate
+the separate mobile-detailer niche or count as real customers.
+
+The companion change carries the server-owned `showcase` marker through public
+JSON and SSR and displays a notice that the business/reviews/qualifications/
+prices are fictional and entries may be visible to other testers. The notice
+is verified in component tests; deployment and browser acceptance of it still
+need a release receipt. Shared showcase accounts must contain sample data only.
+Use separate private accounts for isolation and real delivery tests. Do not
+send test messages to sample addresses or call the sample phone numbers.
+
 Use a dedicated owner account and a separate browser session as the customer.
 Use another dedicated owner account for isolation checks. Account creation and
 credentials stay with the account owner; never commit credentials or disable
@@ -99,9 +113,10 @@ that the owner workflow has not been accepted. Retain failing observations.
 
 ## Starting evidence — 21 October 2026 UTC
 
-- Source reviewed: `aa401c5d36616ffe55a6e04abba1b28cd6ff420d`, including
-  Grokbot's acceptance-copy fixes in PR #43. No application files were changed
-  by this companion work.
+- Source reviewed: `aa401c5d36616ffe55a6e04abba1b28cd6ff420d` (Grokbot PR #43),
+  then main `afc85d7efb80a7c2e16b3678238f284196d6b8a4` (showcases, PR #44).
+  The companion adds only the demo disclosure in the application; it preserves
+  Grokbot's workflows and does not change provider configuration or credentials.
 - Public HTTP observations: liveness healthy, self-service USD14/USD22,
   `gstInclusive:false`, email and SMS `enabled:false`. These are observations,
   not provider delivery tests or proof of the deployed source SHA.
@@ -110,6 +125,11 @@ that the owner workflow has not been accepted. Retain failing observations.
   performed. Further acceptance results must be recorded, not assumed.
 - Signed-in publishing, inbox, owner booking, two-account isolation, mobile,
   restore and paid-provider acceptance remain outstanding until evidenced.
+- After reconciling PR #44 and adding the disclosure, all 577 tests across
+  76 files passed, including SSR, TransferState and demo-to-ordinary-site notice
+  behavior. The earlier public receipt has 11 checks against the then-live
+  release; the extended script also verifies showcase listing, site data and
+  booking services. Save a fresh receipt after the showcase release deploys.
 
 For email configuration see [EMAIL_ALERTS_SETUP.md](EMAIL_ALERTS_SETUP.md);
 for payments see [GO_LIVE_STRIPE.md](GO_LIVE_STRIPE.md) and

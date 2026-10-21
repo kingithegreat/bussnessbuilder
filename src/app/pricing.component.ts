@@ -82,7 +82,7 @@ import { ToastService } from './toast.service';
               <li class="flex items-start gap-2"><mat-icon class="text-green-500 text-[18px] shrink-0 mt-0.5">check_circle</mat-icon> Unlimited services</li>
               <li class="flex items-start gap-2"><mat-icon class="text-green-500 text-[18px] shrink-0 mt-0.5">check_circle</mat-icon> Unlimited enquiries</li>
               <li class="flex items-start gap-2"><mat-icon class="text-green-500 text-[18px] shrink-0 mt-0.5">check_circle</mat-icon> Data export &amp; import</li>
-              <li class="flex items-start gap-2"><mat-icon class="text-green-500 text-[18px] shrink-0 mt-0.5">check_circle</mat-icon> Email notifications@if (emailAlertsOff()) {<span class="ml-1 text-xs font-semibold text-amber-700">(coming soon)</span>}</li>
+              <li class="flex items-start gap-2"><mat-icon class="text-green-500 text-[18px] shrink-0 mt-0.5">check_circle</mat-icon> Email notifications@if (emailAlertsOff()) {<span class="ml-1 text-xs font-semibold text-amber-700">(switching on during beta; enquiries always land in your Inbox)</span>}</li>
             </ul>
             @if (subService.tier() === 'pro') {
               <div class="bg-blue-50 text-blue-600 text-center py-3 rounded-xl text-sm font-bold">Current Plan</div>
@@ -176,7 +176,7 @@ export class PricingComponent implements OnInit {
     if (url) {
       window.location.href = url;
     } else {
-      this.toast.error('Subscription checkout is not yet configured. Please set up Stripe API keys.');
+      this.toast.show('Paid plans open after the beta. Everything on the Free plan keeps working in the meantime.', 'info', 6000);
     }
   }
 }

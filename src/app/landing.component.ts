@@ -4,10 +4,11 @@ import { MatIconModule } from '@angular/material/icon';
 import { AuthService } from './auth.service';
 import { FunnelService } from './funnel.service';
 
+import { ShowcaseLinksComponent } from './showcase-links.component';
 @Component({
   selector: 'app-landing',
   standalone: true,
-  imports: [RouterLink, MatIconModule],
+  imports: [RouterLink, MatIconModule, ShowcaseLinksComponent],
   template: `
     <div class="min-h-screen bg-[#F5F5F7] text-gray-900 flex flex-col font-sans">
       <header class="sticky top-0 z-50 bg-[#F5F5F7]/80 backdrop-blur-xl border-b border-gray-200/40">
@@ -67,6 +68,10 @@ import { FunnelService } from './funnel.service';
             </div>
           </div>
         </section>
+
+        <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 -mt-8 mb-4">
+          <app-showcase-links></app-showcase-links>
+        </div>
 
         <!-- Features Grid -->
         <section class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-20">
