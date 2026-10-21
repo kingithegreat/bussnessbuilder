@@ -210,7 +210,7 @@ import { ToastService } from './toast.service';
                         @if (getSection('hero')?.imageUrl) {
                           <img [src]="getSection('hero')!.imageUrl" [alt]="profile().name ? profile().name + ' — main photo' : 'Main photo'" referrerpolicy="no-referrer" class="w-full h-full object-cover">
                         } @else {
-                          <img src="https://images.unsplash.com/photo-1556761175-5973dc0f32d7?w=800&q=80" [alt]="profile().name ? profile().name + ' — main photo' : 'Main photo'" referrerpolicy="no-referrer" class="w-full h-full object-cover">
+                          <img src="https://images.unsplash.com/photo-1600880292203-757bb62b4baf?w=800&q=80" [alt]="profile().name ? profile().name + ' — main photo' : 'Main photo'" referrerpolicy="no-referrer" class="w-full h-full object-cover">
                         }
                       </div>
                     </div>

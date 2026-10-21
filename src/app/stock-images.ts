@@ -23,24 +23,24 @@ export const STOCK_IMAGES: Record<string, Record<ImageSection, StockImage[]>> = 
       img('1584622650111-993a426fbf0a', 'Cleaning team at work', 'Anton'),
     ],
     services: [
-      img('1558618666-fcd25c85f82e', 'Window cleaning', 'JESHOOTS.COM'),
+      img('1581578731548-c64695cc6952', 'Window cleaning', 'JESHOOTS.COM'),
       img('1585421514284-efb74c2b69ba', 'Floor mopping', 'pan xiaozhen'),
     ],
     general: [
-      img('1527515637462-cee1395c108d', 'Cleaning supplies', 'The Creative Exchange'),
+      img('1581578731548-c64695cc6952', 'Cleaning supplies', 'The Creative Exchange'),
     ],
   },
   barber: {
     hero: [
-      img('1503951914875-452b00a37de8', 'Barbershop interior', 'Arthur Edelmans'),
+      img('1599351431202-1e0f0137899a', 'Barbershop interior', 'Arthur Edelmans'),
       img('1599351431202-1e0f0137899a', 'Barber cutting hair', 'Thgusstavo Santana'),
     ],
     about: [
-      img('1585747860019-f4e7fa2b6e30', 'Barber tools', 'Thgusstavo Santana'),
-      img('1521590832167-7228fcab4f41', 'Classic barbershop chairs', 'Nathon Oski'),
+      img('1599351431202-1e0f0137899a', 'Barber tools', 'Thgusstavo Santana'),
+      img('1599351431202-1e0f0137899a', 'Classic barbershop chairs', 'Nathon Oski'),
     ],
     services: [
-      img('1622286342461-8f85be0a56c8', 'Beard trim close-up', 'Allef Vinicius'),
+      img('1599351431202-1e0f0137899a', 'Beard trim close-up', 'Allef Vinicius'),
       img('1605497788044-5a32c7078486', 'Hair styling', 'Adam Winger'),
     ],
     general: [
@@ -61,12 +61,12 @@ export const STOCK_IMAGES: Record<string, Record<ImageSection, StockImage[]>> = 
       img('1518611012118-696072aa579a', 'Group fitness class', 'Geert Pieters'),
     ],
     general: [
-      img('1526506118085-471d6164e8df', 'Active lifestyle', 'Karsten Winegeart'),
+      img('1534438327276-14e5300c3a48', 'Active lifestyle', 'Karsten Winegeart'),
     ],
   },
   tutor: {
     hero: [
-      img('1523050854058-8df90110c476', 'Student studying', 'Green Chameleon'),
+      img('1497633762265-9d179a990aa6', 'Student studying', 'Green Chameleon'),
       img('1497633762265-9d179a990aa6', 'Library books', 'Kimberly Farmer'),
     ],
     about: [
@@ -91,7 +91,7 @@ export const STOCK_IMAGES: Record<string, Record<ImageSection, StockImage[]>> = 
       img('1585320806297-9794b3e4eeae', 'Mowing equipment', 'Daniel Watson'),
     ],
     services: [
-      img('1564429238961-71748ccc7d38', 'Lawn mowing', 'Ochir-Erdene Oyunmedeg'),
+      img('1558904541-efa843a96f01', 'Lawn mowing', 'Ochir-Erdene Oyunmedeg'),
       img('1585320806297-9794b3e4eeae', 'Hedge trimming', 'Daniel Watson'),
     ],
     general: [
@@ -101,14 +101,14 @@ export const STOCK_IMAGES: Record<string, Record<ImageSection, StockImage[]>> = 
   mechanic: {
     hero: [
       img('1486262715619-67b85e0b08d3', 'Auto repair shop', 'Tim Mossholder'),
-      img('1530046339160-ce3e530c7d2b', 'Car engine close-up', 'Sten Rademaker'),
+      img('1625047509168-a7026f36de04', 'Car engine close-up', 'Sten Rademaker'),
     ],
     about: [
       img('1619642751034-765dfdf7c58e', 'Mechanic tools', 'Tekton'),
-      img('1558618666-fcd25c85f82e', 'Workshop interior', 'JESHOOTS.COM'),
+      img('1504222490345-c075b6008014', 'Workshop interior', 'JESHOOTS.COM'),
     ],
     services: [
-      img('1487754180451-c456f719905b', 'Car maintenance', 'Markus Spiske'),
+      img('1504222490345-c075b6008014', 'Car maintenance', 'Markus Spiske'),
       img('1622186477895-f2af6a0f5a97', 'Tire change', 'Robert Laursoo'),
     ],
     general: [
@@ -129,7 +129,7 @@ export const STOCK_IMAGES: Record<string, Record<ImageSection, StockImage[]>> = 
       img('1600607687939-ce8a6c25118c', 'Room detail', 'Francesca Tosolini'),
     ],
     general: [
-      img('1600596542815-611d0b5dfa2d', 'House keys', 'Tierra Mallorca'),
+      img('1564013799919-ab600027ffc6', 'House keys', 'Tierra Mallorca'),
     ],
   },
   cafe: {
@@ -151,7 +151,7 @@ export const STOCK_IMAGES: Record<string, Record<ImageSection, StockImage[]>> = 
   },
   consultant: {
     hero: [
-      img('1556761175-5973dc0f32d7', 'Business meeting', 'Austin Distel'),
+      img('1600880292203-757bb62b4baf', 'Business meeting', 'Austin Distel'),
       img('1497366216548-37526070297c', 'Modern office', 'Nastuh Abootalebi'),
     ],
     about: [
@@ -160,7 +160,7 @@ export const STOCK_IMAGES: Record<string, Record<ImageSection, StockImage[]>> = 
     ],
     services: [
       img('1454165804606-c3d57bc86b40', 'Laptop work', 'Bench Accounting'),
-      img('1542744173-8e7e91415f58', 'Presentation', 'Campaign Creators'),
+      img('1497366216548-37526070297c', 'Presentation', 'Campaign Creators'),
     ],
     general: [
       img('1507003211169-0a1dd7228f2d', 'Professional portrait', 'Joseph Gonzalez'),
@@ -180,12 +180,12 @@ export const STOCK_IMAGES: Record<string, Record<ImageSection, StockImage[]>> = 
       img('1607082349566-187342175e2f', 'Checkout counter', 'Clay Banks'),
     ],
     general: [
-      img('1528698827591-e625c94bc5ab', 'Open sign', 'Mike Petrucci'),
+      img('1441986300917-64674bd600d8', 'Open sign', 'Mike Petrucci'),
     ],
   },
   other: {
     hero: [
-      img('1556761175-5973dc0f32d7', 'Professional team', 'Austin Distel'),
+      img('1600880292203-757bb62b4baf', 'Professional team', 'Austin Distel'),
       img('1497366216548-37526070297c', 'Modern workspace', 'Nastuh Abootalebi'),
     ],
     about: [
@@ -197,7 +197,7 @@ export const STOCK_IMAGES: Record<string, Record<ImageSection, StockImage[]>> = 
       img('1553877522-43269d4ea984', 'Strategy session', 'Campaign Creators'),
     ],
     general: [
-      img('1528698827591-e625c94bc5ab', 'Business open sign', 'Mike Petrucci'),
+      img('1497366216548-37526070297c', 'Business open sign', 'Mike Petrucci'),
     ],
   },
 };
