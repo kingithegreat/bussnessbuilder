@@ -1,3 +1,4 @@
+import { TooltipDirective } from './tooltip.directive';
 import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -17,7 +18,7 @@ type Mode = 'post' | 'prices' | 'about' | null;
 @Component({
   selector: 'app-ai-actions',
   standalone: true,
-  imports: [FormsModule, RouterLink],
+  imports: [TooltipDirective, FormsModule, RouterLink],
   template: `
     <section class="bg-white border border-gray-200 rounded-2xl p-5" aria-labelledby="ai-actions-title">
       <h2 id="ai-actions-title" class="text-lg font-semibold text-gray-900">Quick updates with AI</h2>
