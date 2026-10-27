@@ -21,7 +21,7 @@ import { PaymentSettings } from './types';
         </button>
       </div>
 
-      <!-- Stripe Connect -->
+      <!-- Owner-managed Stripe Payment Links -->
       <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
         <div class="p-6 border-b border-gray-100 bg-gray-50/50">
           <h2 class="font-bold text-gray-900 flex items-center gap-2"><mat-icon class="text-[18px] text-gray-500">account_balance</mat-icon> Payment Gateway</h2>
@@ -38,13 +38,8 @@ import { PaymentSettings } from './types';
             </label>
           </div>
 
-          @if (settings.enabled) {
-            <div>
-              <label for="stripeId" class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Stripe Account ID</label>
-              <input id="stripeId" type="text" [(ngModel)]="settings.stripeAccountId" placeholder="acct_..." class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm font-mono">
-              <p class="text-xs text-gray-500 mt-1">Connect your Stripe account to receive payments. <a href="https://stripe.com" target="_blank" class="text-blue-600 hover:underline">Create a Stripe account</a></p>
-            </div>
-          }
+          <p class="text-sm text-gray-600">Create Payment Links in your own Stripe Dashboard, then paste them below. Customers pay through Stripe and funds go to that Stripe account. Adding an account ID here does not connect an account.</p>
+          <a href="https://dashboard.stripe.com/payment_links" target="_blank" rel="noopener noreferrer" class="text-sm font-semibold text-blue-700 underline">Open Stripe Payment Links</a>
         </div>
       </div>
 
@@ -140,7 +135,7 @@ export class AdminPaymentsComponent implements OnInit {
       name: '',
       description: '',
       amount: 0,
-      currency: 'NZD',
+      currency: this.dataService.profile().currency || 'NZD',
       active: true,
     });
   }

@@ -1,3 +1,4 @@
+import { provideHttpClient } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
 import { signal } from '@angular/core';
 import { ActivatedRoute, provideRouter } from '@angular/router';
@@ -17,7 +18,7 @@ describe('Home action center in the real dashboard', () => {
   beforeEach(() => {
     TestBed.resetTestingModule(); enquiries.set([]); complete.set(true);
     localStorage.setItem('bf_onboarding_dismissed', '1');
-    TestBed.configureTestingModule({ imports: [AdminDashboardComponent], providers: [provideRouter([]),
+    TestBed.configureTestingModule({ imports: [AdminDashboardComponent], providers: [provideRouter([]), provideHttpClient(),
       { provide: DataService, useValue: { enquiries, activities: signal([]), profile: signal({ name: 'Apex' }), siteSlug: signal('apex'), isSetupComplete: complete, getPages: () => [], savedRecommendations: signal([]) } },
       { provide: AnalyticsService, useValue: { data: signal({ totalViews: 0 }), loadAnalytics: () => undefined, viewsLast7Days: () => 0, viewsLast30Days: () => 0, dailyViewsChart: () => [] } },
       { provide: AuthService, useValue: { currentUser: () => null } },

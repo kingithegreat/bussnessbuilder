@@ -83,6 +83,64 @@ describe('PublicPageComponent — section renderer completeness', () => {
     TestBed.resetTestingModule();
   });
 
+  function renderForm() {
+    const data = { ...makeDataStub(), publicSiteUid: signal('owner-test') };
+    const post = vi.fn<(url: string, body: { formData: Record<string, { value: string }> }) => unknown>(() => of({}));
+    TestBed.configureTestingModule({
+      imports: [PublicPageComponent], providers: [provideRouter([]),
+        { provide: DataService, useValue: data },
+        { provide: HttpClient, useValue: { get: () => of(null), post } }],
+    });
+    const fixture = TestBed.createComponent(PublicPageComponent);
+    const cust = baseCustomization([seededSection('contact', 1)]);
+    cust.formFields = [
+      { id: 'name', label: 'Name', type: 'text', required: true, options: '', order: 1 },
+      { id: 'email', label: 'Email', type: 'email', required: true, options: '', order: 2 },
+      { id: 'work', label: 'Work', type: 'multi-select', required: true, options: 'Mowing, Edges', order: 3 },
+      { id: 'details', label: 'Details', type: 'textarea', required: true, options: '', order: 4,
+        dependsOn: { fieldId: 'work', value: 'Edges' } },
+    ];
+    fixture.componentRef.setInput('previewCustomization', cust);
+    fixture.detectChanges();
+    return { fixture, post };
+  }
+
+  it('adds custom controls after the input arrives and submits all selected options', () => {
+    const { fixture, post } = renderForm();
+    const el = fixture.nativeElement as HTMLElement;
+    const boxes = el.querySelectorAll<HTMLInputElement>('input[type="checkbox"]');
+    expect(boxes.length).toBe(2);
+    boxes[0].click(); fixture.detectChanges();
+    boxes[1].click(); fixture.detectChanges();
+    fixture.componentInstance.form.patchValue({ name: 'Jo', email: 'jo@example.nz', details: 'Please trim the edges' });
+    fixture.componentInstance.onSubmit();
+    expect(post).toHaveBeenCalledOnce();
+    expect(post.mock.calls[0][1].formData['work'].value).toBe('Mowing, Edges');
+    expect(post.mock.calls[0][1].formData['details'].value).toBe('Please trim the edges');
+  });
+
+  it('allows submission when a required conditional field is hidden', () => {
+    const { fixture, post } = renderForm();
+    const box = fixture.nativeElement.querySelector('input[type="checkbox"]') as HTMLInputElement;
+    box.click(); fixture.detectChanges();
+    fixture.componentInstance.form.patchValue({ name: 'Jo', email: 'jo@example.nz' });
+    fixture.componentInstance.onSubmit();
+    expect(post).toHaveBeenCalledOnce();
+    expect(post.mock.calls[0][1].formData['details']).toBeUndefined();
+  });
+
+  it('requires a multi-select choice and revalidates a conditional field when shown', () => {
+    const { fixture, post } = renderForm();
+    fixture.componentInstance.form.patchValue({ name: 'Jo', email: 'jo@example.nz' });
+    fixture.componentInstance.onSubmit();
+    expect(post).not.toHaveBeenCalled();
+    const boxes = fixture.nativeElement.querySelectorAll('input[type="checkbox"]');
+    (boxes[1] as HTMLInputElement).click(); fixture.detectChanges();
+    fixture.componentInstance.onSubmit();
+    expect(post).not.toHaveBeenCalled();
+    expect(fixture.componentInstance.form.get('details')?.invalid).toBe(true);
+  });
+
   it('renders every seeded section without a "Coming Soon" placeholder', () => {
     const sections = SEEDED_SECTION_IDS.map((id, i) => seededSection(id, i + 1));
     const el = renderWithSections(sections);

@@ -34,6 +34,12 @@ import { currentHostSiteUid } from './host-site';
         </div>
       </div>
     } @else {
+      @if (showcase()) {
+        <aside aria-label="Demonstration notice" class="bg-amber-100 px-4 py-3 text-center text-sm text-amber-950" data-testid="showcase-notice">
+          <strong>Demonstration only.</strong> This business, reviews, qualifications and prices are fictional examples.
+          Do not call, pay or enter personal information. Test entries may be visible to other demo users.
+        </aside>
+      }
       <app-public-page></app-public-page>
     }
   `
@@ -50,6 +56,7 @@ export class SiteViewComponent implements OnInit {
 
   loading = signal(true);
   error = signal(false);
+  showcase = signal(false);
 
   ngOnInit() {
     if (!isPlatformBrowser(this.platformId)) {
@@ -62,6 +69,7 @@ export class SiteViewComponent implements OnInit {
       if (ctx) {
         this.transferState.set(PUBLIC_SITE_STATE_KEY, ctx);
         this.dataService.loadPublicSite(ctx.uid, ctx.data);
+        this.showcase.set(ctx.data.showcase === true);
         this.setSiteFavicon(ctx.data);
         this.loading.set(false);
       }
@@ -77,6 +85,7 @@ export class SiteViewComponent implements OnInit {
           const uid = params.get('uid') || this.hostSiteUid;
           this.loading.set(true);
           this.error.set(false);
+          this.showcase.set(false);
           if (!uid) {
             this.error.set(true);
             this.loading.set(false);
@@ -106,6 +115,7 @@ export class SiteViewComponent implements OnInit {
           return;
         }
         this.dataService.loadPublicSite(result.uid, result.data);
+        this.showcase.set(result.data.showcase === true);
         this.setSiteFavicon(result.data);
         this.loading.set(false);
       });

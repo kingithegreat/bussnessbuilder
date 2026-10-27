@@ -1,4 +1,8 @@
-import { Component, inject, signal } from '@angular/core';
+import { AuthService } from './auth.service';
+import { changeIntent } from './change-intent';
+import { SiteChangesService } from './site-changes.service';
+import { SiteChangeHistoryComponent } from './site-change-history.component';
+import { Component, effect, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { DataService } from './data.service';
@@ -7,7 +11,7 @@ import { ToastService } from './toast.service';
 import { ContentPage } from './types';
 import {
   nzSeason, seasonalPostPrompt, parsePostResponse, templateSeasonalPost, slugify,
-  deterministicPriceChanges, priceUpdatePrompt, parsePriceChanges, applyPriceChanges, PriceChange,
+  deterministicPriceChanges, priceUpdatePrompt, parsePriceChanges, PriceChange,
   aboutPrompt, cleanAbout, templateAbout,
 } from './ai-updates';
 
@@ -17,11 +21,18 @@ type Mode = 'post' | 'prices' | 'about' | null;
 @Component({
   selector: 'app-ai-actions',
   standalone: true,
-  imports: [FormsModule, RouterLink],
+  imports: [FormsModule, RouterLink, SiteChangeHistoryComponent],
   template: `
     <section class="bg-white border border-gray-200 rounded-2xl p-5" aria-labelledby="ai-actions-title">
       <h2 id="ai-actions-title" class="text-lg font-semibold text-gray-900">Quick updates with AI</h2>
       <p class="text-sm text-gray-600 mb-4">You'll always see a preview first. Nothing changes on your site until you press Save.</p>
+      <form (ngSubmit)="runCommand()" class="mb-4 space-y-2">
+        <label for="site-change-request" class="block text-sm font-semibold text-gray-900">What would you like to change?</label>
+        <div class="flex flex-col sm:flex-row gap-2"><input id="site-change-request" name="siteRequest" [(ngModel)]="command" maxlength="500" [disabled]="busy() || changesService.busy() || !!changesService.pending()"
+          placeholder="Raise all prices by 5%, refresh my About, or set button text to Book now" class="flex-1 rounded-xl border border-gray-300 p-3 text-sm">
+          <button type="submit" [disabled]="busy() || changesService.busy() || !!changesService.pending() || !command.trim()" class="rounded-xl bg-blue-600 px-4 py-2 font-semibold text-sm text-white disabled:opacity-50">Prepare change</button></div>
+        <p class="text-xs text-gray-600">Supports About text, prices, seasonal posts, and exact headline or button text. Copy and price changes have saved approval, history and undo.</p>
+      </form>
       <div class="flex flex-wrap gap-2">
         <button type="button" (click)="open('post')" [attr.aria-pressed]="mode() === 'post'" class="px-4 py-2 rounded-xl text-sm font-bold bg-blue-50 text-blue-800 hover:bg-blue-100">✍️ Write a {{ season }} special post</button>
         <button type="button" (click)="open('prices')" [attr.aria-pressed]="mode() === 'prices'" class="px-4 py-2 rounded-xl text-sm font-bold bg-blue-50 text-blue-800 hover:bg-blue-100">💲 Update my prices</button>
@@ -72,7 +83,7 @@ type Mode = 'post' | 'prices' | 'about' | null;
                 </tbody>
               </table>
               <div class="flex gap-2">
-                <button type="button" (click)="savePrices()" [disabled]="!keep().length" class="px-4 py-2 rounded-xl text-sm font-bold bg-blue-600 text-white disabled:opacity-50">Save {{ keep().length }} price change{{ keep().length === 1 ? '' : 's' }}</button>
+                <button type="button" (click)="savePrices()" [disabled]="!keep().length" class="px-4 py-2 rounded-xl text-sm font-bold bg-blue-600 text-white disabled:opacity-50">Review {{ keep().length }} price change{{ keep().length === 1 ? '' : 's' }}</button>
                 <button type="button" (click)="close()" class="px-4 py-2 rounded-xl text-sm font-bold text-gray-700">Cancel</button>
               </div>
             }
@@ -88,18 +99,41 @@ type Mode = 'post' | 'prices' | 'about' | null;
             <div><label for="ai-about" class="text-xs font-semibold text-gray-700">New (you can edit it)</label><textarea id="ai-about" rows="8" [ngModel]="about()" (ngModelChange)="about.set($event)" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"></textarea></div>
           </div>
           <div class="flex flex-wrap gap-2">
-            <button type="button" (click)="saveAbout()" class="px-4 py-2 rounded-xl text-sm font-bold bg-blue-600 text-white">Save new About text</button>
+            <button type="button" (click)="saveAbout()" class="px-4 py-2 rounded-xl text-sm font-bold bg-blue-600 text-white">Review and save proposal</button>
             <button type="button" (click)="generateAbout()" class="px-4 py-2 rounded-xl text-sm font-bold text-blue-700">Try again</button>
             <button type="button" (click)="close()" class="px-4 py-2 rounded-xl text-sm font-bold text-gray-700">Cancel</button>
           </div>
         </div>
       }
+      <app-site-change-history></app-site-change-history>
       @if (savedLink()) { <p class="mt-3 text-sm text-green-800" role="status">Saved. <a [routerLink]="savedLink()" class="font-bold underline">Open pages</a></p> }
     </section>
   `,
 })
 export class AiActionsComponent {
+  readonly changesService = inject(SiteChangesService);
   private data = inject(DataService);
+  private aboutBefore = '';
+  private auth = inject(AuthService);
+  private generation = 0;
+  private ownerUid = '';
+  command = '';
+  constructor() {
+    effect(() => {
+      const uid = this.auth.currentUser()?.uid || '';
+      if (uid !== this.ownerUid) { this.ownerUid = uid; this.close(); this.busy.set(false); }
+    });
+  }
+  async runCommand(): Promise<void> {
+    if (this.busy() || this.changesService.busy() || this.changesService.pending()) return;
+    const intent = changeIntent(this.command);
+    if (intent.kind === 'prices') { this.open('prices'); this.priceAsk = this.command; await this.previewPrices(); }
+    else if (intent.kind === 'about') { this.mode.set('about'); await this.generateAbout(this.command); }
+    else if (intent.kind === 'post') this.open('post');
+    else if (intent.kind === 'copy') {
+      await this.changesService.prepare(this.command, [{ target: 'profile', field: intent.field, before: this.data.profile()[intent.field], after: intent.value }]);
+    } else this.note.set('Try refreshing your About section, updating prices, writing a seasonal post, or “set button text to Book now”. Use Website for other edits.');
+  }
   private ai = inject(AiService);
   private toast = inject(ToastService);
   readonly season = nzSeason(new Date());
@@ -115,25 +149,28 @@ export class AiActionsComponent {
   currentAbout = () => this.data.profile().description || '';
 
   open(m: Exclude<Mode, null>) {
+    if (this.busy() || this.changesService.busy() || this.changesService.pending()) return;
     this.mode.set(m); this.note.set(''); this.savedLink.set('');
     if (m === 'post') void this.generatePost();
     if (m === 'about') void this.generateAbout();
     if (m === 'prices') { this.changes.set(null); this.keep.set([]); }
   }
-  close() { this.mode.set(null); this.post.set(null); this.about.set(null); this.changes.set(null); this.note.set(''); }
+  close() { this.generation++; this.busy.set(false); this.mode.set(null); this.post.set(null); this.about.set(null); this.changes.set(null); this.note.set(''); }
 
   async generatePost() {
     const p = this.data.profile(); const services = this.data.services();
+    const version = ++this.generation;
     this.busy.set(true); this.post.set(null);
     const { prompt, system } = seasonalPostPrompt(p, services, this.season);
     const draft = parsePostResponse(await this.ai.generateText(prompt, system));
+    if (version !== this.generation) return;
     this.post.set(draft || templateSeasonalPost(p, services, this.season));
     this.note.set(draft ? 'Written by AI. Check the details before saving.' : 'AI isn\'t available on your plan right now, so this is a ready-made template. Edit it to suit.');
     this.busy.set(false);
   }
 
   savePost(publish: boolean) {
-    const p = this.post(); if (!p || !p.title.trim()) return;
+    const p = this.post(); if (!p || !p.title.trim() || !p.content.trim() || (publish && /\[[^\]]+\]/.test(p.content))) return;
     const pages = this.data.getPages();
     let slug = slugify(p.title); let i = 2;
     while (pages.some(x => x.slug === slug)) slug = `${slugify(p.title)}-${i++}`;
@@ -146,43 +183,47 @@ export class AiActionsComponent {
 
   async previewPrices() {
     const services = this.data.services();
+    const version = ++this.generation;
     this.busy.set(true); this.changes.set(null);
     let changes = deterministicPriceChanges(this.priceAsk, services);
     if (changes) this.note.set('Calculated exactly from your instruction.');
     else {
       const { prompt, system } = priceUpdatePrompt(this.priceAsk, services);
       const text = await this.ai.generateText(prompt, system);
+      if (version !== this.generation) return;
       changes = parsePriceChanges(text, services);
       this.note.set(text === null ? 'AI isn\'t available right now. Percentage changes ("raise all prices by 5%") still work without it.' : 'Suggested by AI. Check each one.');
     }
+    if (version !== this.generation) return;
     this.changes.set(changes); this.keep.set(changes.map(c => c.serviceId));
     this.busy.set(false);
   }
 
   toggleKeep(id: string) { this.keep.update(k => (k.includes(id) ? k.filter(x => x !== id) : [...k, id])); }
 
-  savePrices() {
+  async savePrices() {
     const approved = (this.changes() || []).filter(c => this.keep().includes(c.serviceId));
     if (!approved.length) return;
-    this.data.setServices(applyPriceChanges(this.data.services(), approved));
-    this.toast.success(`Updated ${approved.length} price${approved.length === 1 ? '' : 's'}.`);
-    this.close();
+    const ready = await this.changesService.prepare(this.priceAsk.trim(), approved.map(c => ({ target: 'service', field: 'price', serviceId: c.serviceId, before: c.oldPrice, after: c.newPrice })));
+    if (ready) { this.toast.success('Proposal saved. Review and approve it in Website changes below.'); this.close(); }
   }
 
-  async generateAbout() {
+  async generateAbout(instruction = '') {
     const p = this.data.profile(); const services = this.data.services();
+    this.aboutBefore = p.description;
+    const version = ++this.generation;
     this.busy.set(true); this.about.set(null);
     const { prompt, system } = aboutPrompt(p, services);
-    const text = cleanAbout(await this.ai.generateText(prompt, system));
+    const text = cleanAbout(await this.ai.generateText(`${prompt}\nOwner request: ${instruction.slice(0, 500)}`, system));
+    if (version !== this.generation) return;
     this.about.set(text || templateAbout(p, services));
     this.note.set(text ? 'Written by AI. Check it sounds like you.' : 'AI isn\'t available on your plan right now, so this is a ready-made template. Edit it to suit.');
     this.busy.set(false);
   }
 
-  saveAbout() {
+  async saveAbout() {
     const text = (this.about() || '').trim(); if (!text) return;
-    this.data.updateProfile({ description: text });
-    this.toast.success('About section updated.');
-    this.close();
+    const ready = await this.changesService.prepare('Refresh my About section', [{ target: 'profile', field: 'description', before: this.aboutBefore, after: text }]);
+    if (ready) { this.toast.success('Proposal saved. Review and approve it in Website changes below.'); this.close(); }
   }
 }

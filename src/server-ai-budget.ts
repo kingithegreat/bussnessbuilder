@@ -4,7 +4,7 @@ export { AI_GENERATION_LIMITS } from './app/ai-generation-limits';
 
 // These caps bound every provider call, including its billed reasoning tokens.
 export const AI_MAX_INPUT_CHARS = 16_000;
-export type AiBudgetResult = 'allowed' | 'daily_exhausted' | 'monthly_exhausted' | 'unavailable';
+export type AiBudgetResult = 'allowed' | 'daily_exhausted' | 'monthly_exhausted' | 'platform_exhausted' | 'disabled' | 'unavailable';
 export interface AiUsageLimits { daily: number; monthly: number }
 export interface AiUsageCounter { day: string; count: number; month: string; monthlyCount: number }
 
@@ -72,6 +72,49 @@ export async function reserveAiCall(db: Pick<Firestore, 'doc' | 'runTransaction'
 export function aiFallbackMessage(reason: Exclude<AiBudgetResult, 'allowed'> | 'input_limit'): string {
   if (reason === 'daily_exhausted') return 'Daily AI allowance reached. Template content is shown; the daily allowance resets at midnight UTC.';
   if (reason === 'monthly_exhausted') return 'Monthly AI allowance reached. Template content is shown; the monthly allowance resets on the first day of next month at midnight UTC.';
+  if (reason === 'disabled') return 'Platform AI is paused. Template content is shown.';
+  if (reason === 'platform_exhausted') return 'The shared AI budget has been reached. Template content is shown.';
   if (reason === 'input_limit') return 'This request exceeds the AI input limit. Template content is shown.';
   return 'AI usage could not be checked. Template content is shown; please try again later.';
+}
+
+export interface PlatformAiBudget { enabled: boolean; dailyMicros: number; monthlyMicros: number; reservationMicros: number }
+/** USD reservations, NOT a claim to read the provider's actual bill. Defaults bound account-wide exposure. */
+export function platformAiBudget(env: Record<string, string | undefined>): PlatformAiBudget {
+  const money = (key: string, fallback: number, minimum = 0): number => {
+    const raw = env[key];
+    const value = raw === undefined || raw.trim() === '' ? fallback : Number(raw);
+    return Number.isFinite(value) && value >= minimum && value <= 100000 ? Math.round(value * 1_000_000) : 0;
+  };
+  return { enabled: env['AI_PLATFORM_ENABLED'] !== 'false',
+    dailyMicros: money('AI_PLATFORM_DAILY_USD', 5), monthlyMicros: money('AI_PLATFORM_MONTHLY_USD', 25),
+    reservationMicros: money('AI_RESERVATION_USD', 0.10, 0.10) };
+}
+
+/** Atomically reserve both the user's allowance and the platform's shared USD envelope. */
+export async function reserveManagedAiCall(db: Pick<Firestore, 'doc' | 'runTransaction'>, uid: string,
+  limits: AiUsageLimits, env: Record<string, string | undefined>, now = new Date()): Promise<AiBudgetResult> {
+  const budget = platformAiBudget(env);
+  if (!budget.enabled) return 'disabled';
+  if (!budget.reservationMicros || !budget.dailyMicros || !budget.monthlyMicros) return 'platform_exhausted';
+  try {
+    const ownerRef = db.doc(`serverAiUsage/${uid}`);
+    const globalRef = db.doc('serverAiPlatform/usage');
+    const day = now.toISOString().slice(0, 10), month = day.slice(0, 7);
+    return await db.runTransaction<AiBudgetResult>(async tx => {
+      const owner = await tx.get(ownerRef);
+      const global = (await tx.get(globalRef)).data();
+      const nextOwner = nextAiReservation(owner.data(), day, limits);
+      if (typeof nextOwner === 'string') return nextOwner;
+      if (global?.['disabled'] === true) return 'disabled';
+      if (typeof global?.['day'] === 'string' && global['day'] > day || typeof global?.['month'] === 'string' && global['month'] > month) return 'unavailable';
+      const daily = global?.['day'] === day ? global['dailyMicros'] : 0;
+      const monthly = global?.['month'] === month ? global['monthlyMicros'] : 0;
+      if (![daily, monthly].every(x => Number.isSafeInteger(x) && x >= 0) || monthly < daily) return 'unavailable';
+      if (daily + budget.reservationMicros > budget.dailyMicros || monthly + budget.reservationMicros > budget.monthlyMicros) return 'platform_exhausted';
+      tx.set(ownerRef, nextOwner);
+      tx.set(globalRef, { day, month, dailyMicros: daily + budget.reservationMicros, monthlyMicros: monthly + budget.reservationMicros, disabled: false });
+      return 'allowed';
+    });
+  } catch { return 'unavailable'; }
 }

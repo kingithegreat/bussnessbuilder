@@ -78,9 +78,10 @@ power over the project.
 
 ## Part C — first live test (do this yourself before real users hit it)
 
-This automation was written and unit-tested without access to this live GCP
-project, so the exact request/response wire format for the Domain Mappings
-API (`src/server-domain-mapping.ts`) has **not** been exercised end-to-end.
+The regional Cloud Run endpoint and DomainMapping request shape were corrected
+and checked against the official v1 reference on 18 October 2026. Owner-domain
+verification, runtime permissions and certificate provisioning still need an
+end-to-end test in this GCP project.
 Before announcing this feature:
 
 1. Pick a domain you own and can edit DNS for.

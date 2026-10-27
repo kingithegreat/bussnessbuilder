@@ -1,3 +1,10 @@
+> **18 October update:** platform calls now share an atomic USD reservation
+> envelope as well as per-user quotas. Defaults are US$0.10 reserved per call,
+> US$5/day and US$25/month, UTC. See `.env.example` and
+> [the finishing record](RELEASE_FINISHING.md). Older statements below saying
+> that a shared budget/kill switch is future work are superseded. These are
+> conservative reservations, not live reads of actual provider billing.
+
 # BusinessFlow cost controls
 
 Application controls updated 2026-10-07; pricing reviewed 2026-10-05.

@@ -25,7 +25,7 @@ import type { Firestore } from 'firebase-admin/firestore';
 import { getAllDocs } from './server-firestore';
 import { checkoutSubscriptionStatus, effectiveTier } from './app/effective-tier';
 import { checkoutPriceId, tierForAnyPrices, pricingDisplay, nzdPriceIds, USD_DISPLAY, type PricingDisplay } from './server-pricing';
-import { AI_GENERATION_LIMITS, aiUsageLimits, aiFallbackMessage, reserveAiCall, validAiInput } from './server-ai-budget';
+import { AI_GENERATION_LIMITS, aiUsageLimits, aiFallbackMessage, reserveManagedAiCall, validAiInput } from './server-ai-budget';
 import { persistCheckoutSubscription, updateCurrentSubscription } from './server-subscription-sync';
 import { siteActionRouter } from './server-site-action-routes';
 import { validateDomain } from './app/domain-verification';
@@ -38,6 +38,8 @@ import { enquiryAlert, bookingAlert } from './app/sms-rules';
 import { bookingsRouter } from './server-bookings-routes';
 import { reviewsRouter } from './server-reviews-routes';
 import { quotesRouter } from './server-quotes-routes';
+import { attachmentsRouter, parseAttachments, attachmentMetadata, AttachmentError } from './server-attachments';
+import { siteChangesRouter } from './server-site-change-routes';
 import { statsRouter } from './server-stats-routes';
 import { businessTypeLabel } from './app/presets';
 import { SHOWCASES, seedShowcases, showcaseBySlugOrUid } from './server-showcase';
@@ -145,7 +147,7 @@ app.use((_req, res, next) => {
  * Liveness/readiness probe for Cloud Run (and any container orchestrator).
  */
 app.get('/healthz', (_req, res) => {
-  res.status(200).json({status: 'ok'});
+  res.status(200).json({ status: 'ok', release: process.env['RELEASE_SHA'] || 'development' });
 });
 
 /**
@@ -342,7 +344,7 @@ const MAX_STORED_ENQUIRIES = 500;
 /**
  * Public API: submit an enquiry to a user's site (no auth required).
  */
-app.post('/api/site/:uid/enquiry', express.json(), async (req, res) => {
+app.post('/api/site/:uid/enquiry', express.json({ limit: '2200kb' }), async (req, res) => {
   try {
     const db = await getDb();
     const uid = await resolveUid(db, req.params.uid);
@@ -362,8 +364,11 @@ app.post('/api/site/:uid/enquiry', express.json(), async (req, res) => {
       return;
     }
 
+    const enquiryId = randomUUID();
+    const attachments = parseAttachments(body.attachments, enquiryId);
     const enquiry = {
-      id: randomUUID(),
+      id: enquiryId,
+      attachments: attachments.map(attachmentMetadata),
       date: new Date().toISOString(),
       status: 'New',
       name,
@@ -392,7 +397,7 @@ app.post('/api/site/:uid/enquiry', express.json(), async (req, res) => {
     let ownerName = '';
     await db.runTransaction(async transaction => {
       const mainSnap = await transaction.get(mainRef);
-      if (!mainSnap.exists) throw new Error('SITE_NOT_FOUND');
+      if (!mainSnap.exists || mainSnap.data()?.['isSetupComplete'] !== true) throw new Error('SITE_NOT_FOUND');
 
       const data = mainSnap.data() || {};
       const ownerProfile = (data['profile'] || {}) as Record<string, unknown>;
@@ -400,6 +405,16 @@ app.post('/api/site/:uid/enquiry', express.json(), async (req, res) => {
       ownerName = asTrimmedString(ownerProfile['name'], 120);
       const existing = Array.isArray(data['enquiries']) ? data['enquiries'] : [];
       wasFirstEnquiry = existing.length === 0;
+      const fields = Array.isArray(data['customization']?.['formFields']) ? data['customization']['formFields'] : [];
+      if (attachments.some(file => !fields.some((f: { id: string; type: string }) => f.id === file.fieldId && f.type === 'file'))) {
+        throw new AttachmentError('This form does not accept that attachment.');
+      }
+      for (const file of attachments) transaction.set(db.doc(`enquiryAttachments/${uid}/files/${file.id}`), file);
+      for (const dropped of existing.slice(MAX_STORED_ENQUIRIES - 1)) {
+        for (const file of (Array.isArray(dropped.attachments) ? dropped.attachments : [])) {
+          if (typeof file.id === 'string' && /^[0-9a-f-]{36}$/.test(file.id)) transaction.delete(db.doc(`enquiryAttachments/${uid}/files/${file.id}`));
+        }
+      }
       transaction.set(mainRef, {
         ...data,
         enquiries: [enquiry, ...existing].slice(0, MAX_STORED_ENQUIRIES),
@@ -501,6 +516,7 @@ app.post('/api/site/:uid/enquiry', express.json(), async (req, res) => {
       res.status(404).json({ error: 'Site not found' });
       return;
     }
+    if (e instanceof AttachmentError) { res.status(400).json({ error: e.message }); return; }
     console.error('Error submitting enquiry:', e); captureServerError(e);
     res.status(500).json({ error: 'Server error' });
   }
@@ -965,6 +981,7 @@ app.delete('/api/account/:uid', async (req, res) => {
     await db.doc(`subscriptions/${uid}`).delete();
     await db.doc(`serverAiUsage/${uid}`).delete();
     await db.recursiveDelete(db.doc(`businessActions/${uid}`));
+    await db.recursiveDelete(db.doc(`enquiryAttachments/${uid}`));
 
     const slugsSnap = await db.collection('slugs').where('uid', '==', uid).get();
     for (const slugDoc of slugsSnap.docs) {
@@ -1006,6 +1023,8 @@ const featureDeps: FeatureDeps = {
 app.use(bookingsRouter(featureDeps));
 app.use(reviewsRouter(featureDeps));
 app.use(quotesRouter(featureDeps));
+app.use(attachmentsRouter(featureDeps));
+app.use(siteChangesRouter(featureDeps));
 app.use(statsRouter(featureDeps));
 
 // Public: whether text alerts are switched on for this server (no details).
@@ -1056,7 +1075,7 @@ app.post('/api/ai/generate', express.json(), async (req, res) => {
       return;
     }
 
-    const budget = await reserveAiCall(db, uid, aiUsageLimits(userTier, process.env));
+    const budget = await reserveManagedAiCall(db, uid, aiUsageLimits(userTier, process.env), process.env);
     if (budget !== 'allowed') {
       res.json({ text: null, fallback: true, reason: budget, message: aiFallbackMessage(budget) });
       return;
@@ -1174,7 +1193,7 @@ app.post('/api/ai/growth-report', express.json(), async (req, res) => {
 
     const apiKey = process.env['GEMINI_API_KEY'];
     const budget = apiKey && tier !== 'free'
-      ? await reserveAiCall(db, uid, aiUsageLimits(tier, process.env)) : null;
+      ? await reserveManagedAiCall(db, uid, aiUsageLimits(tier, process.env), process.env) : null;
     if (!apiKey || tier === 'free' || budget !== 'allowed') {
       const recs: { title: string; reason: string; suggestion: string; priority: string; type: string }[] = [];
       if (services.length === 0) recs.push({ title: 'Add your services', reason: 'Your site has no services listed', suggestion: 'Add at least 3 services with descriptions and prices to help visitors understand what you offer.', priority: 'high', type: 'service' });
@@ -1391,7 +1410,7 @@ app.post('/api/ai/draft-recommendation', express.json(), async (req, res) => {
 
     const prompt = buildDraftPrompt(recType, recSuggestion, profile, services, faqCount, testimonialCount);
     const budget = validAiInput(prompt, 'You are a website improvement expert for small service businesses. Draft clear, ready-to-use content. Return ONLY valid JSON.')
-      ? await reserveAiCall(db, uid, aiUsageLimits(userTier, process.env)) : 'input_limit';
+      ? await reserveManagedAiCall(db, uid, aiUsageLimits(userTier, process.env), process.env) : 'input_limit';
     if (budget !== 'allowed') {
       res.json({
         title: recTitle, draftType: recType,

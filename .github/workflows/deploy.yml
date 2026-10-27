@@ -112,6 +112,7 @@ jobs:
           env_vars: |-
             NG_ALLOWED_HOSTS=*
             DEMO_OWNER_PASSWORD=${{ secrets.DEMO_OWNER_PASSWORD }}
+            RELEASE_SHA=${{ github.sha }}
           # Explicit (it's also the action default): merge with — never overwrite —
           # env vars set directly on the service. The live Stripe keys / price IDs
           # are configured on Cloud Run outside this workflow (see
@@ -121,3 +122,22 @@ jobs:
 
       - name: Show service URL
         run: echo "Deployed to ${{ steps.deploy.outputs.url }}"
+
+      - uses: google-github-actions/setup-gcloud@v2
+
+      - name: Verify release, configuration and Firebase rules
+        env:
+          GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
+          GCP_REGION: ${{ vars.GCP_REGION || 'us-central1' }}
+          CLOUD_RUN_SERVICE: ${{ vars.CLOUD_RUN_SERVICE || 'businessflow' }}
+          RELEASE_SHA: ${{ github.sha }}
+          DEPLOY_FIREBASE_RULES: 'true'
+        run: node scripts/production-check.mjs
+
+      - name: Save production check receipt
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: production-readiness
+          path: production-readiness.json
+          if-no-files-found: ignore

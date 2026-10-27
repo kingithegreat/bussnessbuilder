@@ -1,3 +1,4 @@
+import { AttachmentInput, attachmentFileError, ATTACHMENT_MAX_FILES } from './enquiry-attachments';
 import { Component, inject, computed, input, output, effect, signal } from '@angular/core';
 import { DataService } from './data.service';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -784,16 +785,16 @@ import { ToastService } from './toast.service';
                                 }
                               </div>
                             } @else if (field.type === 'file') {
-                              <div class="w-full px-4 py-6 bg-gray-50 border-2 border-dashed border-gray-200 rounded-xl text-center cursor-pointer hover:bg-gray-100 transition-colors">
-                                <mat-icon class="text-gray-400 mb-2">cloud_upload</mat-icon>
-                                <p class="text-sm text-gray-600 font-medium">{{ field.placeholder || 'Click or drag file to upload' }}</p>
-                              </div>
+                              <input [id]="field.id" type="file" accept="image/jpeg,image/png,image/webp,application/pdf"
+                                (change)="chooseAttachment(field.id, $event)" [disabled]="isSubmittingEnquiry || readingAttachment"
+                                class="block w-full rounded-xl border border-gray-300 p-3 text-sm">
+                              <p class="mt-1 text-xs text-gray-500">JPEG, PNG, WebP or PDF, up to 512 KB. Up to three files per enquiry. Only the business owner can download them.</p>
                             } @else if (field.type === 'multi-select') {
                               <div class="space-y-2">
                                  <p class="text-xs text-gray-500 mb-1">Select all that apply:</p>
                                  @for (opt of fieldOptions(field); track opt) {
                                    <label class="flex items-center gap-3 cursor-pointer">
-                                     <input type="checkbox" [value]="opt" [formControlName]="field.id" class="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500">
+                                     <input type="checkbox" [value]="opt" [checked]="isOptionSelected(field.id, opt)" (change)="toggleOption(field.id, opt, $event)" class="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500">
                                      <span class="text-sm text-gray-700">{{ opt }}</span>
                                    </label>
                                  }
@@ -1447,20 +1448,51 @@ export class PublicPageComponent {
   }
 
   private setupDynamicForm() {
-    const fields = [...this.customization().formFields].sort((a, b) => a.order - b.order);
-    fields.forEach(field => {
-      const validators = field.required ? [Validators.required] : [];
-      if (field.type === 'email') {
-        validators.push(Validators.email);
+    // Inputs/tenant data arrive after construction. Reconcile controls whenever
+    // the configured fields change while retaining answers to unchanged fields.
+    effect(onCleanup => {
+      const fields = [...this.customization().formFields].sort((a, b) => a.order - b.order);
+      for (const id of Object.keys(this.form.controls)) {
+        if (!fields.some(field => field.id === id)) this.form.removeControl(id, { emitEvent: false });
       }
-      if (field.type === 'phone') {
-        validators.push(Validators.minLength(8));
+      for (const field of fields) {
+        const validators = field.required ? [field.type === 'checkbox' ? Validators.requiredTrue : Validators.required] : [];
+        if (field.type === 'email') validators.push(Validators.email);
+        if (field.type === 'phone') validators.push(Validators.minLength(8));
+        if (field.type === 'textarea') validators.push(Validators.minLength(10));
+        const existing = this.form.get(field.id);
+        if (existing) {
+          existing.setValidators(validators);
+          existing.updateValueAndValidity({ emitEvent: false });
+        } else {
+          this.form.addControl(field.id, this.fb.control(field.type === 'multi-select' ? [] : field.type === 'checkbox' ? false : '', validators), { emitEvent: false });
+        }
       }
-      if (field.type === 'textarea') {
-        validators.push(Validators.minLength(10));
-      }
-      this.form.addControl(field.id, this.fb.control('', validators));
+      const syncVisibility = () => {
+        for (const field of fields) {
+          const control = this.form.get(field.id)!;
+          if (this.isFieldVisible(field)) control.enable({ emitEvent: false });
+          else control.disable({ emitEvent: false });
+        }
+      };
+      syncVisibility();
+      const subscription = this.form.valueChanges.subscribe(syncVisibility);
+      onCleanup(() => subscription.unsubscribe());
     });
+  }
+
+  isOptionSelected(fieldId: string, option: string): boolean {
+    const value = this.form.get(fieldId)?.value;
+    return Array.isArray(value) && value.includes(option);
+  }
+
+  toggleOption(fieldId: string, option: string, event: Event): void {
+    const control = this.form.get(fieldId);
+    if (!control) return;
+    const selected: string[] = Array.isArray(control.value) ? control.value : [];
+    const checked = (event.target as HTMLInputElement).checked;
+    control.setValue(checked ? [...new Set([...selected, option])] : selected.filter(value => value !== option));
+    control.markAsTouched();
   }
   
   isFieldVisible(field: FormFieldConfig): boolean {
@@ -1470,7 +1502,7 @@ export class PublicPageComponent {
     const control = this.form.get(fieldId);
     if (!control) return true;
     // Simple equals check
-    return control.value === value;
+    return Array.isArray(control.value) ? control.value.includes(value) : control.value === value;
   }
 
   get visibleFormFields(): FormFieldConfig[] {
@@ -1479,9 +1511,34 @@ export class PublicPageComponent {
       .filter(f => this.isFieldVisible(f));
   }
 
+  attachmentInputs: Record<string, AttachmentInput> = {};
+  readingAttachment = false;
+  async chooseAttachment(fieldId: string, event: Event): Promise<void> {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    delete this.attachmentInputs[fieldId];
+    this.form.get(fieldId)?.setValue('');
+    if (!file) return;
+    const error = attachmentFileError(file) || (Object.keys(this.attachmentInputs).length >= ATTACHMENT_MAX_FILES ? 'Attach at most three files.' : null);
+    if (error) { this.toast.error(error); input.value = ''; return; }
+    this.readingAttachment = true;
+    try {
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result).split(',')[1]);
+        reader.onerror = () => reject(new Error('Could not read the file.'));
+        reader.readAsDataURL(file);
+      });
+      this.attachmentInputs[fieldId] = { fieldId, name: file.name, type: file.type, base64 };
+      this.form.get(fieldId)?.setValue(file.name);
+    } catch { this.toast.error('Could not read the file. Please select it again.'); input.value = ''; }
+    finally { this.readingAttachment = false; }
+  }
+
   isSubmittingEnquiry = false;
 
   onSubmit() {
+    if (this.isSubmittingEnquiry || this.readingAttachment) return;
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
@@ -1492,7 +1549,8 @@ export class PublicPageComponent {
       this.form.reset();
       return;
     }
-    const val = this.form.value as Record<string, string>;
+    const val = Object.fromEntries(Object.entries(this.form.value).map(([key, value]) =>
+      [key, Array.isArray(value) ? value.join(', ') : value === true ? 'Yes' : value === false || value == null ? '' : String(value)]));
 
     let fullMessage = val['message'] || val['details'] || '';
     const fields = this.customization().formFields;
@@ -1525,6 +1583,7 @@ export class PublicPageComponent {
       urgency: 'Medium',
       message: fullMessage,
       formData: formData,
+      attachments: Object.values(this.attachmentInputs).filter(file => fields.some(f => f.id === file.fieldId && this.isFieldVisible(f))),
     };
 
     const publicUid = this.dataService.publicSiteUid();
@@ -1533,16 +1592,18 @@ export class PublicPageComponent {
       this.http.post(`/api/site/${publicUid}/enquiry`, enquiry).subscribe({
         next: () => {
           this.submitSuccess = true;
+          this.attachmentInputs = {};
           this.form.reset();
           this.isSubmittingEnquiry = false;
         },
-        error: () => {
-          this.toast.error('Could not send your message. Please try again.');
+        error: (error) => {
+          this.toast.error(error?.error?.error || 'Could not send your message. Please try again.');
           this.isSubmittingEnquiry = false;
         }
       });
     } else {
-      this.dataService.addEnquiry(enquiry);
+      if (enquiry.attachments.length) { this.toast.error('Attachments can be sent from the published website.'); return; }
+      this.dataService.addEnquiry({ ...enquiry, attachments: [] });
       this.submitSuccess = true;
       this.form.reset();
     }

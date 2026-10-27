@@ -9,6 +9,7 @@ import { effectiveTier } from './app/effective-tier';
 
 export interface PublicSitePayload {
   profile: unknown;
+  showcase?: boolean;
   services: unknown[];
   testimonials: unknown[];
   faqs: unknown[];
@@ -31,6 +32,9 @@ export function buildPublicSiteData(
   if (!main || !main['isSetupComplete']) return null;
   return {
     profile: main['profile'],
+    // Preserve the server-owned marker through JSON and SSR/TransferState.
+    // Do not infer it from a slug, business name or client-editable profile.
+    ...(main['showcase'] === true ? { showcase: true } : {}),
     services: (main['services'] as unknown[]) || [],
     testimonials: (main['testimonials'] as unknown[]) || [],
     faqs: (main['faqs'] as unknown[]) || [],

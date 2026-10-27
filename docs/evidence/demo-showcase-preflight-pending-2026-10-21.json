@@ -1,0 +1,80 @@
+{
+  "checkedAt": "2026-10-21T05:04:31.301Z",
+  "origin": "https://businessflow-722923667291.us-central1.run.app",
+  "scope": "public GET-only preflight",
+  "checks": [
+    {
+      "path": "/healthz/",
+      "status": "PASS",
+      "detail": "healthy"
+    },
+    {
+      "path": "/",
+      "status": "PASS",
+      "detail": "HTML app shell served; browser interaction requires separate acceptance"
+    },
+    {
+      "path": "/setup",
+      "status": "PASS",
+      "detail": "HTML app shell served; browser interaction requires separate acceptance"
+    },
+    {
+      "path": "/login",
+      "status": "PASS",
+      "detail": "HTML app shell served; browser interaction requires separate acceptance"
+    },
+    {
+      "path": "/pricing",
+      "status": "PASS",
+      "detail": "HTML app shell served; browser interaction requires separate acceptance"
+    },
+    {
+      "path": "/privacy",
+      "status": "PASS",
+      "detail": "HTML app shell served; browser interaction requires separate acceptance"
+    },
+    {
+      "path": "/terms",
+      "status": "PASS",
+      "detail": "HTML app shell served; browser interaction requires separate acceptance"
+    },
+    {
+      "path": "/api/pricing",
+      "status": "PASS",
+      "detail": {
+        "currency": "USD",
+        "pro": 14,
+        "business": 22,
+        "gstInclusive": false
+      }
+    },
+    {
+      "path": "/api/email-alerts/status",
+      "status": "PASS",
+      "detail": {
+        "configured": false,
+        "deliveryTested": false
+      }
+    },
+    {
+      "path": "/api/sms/status",
+      "status": "PASS",
+      "detail": {
+        "configured": false,
+        "deliveryTested": false
+      }
+    },
+    {
+      "path": "/api/bookings?uid=demo-smoke",
+      "status": "PASS",
+      "detail": "unauthenticated owner request rejected"
+    },
+    {
+      "path": "/api/showcases",
+      "status": "FAIL",
+      "detail": "fetch failed"
+    }
+  ],
+  "result": "FAIL",
+  "limitations": "No signed-in flow, owner isolation, delivery, restore, paid providers, or deployment commit proven. Disabled notifications are recorded, not treated as delivery success."
+}

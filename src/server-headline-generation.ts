@@ -2,7 +2,7 @@ import type { Firestore } from 'firebase-admin/firestore';
 import { effectiveTier } from './app/effective-tier';
 import { businessTypeLabel } from './app/presets';
 import { validHeadline } from './app/site-action';
-import { AI_GENERATION_LIMITS, aiUsageLimits, aiFallbackMessage, reserveAiCall, validAiInput } from './server-ai-budget';
+import { AI_GENERATION_LIMITS, aiUsageLimits, aiFallbackMessage, reserveManagedAiCall, validAiInput } from './server-ai-budget';
 
 export interface HeadlineContext {
   request: string;
@@ -53,7 +53,7 @@ export async function generateHomepageHeadline(
     tone: field(context.profile, 'toneOfVoice'), currentHeadline: context.before.tagline.slice(0, 160), request: context.request,
   })}`;
   if (!validAiInput(prompt, system)) return template;
-  const budget = await reserveAiCall(db, uid, aiUsageLimits(tier, env));
+  const budget = await reserveManagedAiCall(db, uid, aiUsageLimits(tier, env), env);
   if (budget !== 'allowed') return { ...template, reason: `${aiFallbackMessage(budget)} ${template.reason}` };
   try {
     const text = (await provider(key, prompt, system))?.trim().replace(/^(?:headline|title)\s*:\s*/i, '').replace(/^["“]|["”]$/g, '');
