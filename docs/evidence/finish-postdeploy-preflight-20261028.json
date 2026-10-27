@@ -1,0 +1,103 @@
+{
+  "checkedAt": "2026-10-27T18:16:16.168Z",
+  "origin": "https://businessflow-722923667291.us-central1.run.app",
+  "scope": "public GET-only preflight",
+  "checks": [
+    {
+      "path": "/healthz/",
+      "status": "PASS",
+      "detail": "healthy"
+    },
+    {
+      "path": "/",
+      "status": "PASS",
+      "detail": "HTML app shell served; browser interaction requires separate acceptance"
+    },
+    {
+      "path": "/setup",
+      "status": "PASS",
+      "detail": "HTML app shell served; browser interaction requires separate acceptance"
+    },
+    {
+      "path": "/login",
+      "status": "PASS",
+      "detail": "HTML app shell served; browser interaction requires separate acceptance"
+    },
+    {
+      "path": "/pricing",
+      "status": "PASS",
+      "detail": "HTML app shell served; browser interaction requires separate acceptance"
+    },
+    {
+      "path": "/privacy",
+      "status": "PASS",
+      "detail": "HTML app shell served; browser interaction requires separate acceptance"
+    },
+    {
+      "path": "/terms",
+      "status": "PASS",
+      "detail": "HTML app shell served; browser interaction requires separate acceptance"
+    },
+    {
+      "path": "/api/pricing",
+      "status": "PASS",
+      "detail": {
+        "currency": "USD",
+        "pro": 14,
+        "business": 22,
+        "gstInclusive": false
+      }
+    },
+    {
+      "path": "/api/email-alerts/status",
+      "status": "PASS",
+      "detail": {
+        "configured": false,
+        "deliveryTested": false
+      }
+    },
+    {
+      "path": "/api/sms/status",
+      "status": "PASS",
+      "detail": {
+        "configured": false,
+        "deliveryTested": false
+      }
+    },
+    {
+      "path": "/api/bookings?uid=demo-smoke",
+      "status": "PASS",
+      "detail": "unauthenticated owner request rejected"
+    },
+    {
+      "path": "/api/showcases",
+      "status": "PASS",
+      "detail": {
+        "listed": 2,
+        "note": "Zero means no showcase is available for the walkthrough"
+      }
+    },
+    {
+      "path": "/api/site/demo-bay-mobile-mechanics",
+      "status": "PASS",
+      "detail": "listed showcase is published"
+    },
+    {
+      "path": "/api/site/demo-bay-mobile-mechanics/booking",
+      "status": "PASS",
+      "detail": "showcase booking services are available; no request submitted"
+    },
+    {
+      "path": "/api/site/demo-tauranga-lawn-co",
+      "status": "PASS",
+      "detail": "listed showcase is published"
+    },
+    {
+      "path": "/api/site/demo-tauranga-lawn-co/booking",
+      "status": "PASS",
+      "detail": "showcase booking services are available; no request submitted"
+    }
+  ],
+  "result": "PASS",
+  "limitations": "No signed-in flow, owner isolation, delivery, restore, paid providers, or deployment commit proven. Disabled notifications are recorded, not treated as delivery success."
+}

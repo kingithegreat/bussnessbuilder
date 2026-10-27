@@ -18,8 +18,10 @@ Read [the current finishing audit](docs/FINISH_AUDIT_20261028.md). Fresh main
 9459f2c lacked the earlier local-only finishing work. This branch reconciles
 578bb1f and existing PR #45 with the current beta, and fixes custom enquiry
 controls, multi-select and hidden-required validation. All 603 tests, lint and
-the production SSR build pass; public live preflight passes. Deployment and
-signed-in/account acceptance remain open. Workforce checkout fails on its
+the production SSR build pass. PR #48 is merged as 093704795d9022a21ebbb6e0265e3d3f5d4f7265;
+deployment 40557317103 succeeded as revision businessflow-00102-z28. Live
+health reports that exact release, and the postdeploy preflight passes.
+Signed-in/account acceptance remains open. Workforce checkout fails on its
 existing merge credential; do not mark that infrastructure repaired. Preserve
 PR #47's separate tooltip work. No Notion mirror was possible in this session.
 
