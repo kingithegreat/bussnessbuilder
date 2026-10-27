@@ -1,3 +1,5 @@
+import { OwnerApiService } from './owner-api.service';
+import { EnquiryAttachment } from './enquiry-attachments';
 import { Component, effect, inject, signal, PLATFORM_ID } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -160,6 +162,13 @@ import { BookingRequestsComponent } from './booking-requests.component';
                 </div>
               </div>
 
+              @if (enquiry.attachments?.length) {
+                <div class="mb-6 space-y-2"><h3 class="font-semibold text-gray-900">Attachments</h3>
+                  @for (file of enquiry.attachments; track file.id) {
+                    <button type="button" (click)="downloadAttachment(file)" class="block text-sm font-semibold text-blue-700 underline">Download {{ file.name }} ({{ (file.size / 1024).toFixed(0) }} KB)</button>
+                  }
+                </div>
+              }
               @if (enquiry.formData) {
                 <div class="mb-8">
                   <div class="flex items-center justify-between mb-2">
@@ -247,6 +256,11 @@ import { BookingRequestsComponent } from './booking-requests.component';
   `
 })
 export class AdminInboxComponent {
+  private ownerApi = inject(OwnerApiService);
+  async downloadAttachment(file: EnquiryAttachment): Promise<void> {
+    try { await this.ownerApi.download(`/api/attachments/${encodeURIComponent(file.id)}`, file.name); }
+    catch { this.toast.error('Could not download the attachment. Please try again.'); }
+  }
   private dataService = inject(DataService);
   private aiService = inject(AiService);
   private toast = inject(ToastService);

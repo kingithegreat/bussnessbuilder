@@ -1,3 +1,4 @@
+import { OwnerApiService } from './owner-api.service';
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap } from '@angular/router';
@@ -24,6 +25,7 @@ describe('Inbox navigation and attention', () => {
       { provide: ActivatedRoute, useValue: { queryParamMap: params } },
       { provide: DataService, useValue: { enquiries, updateEnquiry, customization: signal({}) } },
       { provide: AiService, useValue: {} },
+      { provide: OwnerApiService, useValue: { download: async () => undefined } },
       { provide: SubscriptionService, useValue: {} },
       { provide: ToastService, useValue: {} },
     ] });

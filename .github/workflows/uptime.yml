@@ -1,0 +1,23 @@
+name: Production uptime
+on:
+  schedule:
+    - cron: '*/30 * * * *'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: businessflow-uptime
+  cancel-in-progress: true
+jobs:
+  uptime:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Check production liveness and public pages
+        env:
+          BASE_URL: https://businessflow-722923667291.us-central1.run.app
+        run: |
+          for path in /healthz/ /pricing /login; do
+            curl --fail --silent --show-error --location --retry 2 --connect-timeout 10 --max-time 30 "$BASE_URL$path" -o /dev/null
+          done
+          echo 'Production responded successfully.' >> "$GITHUB_STEP_SUMMARY"

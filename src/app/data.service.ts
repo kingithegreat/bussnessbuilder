@@ -1,3 +1,4 @@
+import { SiteChangeField } from './site-change';
 import { Injectable, computed, signal, effect, PLATFORM_ID, inject, DestroyRef } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { AppState, BusinessProfile, Enquiry, FAQ, Service, Activity, Testimonial, ContentPage, GrowthReport, NotificationPreferences, PaymentSettings, SavedRecommendation, SiteTemplate, PublicSiteData } from './types';
@@ -21,6 +22,7 @@ export class DataService {
   private ownerSavePaused = signal(false);
   private headlineRecoveryRequired = false;
   private unconfirmedMutation: string | null = null;
+  private recoveryFields: SiteChangeField[] = [];
   private siteActionRunning = false;
   // Server inbox snapshots must never trigger owner-site autosaves in a loop.
   private ownerSite = computed(() => this.serializeSite(this.state()));
@@ -179,7 +181,29 @@ export class DataService {
     }
     this.persistedSite = this.serializeSite(saved);
     this.state.update(current => ({ ...current, profile: { ...current.profile, tagline: saved.profile.tagline } }));
+    if (this.recoveryFields.length) {
+      const fields = this.recoveryFields.map(f => ({ ...f, after: f.target === 'profile'
+        ? String(saved.profile[f.field as 'tagline' | 'description' | 'ctaText'] || '')
+        : saved.services.find(s => s.id === f.serviceId)?.price || '' }));
+      this.adoptChangeFields(fields);
+      const removedIds = this.recoveryFields.filter(f => f.target === 'service' && !saved.services.some(s => s.id === f.serviceId)).map(f => f.serviceId);
+      if (removedIds.length) this.state.update(current => ({ ...current, services: current.services.filter(s => !removedIds.includes(s.id)) }));
+      this.recoveryFields = [];
+    }
     this.headlineRecoveryRequired = false;
+  }
+
+  private adoptChangeFields(fields: SiteChangeField[]): void {
+    const adopt = (state: AppState): AppState => {
+      const profile = { ...state.profile }, services = state.services.filter(s => !fields.some(f => f.target === 'service' && f.serviceId === s.id && f.removed)).map(s => ({ ...s }));
+      for (const f of fields) {
+        if (f.target === 'profile' && f.field !== 'price') profile[f.field] = f.after;
+        else if (f.target === 'service') { const service = services.find(s => s.id === f.serviceId); if (service) service.price = f.after; }
+      }
+      return { ...state, profile, services };
+    };
+    this.persistedSite = this.serializeSite(adopt(JSON.parse(this.persistedSite) as AppState));
+    this.state.update(adopt);
   }
 
   /** Flush owner edits before server actions and adopt their single committed field. */
@@ -187,7 +211,7 @@ export class DataService {
     uid: string,
     task: (savedHeadline: string) => Promise<T>,
     headlineOf: (result: T) => string | null = () => null,
-    options: { mayChangeHeadline?: boolean; operationKey?: string; readOnly?: boolean; isDefiniteRejection?: (error: unknown) => boolean } = {},
+    options: { mayChangeHeadline?: boolean; operationKey?: string; readOnly?: boolean; isDefiniteRejection?: (error: unknown) => boolean; siteFieldsOf?: (result: T) => SiteChangeField[]; fieldsToReconcile?: SiteChangeField[] } = {},
   ): Promise<T> {
     const version = this.sessionVersion;
     const operationKey = options.mayChangeHeadline ? options.operationKey ?? 'unconfirmed-site-action' : null;
@@ -220,12 +244,17 @@ export class DataService {
         this.state.update(current => ({ ...current, profile: { ...current.profile, tagline: headline } }));
         if (operationKey === this.unconfirmedMutation) this.unconfirmedMutation = null;
       }
+      if (options.siteFieldsOf) {
+        this.adoptChangeFields(options.siteFieldsOf(result));
+        if (operationKey === this.unconfirmedMutation) this.unconfirmedMutation = null;
+      }
       return result;
     } catch (error) {
       if (taskStarted && options.mayChangeHeadline && this.isOwnerSession(uid, version)) {
         if (!this.unconfirmedMutation && options.isDefiniteRejection?.(error)) {
           // A response rejecting the initial request proves it has finished.
           this.headlineRecoveryRequired = true;
+          this.recoveryFields = options.fieldsToReconcile || [];
           try {
             await this.reconcileHeadline(uid, version);
           } catch {
@@ -263,6 +292,7 @@ export class DataService {
     this.persistedSite = '';
     this.headlineRecoveryRequired = false;
     this.unconfirmedMutation = null;
+    this.recoveryFields = [];
     this.siteActionRunning = false;
     this.ownerSavePaused.set(false);
     this.state.set(defaultState);

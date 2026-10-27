@@ -9,8 +9,8 @@ function database(tier = 'pro', status = 'active', count = 0) {
   const db = {
     doc: (path: string) => ({ path, get: async () => ({ data: () => ({ tier, status }) }) }),
     runTransaction: async (work: (tx: unknown) => Promise<unknown>) => work({
-      get: async () => ({ data: () => counter }),
-      set: (_ref: unknown, value: typeof counter) => { counter = value; writes(value); },
+      get: async (ref: { path: string }) => ({ data: () => ref.path.startsWith('serverAiUsage/') ? counter : undefined }),
+      set: (ref: { path: string }, value: typeof counter) => { if (ref.path.startsWith('serverAiUsage/')) { counter = value; writes(value); } },
     }),
   } as unknown as Pick<Firestore, 'doc' | 'runTransaction'>;
   return { db, writes };

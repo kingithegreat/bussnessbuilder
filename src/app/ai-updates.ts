@@ -8,7 +8,7 @@ export type NzSeason = 'summer' | 'autumn' | 'winter' | 'spring';
 
 /** Southern-hemisphere season for a date (NZ). */
 export function nzSeason(d: Date): NzSeason {
-  const m = d.getMonth() + 1;
+  const m = Number(new Intl.DateTimeFormat('en-NZ', { timeZone: 'Pacific/Auckland', month: 'numeric' }).format(d));
   return m === 12 || m <= 2 ? 'summer' : m <= 5 ? 'autumn' : m <= 8 ? 'winter' : 'spring';
 }
 
@@ -39,9 +39,9 @@ export function parsePostResponse(text: string | null | undefined): PostDraft | 
 
 const SEASON_LINES: Record<NzSeason, string> = {
   spring: 'Spring is here: longer days and everything starting to grow. It is the perfect time to get sorted before the summer rush.',
-  summer: 'Summer is the busiest time of year, so it pays to book early and enjoy the sunshine while we do the work.',
+  summer: 'Summer is here. Get in touch to discuss what you need and check our availability.',
   autumn: "Autumn is a great time to tidy up and get ready for the cooler months before winter sets in.",
-  winter: 'Winter is a quieter time of year, which means more flexible bookings and quicker turnaround.',
+  winter: 'Winter is here. Get in touch to discuss your plans for the cooler months.',
 };
 
 export function templateSeasonalPost(p: Partial<BusinessProfile>, services: Service[], season: NzSeason): PostDraft {
@@ -50,7 +50,7 @@ export function templateSeasonalPost(p: Partial<BusinessProfile>, services: Serv
   const list = services.slice(0, 3).map(s => `- **${s.name}**${s.price ? ` from ${s.price}` : ''}`).join('\n');
   return {
     title: `${cap} special at ${name}`,
-    content: `## ${cap} is here\n\n${SEASON_LINES[season]}\n\n${list ? `Popular this ${season}:\n\n${list}\n\n` : ''}**[your offer here]**: get in touch${p.serviceArea ? ` if you're in ${p.serviceArea}` : ''} and we'll make it happen.\n\nSend us an enquiry or call${p.phone ? ` ${p.phone}` : ''} to book.`,
+    content: `## ${cap} is here\n\n${SEASON_LINES[season]}\n\n${list ? `Our services this ${season}:\n\n${list}\n\n` : ''}**[your offer here]**: get in touch${p.serviceArea ? ` if you're in ${p.serviceArea}` : ''} and we'll make it happen.\n\nSend us an enquiry or call${p.phone ? ` ${p.phone}` : ''} to book.`,
   };
 }
 

@@ -52,16 +52,19 @@ describe('buildDomainMappingCreateRequest', () => {
       url: string;
       body: { metadata: { name: string; namespace: string }; spec: { routeName: string } };
     };
-    expect(url).toBe('https://domains.cloudrun.com/v1/namespaces/proj/domainmappings');
+    expect(url).toBe('https://us-central1-run.googleapis.com/apis/domains.cloudrun.com/v1/namespaces/proj/domainmappings');
     expect(body.metadata).toEqual({ name: 'example.com', namespace: 'proj' });
     expect(body.spec.routeName).toBe('businessflow');
+    expect(body).not.toHaveProperty('_region');
+    expect(buildDomainMappingCreateRequest('proj', 'asia-east1', 'businessflow', 'example.com').url).toContain('https://asia-east1-run.googleapis.com/');
   });
 });
 
 describe('buildDomainMappingGetRequest', () => {
   it('builds the get URL for a specific domain', () => {
+    expect(buildDomainMappingGetRequest('proj', 'www.example.com', 'asia-east1').url).toContain('https://asia-east1-run.googleapis.com/');
     expect(buildDomainMappingGetRequest('proj', 'example.com')).toEqual({
-      url: 'https://domains.cloudrun.com/v1/namespaces/proj/domainmappings/example.com',
+      url: 'https://us-central1-run.googleapis.com/apis/domains.cloudrun.com/v1/namespaces/proj/domainmappings/example.com',
     });
   });
 });

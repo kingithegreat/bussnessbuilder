@@ -417,6 +417,24 @@ describe('DataService server action save coordination', () => {
     expect(db.saveBusinessData.mock.calls[0][1].profile).toMatchObject({ tagline: 'Server edit', description: 'Retained local edit' });
   });
 
+  it('adopts approved About text without an old autosave overwriting it', async () => {
+    await service.runSiteAction('owner-a', async () => ({ fields: [{ target: 'profile' as const, field: 'description' as const, before: stored.profile.description, after: 'Approved About' }] }), () => null,
+      { mayChangeHeadline: true, operationKey: 'about:approve', siteFieldsOf: r => r.fields });
+    expect(service.profile().description).toBe('Approved About');
+    service.updateProfile({ name: 'Keep another edit' }); TestBed.tick();
+    await vi.advanceTimersByTimeAsync(2000);
+    expect(db.saveBusinessData.mock.calls[0][1].profile).toMatchObject({ description: 'Approved About', name: 'Keep another edit' });
+  });
+
+  it('reconciles changed About text after a rejected stale proposal before resuming saves', async () => {
+    db.loadBusinessData.mockResolvedValue({ ...stored, profile: { ...stored.profile, description: 'Edited on another device' } });
+    await expect(service.runSiteAction('owner-a', async () => { throw new Error('conflict'); }, () => null,
+      { mayChangeHeadline: true, isDefiniteRejection: () => true, fieldsToReconcile: [{ target: 'profile', field: 'description', before: '', after: 'Stale draft' }] })).rejects.toThrow('conflict');
+    expect(service.profile().description).toBe('Edited on another device');
+    service.updateProfile({ name: 'Next edit' }); TestBed.tick(); await vi.advanceTimersByTimeAsync(2000);
+    expect(db.saveBusinessData.mock.calls[0][1].profile.description).toBe('Edited on another device');
+  });
+
   it('ignores an action response belonging to a previous account', async () => {
     let finish!: (headline: string) => void;
     const oldAction = service.runSiteAction('owner-a', () => new Promise<string>(resolve => { finish = resolve; }), headline => headline);

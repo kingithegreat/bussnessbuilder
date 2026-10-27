@@ -1,5 +1,9 @@
 # Production Readiness Checklist — BusinessFlow Studio
 
+**18 October 2026:** see [the current finishing record](docs/RELEASE_FINISHING.md).
+Dated audit entries below are historical. Account/live acceptance is not implied
+by a checked-in implementation.
+
 ## Infrastructure
 
 - [x] Deployed on Google Cloud Run (us-central1)
@@ -8,7 +12,7 @@
 - [x] `NG_ALLOWED_HOSTS=*` configured
 - [x] `trustProxyHeaders: true` for Cloud Run reverse proxy
 - [ ] Custom domain mapping (manual via `gcloud run domain-mappings create`)
-- [ ] Uptime monitoring (e.g. Cloud Monitoring, UptimeRobot)
+- [x] Scheduled public uptime checks in GitHub Actions (`uptime.yml`); owner GitHub notification preferences determine delivery
 
 ## Authentication & Authorization
 
@@ -70,7 +74,7 @@
 - [x] Client-side fallback to template-only for free tier
 - [x] Atomic per-user daily/monthly allowances across all server AI routes (Pro 20/200, Business 60/600)
 - [x] Server input cap, output token cap and disabled extra thinking; BYOK shares output/thinking caps
-- [ ] Account-wide monetary budget/kill switch; actual bills and margins need measurement (see `docs/COST_CONTROLS.md`)
+- [x] Shared platform USD reservation envelope and kill switches, atomically combined with user quotas; actual provider bills/margins still require measurement (see `docs/RELEASE_FINISHING.md`)
 
 ## CI/CD
 
@@ -89,8 +93,10 @@
 - [x] Opening a lead preserves its status; Home links select new/due leads
 - [x] First typed chat action: homepage headline proposal, before/after review,
   explicit approval, saved history and stale-safe undo; conventional editors remain available
-- [ ] Full chat action engine with typed actions, previews, approval, history and rollback
-- [ ] Closed-loop measurement connecting changes to actual business outcomes
+- [x] Extend typed approval/history/rollback from headline to About/button copy and service prices
+- [ ] Extend the full V2 action vocabulary (FAQ/pages/external follow-ups and remaining tools)
+- [x] Observed seven-day before/after views, enquiries and booking requests for reviewed copy/price changes
+- [ ] Controlled attribution/experiments and measurement for all remaining action kinds
 - [ ] Signed-in end-to-end acceptance and visual browser review of the final release (component behavior has automated coverage; browser launch was blocked by automatic approval review)
 
 ## Legal & Compliance
@@ -108,7 +114,8 @@
 - [x] Structured console.error/console.warn logging on all endpoints
 - [x] Admin metrics dashboard with user/enquiry/revenue analytics
 - [x] Metrics endpoint cached (30s TTL) to reduce Firestore reads
-- [ ] Add Sentry or Cloud Error Reporting for structured alerting
+- [x] Sentry integration exists on server/browser
+- [ ] Confirm a configured Sentry destination receives an actual test exception
 - [ ] Add Cloud Run request logging to BigQuery for analytics
 
 ## Performance

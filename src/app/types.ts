@@ -36,6 +36,7 @@ export interface Service {
 }
 
 export interface Enquiry {
+  attachments?: import('./enquiry-attachments').EnquiryAttachment[];
   id: string;
   date: string;
   name: string;
@@ -334,6 +335,8 @@ export interface PaymentSettings {
 
 export interface PublicSiteData {
   profile: BusinessProfile;
+  /** Server-owned marker for seeded, fictional shared demonstration businesses. */
+  showcase?: boolean;
   services?: Service[];
   testimonials?: Testimonial[];
   faqs?: FAQ[];

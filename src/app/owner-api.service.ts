@@ -27,6 +27,14 @@ export class OwnerApiService {
     return firstValueFrom(this.http.request<T>(method, path, { body: { uid: this.uid(), ...body }, headers: await this.headers() }));
   }
 
+  async download(path: string, filename: string): Promise<void> {
+    const q = new URLSearchParams({ uid: this.uid() });
+    const blob = await firstValueFrom(this.http.get(`${path}?${q}`, { headers: await this.headers(), responseType: 'blob' }));
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a'); link.href = url; link.download = filename; link.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
   /** Best-effort readable error message from an HttpErrorResponse. */
   static message(e: unknown, fallback = 'Something went wrong. Please try again.'): string {
     const err = (e as { error?: { error?: string } })?.error?.error;

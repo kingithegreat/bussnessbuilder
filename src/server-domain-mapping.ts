@@ -15,11 +15,9 @@
  * mock payloads. `getAccessToken` and the four `fetch`-calling functions are
  * the only impure pieces, kept thin so the decision logic stays testable.
  *
- * NOTE ON UNTESTED SURFACE: the exact Domain Mappings request/response shape
- * below follows Google's documented `DomainMapping` (Knative-style) resource,
- * but this integration has not been exercised against a live GCP project (no
- * production credentials were available while writing it). Re-confirm the
- * wire format against current Cloud Run API docs before the first live use.
+ * Endpoint and request shape checked against the Cloud Run v1 DomainMapping
+ * reference on 2026-10-18. Owner-controlled DNS and certificate provisioning
+ * still require a live acceptance test; pure tests do not prove that setup.
  */
 
 export type GcpDnsRecordType = 'TXT' | 'CNAME' | 'A' | 'AAAA';
@@ -62,7 +60,12 @@ export interface DomainMappingState {
 
 const DEFAULT_TTL = 3600;
 const SITE_VERIFICATION_API = 'https://www.googleapis.com/siteVerification/v1';
-const DOMAINS_API = 'https://domains.cloudrun.com/v1';
+// Mutations require the locational Cloud Run endpoint; domains.cloudrun.com is
+// the API namespace in the path, not a standalone HTTPS API host.
+function domainsApi(region: string): string {
+  if (!/^[a-z]+-[a-z]+[0-9]+$/.test(region)) throw new Error('Invalid Cloud Run region');
+  return `https://${region}-run.googleapis.com/apis/domains.cloudrun.com/v1`;
+}
 
 export const GCP_PROJECT_ID = process.env['GCP_PROJECT_ID'] || 'sitebuilder-b2ee6';
 export const GCP_REGION = process.env['GCP_REGION'] || 'us-central1';
@@ -106,21 +109,18 @@ export function buildDomainMappingCreateRequest(
   domain: string,
 ): { url: string; body: unknown } {
   return {
-    url: `${DOMAINS_API}/namespaces/${projectId}/domainmappings`,
+    url: `${domainsApi(region)}/namespaces/${encodeURIComponent(projectId)}/domainmappings`,
     body: {
       apiVersion: 'domains.cloudrun.com/v1',
       kind: 'DomainMapping',
       metadata: { name: domain, namespace: projectId },
       spec: { routeName: service, certificateMode: 'AUTOMATIC' },
-      // region is carried for documentation/future use; the domains.cloudrun.com
-      // v1 API infers the target region from the route/service, not this field.
-      _region: region,
     },
   };
 }
 
-export function buildDomainMappingGetRequest(projectId: string, domain: string): { url: string } {
-  return { url: `${DOMAINS_API}/namespaces/${projectId}/domainmappings/${domain}` };
+export function buildDomainMappingGetRequest(projectId: string, domain: string, region = GCP_REGION): { url: string } {
+  return { url: `${domainsApi(region)}/namespaces/${encodeURIComponent(projectId)}/domainmappings/${encodeURIComponent(domain)}` };
 }
 
 interface DomainMappingCondition {
@@ -215,6 +215,7 @@ async function gcpFetch(
   const token = await getAccessToken();
   const res = await fetchImpl(url, {
     method: init.method,
+    signal: AbortSignal.timeout(20_000),
     headers: {
       Authorization: `Bearer ${token}`,
       'Content-Type': 'application/json',

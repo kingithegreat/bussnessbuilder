@@ -1,0 +1,47 @@
+[
+  {
+    "path": "/healthz/",
+    "status": 200,
+    "expected": 200
+  },
+  {
+    "path": "/",
+    "status": 200,
+    "expected": 200
+  },
+  {
+    "path": "/setup",
+    "status": 200,
+    "expected": 200
+  },
+  {
+    "path": "/pricing",
+    "status": 200,
+    "expected": 200
+  },
+  {
+    "path": "/login",
+    "status": 200,
+    "expected": 200
+  },
+  {
+    "path": "/privacy",
+    "status": 200,
+    "expected": 200
+  },
+  {
+    "path": "/api/changes?uid=owner-test",
+    "status": 401,
+    "expected": 401
+  },
+  {
+    "path": "/api/attachments/00000000-0000-0000-0000-000000000000?uid=owner-test",
+    "status": 401,
+    "expected": 401
+  },
+  {
+    "path": "/api/bookings?uid=owner-test",
+    "status": 401,
+    "expected": 401
+  }
+]
