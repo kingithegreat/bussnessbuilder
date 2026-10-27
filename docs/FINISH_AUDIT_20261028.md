@@ -25,3 +25,11 @@ The Workforce auto-merge job fails during checkout, before tests: run 4051024930
 Before claiming production complete: reconcile this branch through review/CI and the existing deployment; inspect exact release/rules receipt; exercise signed-in publish/relogin, enquiry and booking accept/decline, two-owner isolation, restore and mobile. Owner setup/acceptance remains for live Stripe/webhooks, email/SMS delivery, domain DNS/HTTPS and any paid AI. No charge, provider generation or account provisioning was performed.
 
 The wider V2 scope in RELEASE_FINISHING.md remains explicitly separate from this release. This is tested source, not a claim that all possible future features or owner integrations are finished.
+
+## Published beta receipt
+
+PR #48 merged as `093704795d9022a21ebbb6e0265e3d3f5d4f7265`. Tested, remote and merged trees are exactly `e7af8f5f5579eb203945c36f752b6781bd2de5c9`. Main deployment [40557317103](https://github.com/kingithegreat/bussnessbuilder/actions/runs/40557317103) passed its fresh lint/test/SSR build and deployment jobs. Ready revision: `businessflow-00102-z28`. Direct live health returned 200 with this exact release SHA. The postdeploy GET-only preflight also passed, including both showcases and booking availability. See `docs/evidence/finish-postdeploy-preflight-20261028.json`.
+
+The `production-readiness` Actions artifact 12758008222 verifies live release, public routes and the regional domain-mapping API. It reports Stripe configured but untested; NZD price configuration, email, SMS and Sentry need owner setup. Firestore/Storage rules inspection and domain-verification API access returned HTTP 403 to the deployment identity. Those are unverified access gates, not deployed-rule matches. These results do not accept a real payment, owner isolation, delivery or custom-domain HTTPS.
+
+PR #45 was closed as superseded only after a merge-tree check proved all its changes are present in main; its branch is retained. The workforce credential is still broken; PR #48 was integrated through GitHub after its exact-head `verify` check passed. This documentation receipt does not change the deployed runtime or trigger another deployment.
