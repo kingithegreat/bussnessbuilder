@@ -7,6 +7,11 @@ const LONG_PRESS_MS = 450;
 const TOUCH_HIDE_MS = 2500;
 const GAP = 8;
 const EDGE = 8;
+/** Hover show delay (NN/g, Material 3: ~300–500 ms) so sweeping the pointer
+ *  across a toolbar doesn't flash a tip on every control. Focus is instant. */
+const HOVER_DELAY_MS = 400;
+/** Only one tooltip on screen at a time (Material 3). */
+let activeTip: TooltipDirective | null = null;
 
 /**
  * Accessible hover/focus/long-press tooltip for every button and link.
@@ -38,6 +43,7 @@ export class TooltipDirective implements AfterViewInit, OnDestroy {
   private readonly id = `bf-tip-${++nextId}`;
   private pressTimer: ReturnType<typeof setTimeout> | null = null;
   private hideTimer: ReturnType<typeof setTimeout> | null = null;
+  private hoverTimer: ReturnType<typeof setTimeout> | null = null;
   private titleText: string | null = null;
   private readonly cleanups: (() => void)[] = [];
 
@@ -51,7 +57,10 @@ export class TooltipDirective implements AfterViewInit, OnDestroy {
       el.addEventListener(type, fn, opts);
       this.cleanups.push(() => el.removeEventListener(type, fn, opts));
     };
-    on('mouseenter', () => this.show());
+    on('mouseenter', () => {
+      this.clearHover();
+      this.hoverTimer = setTimeout(() => this.show(), HOVER_DELAY_MS);
+    });
     on('mouseleave', () => this.hide());
     on('focusin', () => this.show());
     on('focusout', () => this.hide());
@@ -94,6 +103,8 @@ export class TooltipDirective implements AfterViewInit, OnDestroy {
   show(autoHideMs?: number): void {
     if (!this.browser || !this.refresh() || !this.tipEl) return;
     if (this.hideTimer) { clearTimeout(this.hideTimer); this.hideTimer = null; }
+    if (activeTip && activeTip !== this) activeTip.hide();
+    activeTip = this;
     const tip = this.tipEl;
     tip.hidden = false;
     tip.classList.remove('bf-tip--below');
@@ -104,9 +115,15 @@ export class TooltipDirective implements AfterViewInit, OnDestroy {
 
   hide(): void {
     this.clearPress();
+    this.clearHover();
+    if (activeTip === this) activeTip = null;
     if (!this.tipEl) return;
     this.tipEl.classList.remove('bf-tip--visible');
     this.tipEl.hidden = true;
+  }
+
+  private clearHover(): void {
+    if (this.hoverTimer) { clearTimeout(this.hoverTimer); this.hoverTimer = null; }
   }
 
   private position(): void {
@@ -139,6 +156,8 @@ export class TooltipDirective implements AfterViewInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.clearPress();
+    this.clearHover();
+    if (activeTip === this) activeTip = null;
     if (this.hideTimer) clearTimeout(this.hideTimer);
     this.cleanups.forEach(fn => fn());
     this.tipEl?.remove();

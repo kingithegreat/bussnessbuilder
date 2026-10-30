@@ -11,7 +11,17 @@ html, body {
   margin: 0;
   font-family: var(--font-sans);
   background-color: #f9fafb;
+  color-scheme: light;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
+
+/* 2025–26 polish: balanced headings and no orphaned last words in copy. */
+:where(h1, h2, h3) { text-wrap: balance; }
+:where(p, li, figcaption) { text-wrap: pretty; }
+/* Prices, counts and dates line up in tables and stat tiles. */
+:where(table, [data-numeric]) { font-variant-numeric: tabular-nums; }
 
 /* Accessibility: a visible keyboard focus ring everywhere. Unlayered, so it
    wins over Tailwind's layered `outline-none` utilities; :focus-visible keeps
@@ -36,7 +46,7 @@ html, body {
 .bf-tip {
   position: fixed;
   z-index: 10000;
-  max-width: min(18rem, calc(100vw - 16px));
+  max-width: min(16rem, calc(100vw - 16px));
   padding: 0.4rem 0.6rem;
   border-radius: 0.5rem;
   background: #111827;

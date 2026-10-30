@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import { Component } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { TooltipDirective } from './tooltip.directive';
@@ -66,7 +67,11 @@ describe('TooltipDirective', () => {
   it('shows on hover and keyboard focus, hides on leave, blur and Escape', () => {
     const btn = root.querySelector<HTMLButtonElement>('#save')!;
     const tip = tipFor('#save')!;
+    vi.useFakeTimers();
     btn.dispatchEvent(new MouseEvent('mouseenter'));
+    expect(tip.hidden).toBe(true); // hover waits ~400 ms so a passing pointer doesn't flash tips
+    vi.advanceTimersByTime(450);
+    vi.useRealTimers();
     expect(tip.hidden).toBe(false);
     expect(tip.classList).toContain('bf-tip--visible');
     btn.dispatchEvent(new MouseEvent('mouseleave'));
@@ -95,10 +100,28 @@ describe('TooltipDirective', () => {
 
   it('never intercepts clicks and stays inside the viewport', () => {
     const btn = root.querySelector<HTMLButtonElement>('#save')!;
-    btn.dispatchEvent(new MouseEvent('mouseenter'));
+    btn.dispatchEvent(new FocusEvent('focusin'));
     const tip = tipFor('#save')!;
     expect(getComputedStyle(tip).pointerEvents === 'none' || tip.className.includes('bf-tip')).toBe(true);
     expect(parseInt(tip.style.left, 10)).toBeGreaterThanOrEqual(8);
     expect(parseInt(tip.style.top, 10)).toBeGreaterThanOrEqual(0);
+  });
+
+  it('shows only one tooltip at a time', () => {
+    root.querySelector('#save')!.dispatchEvent(new FocusEvent('focusin'));
+    root.querySelector('#explicit')!.dispatchEvent(new FocusEvent('focusin'));
+    expect(tipFor('#save')!.hidden).toBe(true);
+    expect(tipFor('#explicit')!.hidden).toBe(false);
+  });
+
+  it('cancels a pending hover tip when the pointer leaves early', () => {
+    vi.useFakeTimers();
+    const btn = root.querySelector('#save')!;
+    btn.dispatchEvent(new MouseEvent('mouseenter'));
+    vi.advanceTimersByTime(200);
+    btn.dispatchEvent(new MouseEvent('mouseleave'));
+    vi.advanceTimersByTime(500);
+    vi.useRealTimers();
+    expect(tipFor('#save')!.hidden).toBe(true);
   });
 });
