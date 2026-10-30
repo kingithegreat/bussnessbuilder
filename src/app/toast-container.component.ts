@@ -1,16 +1,18 @@
+import { TooltipDirective } from './tooltip.directive';
 import { Component, inject } from '@angular/core';
 import { ToastService } from './toast.service';
 
 @Component({
   selector: 'app-toast-container',
   standalone: true,
+  imports: [TooltipDirective],
   template: `
     <div class="fixed bottom-4 right-4 z-[9999] flex flex-col gap-2 pointer-events-none">
       @for (toast of toastService.toasts(); track toast.id) {
         <div class="pointer-events-auto flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg text-sm font-medium animate-slide-in max-w-sm"
              [class]="toast.type === 'error' ? 'bg-red-600 text-white' : toast.type === 'info' ? 'bg-gray-800 text-white' : 'bg-green-600 text-white'">
           <span class="flex-1">{{ toast.message }}</span>
-          <button (click)="toastService.dismiss(toast.id)" class="text-white/70 hover:text-white transition-colors shrink-0">&times;</button>
+          <button bfTip="Closes this notification." aria-label="Dismiss notification" (click)="toastService.dismiss(toast.id)" class="text-white/70 hover:text-white transition-colors shrink-0">&times;</button>
         </div>
       }
     </div>

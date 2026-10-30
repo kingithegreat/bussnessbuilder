@@ -1,3 +1,4 @@
+import { TooltipDirective } from './tooltip.directive';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -10,7 +11,7 @@ import { SiteAction } from './site-action';
 @Component({
   selector: 'app-headline-chat',
   standalone: true,
-  imports: [DatePipe, FormsModule, RouterLink],
+  imports: [TooltipDirective, DatePipe, FormsModule, RouterLink],
   template: `
     <section class="rounded-2xl border border-gray-200 bg-white p-5 md:p-6" aria-labelledby="headline-chat-title" [attr.aria-busy]="actions.busy()">
       <div class="flex flex-wrap items-start justify-between gap-3">

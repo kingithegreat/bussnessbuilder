@@ -1,3 +1,4 @@
+import { TooltipDirective } from './tooltip.directive';
 import { Component, inject, signal, OnInit, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
@@ -14,7 +15,7 @@ import { isAuthErrorCode } from './funnel';
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [ReactiveFormsModule, MatIconModule, RouterLink],
+  imports: [TooltipDirective, ReactiveFormsModule, MatIconModule, RouterLink],
   template: `
     <div class="min-h-screen bg-[#F5F5F7] flex flex-col items-center justify-center px-4 font-sans">
       <div class="w-full max-w-md">

@@ -1,3 +1,4 @@
+import { TooltipDirective } from './tooltip.directive';
 import { Component, inject, input, signal, computed, OnInit, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
@@ -11,7 +12,7 @@ interface Availability { enabled: boolean; timezone?: string; services?: Bookabl
 @Component({
   selector: 'app-booking-widget',
   standalone: true,
-  imports: [FormsModule],
+  imports: [TooltipDirective, FormsModule],
   template: `
     @if (info()?.enabled) {
       <section id="book" class="py-16 md:py-20" aria-labelledby="book-title">
@@ -51,7 +52,7 @@ interface Availability { enabled: boolean; timezone?: string; services?: Bookabl
                 } @else {
                   <div class="flex flex-wrap gap-2">
                     @for (s of slots(); track s.start) {
-                      <button type="button" (click)="chosen.set(s.start)" [attr.aria-pressed]="chosen() === s.start"
+                      <button bfTip="Picks this time for your booking request." type="button" (click)="chosen.set(s.start)" [attr.aria-pressed]="chosen() === s.start"
                         class="px-3 py-2 rounded-lg text-sm font-semibold border"
                         [class.bg-blue-600]="chosen() === s.start" [class.text-white]="chosen() === s.start" [class.border-blue-600]="chosen() === s.start"
                         [class.bg-white]="chosen() !== s.start" [class.text-gray-900]="chosen() !== s.start" [class.border-gray-300]="chosen() !== s.start">{{ time(s.start) }}</button>

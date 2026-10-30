@@ -11,7 +11,17 @@ html, body {
   margin: 0;
   font-family: var(--font-sans);
   background-color: #f9fafb;
+  color-scheme: light;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
+
+/* 2025–26 polish: balanced headings and no orphaned last words in copy. */
+:where(h1, h2, h3) { text-wrap: balance; }
+:where(p, li, figcaption) { text-wrap: pretty; }
+/* Prices, counts and dates line up in tables and stat tiles. */
+:where(table, [data-numeric]) { font-variant-numeric: tabular-nums; }
 
 /* Accessibility: a visible keyboard focus ring everywhere. Unlayered, so it
    wins over Tailwind's layered `outline-none` utilities; :focus-visible keeps
@@ -29,4 +39,47 @@ html, body {
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+}
+
+/* ── Tooltips (see src/app/tooltip.directive.ts) ───────────────────────────
+   Fixed-position, never intercepts clicks, honours reduced motion. */
+.bf-tip {
+  position: fixed;
+  z-index: 10000;
+  max-width: min(16rem, calc(100vw - 16px));
+  padding: 0.4rem 0.6rem;
+  border-radius: 0.5rem;
+  background: #111827;
+  color: #fff;
+  font: 500 0.75rem/1.35 var(--font-sans);
+  text-align: left;
+  white-space: normal;
+  box-shadow: 0 6px 20px rgba(17, 24, 39, 0.25);
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(2px);
+  transition: opacity 120ms ease-out, transform 120ms ease-out;
+}
+.bf-tip--below { transform: translateY(-2px); }
+.bf-tip--visible { opacity: 1; transform: none; }
+.bf-tip[hidden] { display: none; }
+
+/* Subtle, consistent hover feedback for every control that lacks its own. */
+:where(button, a[href], [role="button"]) {
+  transition-property: color, background-color, border-color, box-shadow, opacity, transform;
+  transition-duration: 150ms;
+  transition-timing-function: ease-out;
+}
+:where(button:not(:disabled), [role="button"]):hover {
+  box-shadow: 0 1px 2px rgba(17, 24, 39, 0.06), 0 2px 6px rgba(17, 24, 39, 0.08);
+}
+:where(a[href]):hover { text-underline-offset: 3px; }
+/* Clickable cards (links/buttons that are block containers) lift slightly. */
+:where(a[href].block, a[href].rounded-xl, a[href].rounded-2xl, button.rounded-xl.text-left, button.rounded-2xl.text-left):hover {
+  box-shadow: 0 4px 14px rgba(17, 24, 39, 0.10);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bf-tip, .bf-tip--below, .bf-tip--visible { transition: none; transform: none; }
+  :where(button, a[href], [role="button"]) { transition: none; }
 }

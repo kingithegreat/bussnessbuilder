@@ -1,3 +1,4 @@
+import { TooltipDirective } from './tooltip.directive';
 import { ReviewModerationComponent } from './review-moderation.component';
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
@@ -22,7 +23,7 @@ type Tab = 'services' | 'testimonials' | 'faqs';
 @Component({
   selector: 'app-admin-content',
   standalone: true,
-  imports: [FormsModule, MatIconModule, NgTemplateOutlet, ImagePickerComponent, RouterLink, ReviewModerationComponent],
+  imports: [TooltipDirective, FormsModule, MatIconModule, NgTemplateOutlet, ImagePickerComponent, RouterLink, ReviewModerationComponent],
   template: `
     <div class="max-w-3xl mx-auto">
       <div class="flex items-start justify-between mb-6">
@@ -50,7 +51,7 @@ type Tab = 'services' | 'testimonials' | 'faqs';
       <!-- Tabs -->
       <div class="flex gap-1 bg-gray-100 p-1 rounded-xl mb-6 w-fit">
         @for (t of tabs; track t.id) {
-          <button (click)="tab = t.id"
+          <button [bfTip]="'Shows your ' + t.label.toLowerCase() + ' so you can add, edit or reorder them.'" (click)="tab = t.id"
                   class="px-4 py-2 rounded-lg text-sm font-bold transition-colors flex items-center gap-1.5"
                   [class]="tab === t.id ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'">
             <mat-icon class="text-[18px]">{{ t.icon }}</mat-icon> {{ t.label }}

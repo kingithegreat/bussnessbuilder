@@ -1,3 +1,4 @@
+import { TooltipDirective } from './tooltip.directive';
 import { Component, inject, signal, OnInit, PLATFORM_ID, REQUEST_CONTEXT, TransferState } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { isPlatformBrowser } from '@angular/common';
@@ -15,7 +16,7 @@ import { currentHostSiteUid } from './host-site';
 @Component({
   selector: 'app-site-view',
   standalone: true,
-  imports: [PublicPageComponent, MatIconModule, RouterLink],
+  imports: [TooltipDirective, PublicPageComponent, MatIconModule, RouterLink],
   template: `
     @if (loading()) {
       <div class="min-h-screen bg-[#F5F5F7] flex items-center justify-center">

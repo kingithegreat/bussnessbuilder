@@ -1,10 +1,11 @@
+import { TooltipDirective } from './tooltip.directive';
 import { Component, signal, afterNextRender } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 @Component({
   selector: 'app-cookie-consent',
   standalone: true,
-  imports: [RouterLink],
+  imports: [TooltipDirective, RouterLink],
   template: `
     @if (visible()) {
       <!-- pointer-events-none on the shell so the banner never blocks the form

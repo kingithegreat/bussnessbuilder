@@ -1,3 +1,4 @@
+import { TooltipDirective } from './tooltip.directive';
 import { Component, inject, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
@@ -8,7 +9,7 @@ import { PaymentSettings } from './types';
 @Component({
   selector: 'app-admin-payments',
   standalone: true,
-  imports: [FormsModule, MatIconModule],
+  imports: [TooltipDirective, FormsModule, MatIconModule],
   template: `
     <div class="max-w-3xl mx-auto space-y-6 pb-12">
       <div class="flex items-start justify-between">

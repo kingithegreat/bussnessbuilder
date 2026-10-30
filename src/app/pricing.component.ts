@@ -1,3 +1,4 @@
+import { TooltipDirective } from './tooltip.directive';
 import { Component, inject, signal, OnInit, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
@@ -9,7 +10,7 @@ import { ToastService } from './toast.service';
 @Component({
   selector: 'app-pricing',
   standalone: true,
-  imports: [RouterLink, MatIconModule],
+  imports: [TooltipDirective, RouterLink, MatIconModule],
   template: `
     <div class="min-h-screen bg-[#F5F5F7] font-sans text-gray-900">
       <header class="sticky top-0 z-50 bg-[#F5F5F7]/80 backdrop-blur-xl border-b border-gray-200/40">

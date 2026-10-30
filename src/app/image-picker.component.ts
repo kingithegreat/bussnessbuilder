@@ -1,3 +1,4 @@
+import { TooltipDirective } from './tooltip.directive';
 import { Component, inject, input, output, signal, computed } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
 import { StorageService } from './storage.service';
@@ -8,7 +9,7 @@ import { ImageSection, getStockImages } from './stock-images';
 @Component({
   selector: 'app-image-picker',
   standalone: true,
-  imports: [MatIconModule],
+  imports: [TooltipDirective, MatIconModule],
   template: `
     <div class="space-y-3">
       <div class="block text-[10px] font-bold text-gray-500 uppercase tracking-wider">{{ label() }}</div>
@@ -62,7 +63,7 @@ import { ImageSection, getStockImages } from './stock-images';
               @if (activeTab() === 'stock') {
                 <div class="grid grid-cols-2 gap-3">
                   @for (img of stockImages(); track img.url) {
-                    <button (click)="selectImage(img.url)" class="group relative rounded-xl overflow-hidden border-2 border-transparent hover:border-blue-500 transition-colors aspect-[4/3]">
+                    <button bfTip="Selects this photo. Press Use This Image to put it on your site." (click)="selectImage(img.url)" class="group relative rounded-xl overflow-hidden border-2 border-transparent hover:border-blue-500 transition-colors aspect-[4/3]">
                       <img [src]="img.url" [alt]="img.alt" class="w-full h-full object-cover" referrerpolicy="no-referrer" loading="lazy">
                       <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-2 opacity-0 group-hover:opacity-100 transition-opacity">
                         <p class="text-white text-[10px] font-medium truncate">Photo by {{ img.credit }}</p>

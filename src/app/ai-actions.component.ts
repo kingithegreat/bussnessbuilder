@@ -1,3 +1,4 @@
+import { TooltipDirective } from './tooltip.directive';
 import { AuthService } from './auth.service';
 import { changeIntent } from './change-intent';
 import { SiteChangesService } from './site-changes.service';
@@ -21,7 +22,7 @@ type Mode = 'post' | 'prices' | 'about' | null;
 @Component({
   selector: 'app-ai-actions',
   standalone: true,
-  imports: [FormsModule, RouterLink, SiteChangeHistoryComponent],
+  imports: [TooltipDirective, FormsModule, RouterLink, SiteChangeHistoryComponent],
   template: `
     <section class="bg-white border border-gray-200 rounded-2xl p-5" aria-labelledby="ai-actions-title">
       <h2 id="ai-actions-title" class="text-lg font-semibold text-gray-900">Quick updates with AI</h2>

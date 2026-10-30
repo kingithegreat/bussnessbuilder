@@ -1,3 +1,4 @@
+import { TooltipDirective } from './tooltip.directive';
 import { Component, inject, signal, computed, OnInit } from '@angular/core';
 import { RouterOutlet, RouterLink, RouterLinkActive, Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
@@ -20,7 +21,7 @@ export const OUTCOME_NAVIGATION = [
 @Component({
   selector: 'app-admin-layout',
   standalone: true,
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, MatIconModule],
+  imports: [TooltipDirective, RouterOutlet, RouterLink, RouterLinkActive, MatIconModule],
   styles: [`
     @media (min-width: 768px) {
       .admin-sidebar {

@@ -1,3 +1,4 @@
+import { TooltipDirective } from './tooltip.directive';
 import { normalizeMobile } from './sms-rules';
 import { SITE_CURRENCIES, displayPrice } from './money';
 import { Component, inject, OnInit, signal } from '@angular/core';
@@ -23,7 +24,7 @@ import { DatePipe } from '@angular/common';
 @Component({
   selector: 'app-admin-settings',
   standalone: true,
-  imports: [FormsModule, MatIconModule, RouterLink, DatePipe],
+  imports: [TooltipDirective, FormsModule, MatIconModule, RouterLink, DatePipe],
   template: `
     <div class="max-w-3xl mx-auto space-y-6 pb-12">
       <div>
