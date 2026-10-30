@@ -104,6 +104,8 @@ export class TooltipDirective implements AfterViewInit, OnDestroy {
     if (!this.browser || !this.refresh() || !this.tipEl) return;
     if (this.hideTimer) { clearTimeout(this.hideTimer); this.hideTimer = null; }
     if (activeTip && activeTip !== this) activeTip.hide();
+    // Module-level "currently open tip" pointer, not an alias for closures.
+    // eslint-disable-next-line @typescript-eslint/no-this-alias
     activeTip = this;
     const tip = this.tipEl;
     tip.hidden = false;
