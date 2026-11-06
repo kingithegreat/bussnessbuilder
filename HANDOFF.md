@@ -1,6 +1,9 @@
 # Handoff — BusinessFlow Studio
 
-Updated 18 October 2026. Canonical instructions/state: [CLAUDE.md](CLAUDE.md).
+Updated 6 November 2026 NZDT. **Start at [docs/PROPOSAL_HANDOFF.md](docs/PROPOSAL_HANDOFF.md)**
+(single-page proposal handoff) and [docs/SECURITY_REVIEW.md](docs/SECURITY_REVIEW.md).
+
+Earlier notes (18 October 2026) follow. Canonical instructions/state: [CLAUDE.md](CLAUDE.md).
 
 The SMS and quick-AI updates PRs #41/#42 are on main and their deployments
 succeeded. The current finishing work is documented in

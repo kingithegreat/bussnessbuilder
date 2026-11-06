@@ -17,7 +17,8 @@ import { RouterLink } from '@angular/router';
       <main class="max-w-4xl mx-auto px-4 sm:px-6 pb-20">
         <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 md:p-12">
           <h1 class="text-3xl md:text-4xl font-bold tracking-tight mb-2">Privacy Policy</h1>
-          <p class="text-gray-500 text-sm mb-10">Last updated: 14 August 2026</p>
+          <p class="text-gray-500 text-sm mb-4">Last updated: 14 August 2026</p>
+          <p class="mb-8 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900" role="note" data-testid="legal-draft-notice">Invite-only beta draft: this document has not yet been reviewed by a solicitor and may change before public launch.</p>
 
           <div class="prose prose-gray max-w-none space-y-8 text-sm leading-relaxed text-gray-700">
             <section>

@@ -30,6 +30,11 @@ describe('legal pages name a real legal entity', () => {
         expect(src).toMatch(/New Zealand/);
       });
 
+      it('is honestly labelled as an unreviewed beta draft', () => {
+        expect(src).toContain('data-testid="legal-draft-notice"');
+        expect(src).toMatch(/not yet been reviewed by a solicitor/);
+      });
+
       it('gives a contact email', () => {
         // &#64; is the HTML entity Angular templates use for @
         expect(src).toMatch(/[\w.]+(@|&#64;)[\w.]+/);
