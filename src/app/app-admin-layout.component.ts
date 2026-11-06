@@ -1,3 +1,4 @@
+import { TooltipDirective } from './tooltip.directive';
 import { Component } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
@@ -5,7 +6,7 @@ import { MatIconModule } from '@angular/material/icon';
 @Component({
   selector: 'app-admin-panel-layout',
   standalone: true,
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, MatIconModule],
+  imports: [TooltipDirective, RouterOutlet, RouterLink, RouterLinkActive, MatIconModule],
   template: `
     <div class="min-h-screen bg-[#F5F5F7] font-sans">
       <header class="bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between sticky top-0 z-50">

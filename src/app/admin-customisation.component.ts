@@ -1,3 +1,4 @@
+import { TooltipDirective } from './tooltip.directive';
 import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -10,7 +11,7 @@ import { ImagePickerComponent } from './image-picker.component';
 @Component({
   selector: 'app-admin-customisation',
   standalone: true,
-  imports: [CommonModule, FormsModule, MatIconModule, ImagePickerComponent],
+  imports: [TooltipDirective, CommonModule, FormsModule, MatIconModule, ImagePickerComponent],
   template: `
     <div class="max-w-4xl mx-auto space-y-8 pb-12">
       <!-- Header -->
@@ -30,7 +31,7 @@ import { ImagePickerComponent } from './image-picker.component';
       <!-- Navigation Tabs -->
       <div class="flex overflow-x-auto gap-2 bg-gray-100 p-1 rounded-xl">
         @for (tab of tabs; track tab.id) {
-          <button 
+          <button [bfTip]="'Opens the ' + tab.label + ' settings for your website design.'" 
             (click)="currentTab = tab.id"
             [class.bg-white]="currentTab === tab.id"
             [class.shadow-sm]="currentTab === tab.id"
@@ -52,7 +53,7 @@ import { ImagePickerComponent } from './image-picker.component';
         </div>
         <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
           @for (preset of layoutPresets; track preset.id) {
-            <button (click)="applyLayoutPreset(preset)" class="group border border-gray-200 rounded-xl p-4 text-left hover:border-blue-500 hover:shadow-md transition-all duration-200">
+            <button [bfTip]="'Applies the ' + preset.name + ' layout to your site. Save Changes to keep it.'" (click)="applyLayoutPreset(preset)" class="group border border-gray-200 rounded-xl p-4 text-left hover:border-blue-500 hover:shadow-md transition-all duration-200">
               <div class="w-full h-16 rounded-lg mb-3 overflow-hidden" [style.background]="preset.preview"></div>
               <p class="text-sm font-semibold text-gray-900">{{ preset.name }}</p>
               <p class="text-[11px] text-gray-500">{{ preset.description }}</p>

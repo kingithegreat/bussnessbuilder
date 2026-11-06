@@ -1,8 +1,9 @@
+import { TooltipDirective } from './tooltip.directive';
 import { Component, OnInit, PLATFORM_ID, inject } from '@angular/core';
 import { DatePipe, isPlatformBrowser } from '@angular/common';
 import { SiteChangesService } from './site-changes.service';
 @Component({
-  selector: 'app-site-change-history', standalone: true, imports: [DatePipe],
+  selector: 'app-site-change-history', standalone: true, imports: [DatePipe, TooltipDirective],
   template: `
     <section class="bg-white rounded-2xl border border-gray-200 p-5" aria-labelledby="change-history-title" [attr.aria-busy]="changes.busy()">
       <div class="flex items-center justify-between gap-3"><h2 id="change-history-title" class="text-lg font-semibold text-gray-900">Website changes and results</h2>

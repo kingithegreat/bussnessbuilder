@@ -1,3 +1,4 @@
+import { TooltipDirective } from './tooltip.directive';
 import { Component, inject, signal, OnInit } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { DataService } from './data.service';
@@ -76,7 +77,7 @@ const SECTION_INSERT_TYPES: RecommendationType[] = ['pricing', 'marketing', 'seo
 @Component({
   selector: 'app-admin-growth',
   standalone: true,
-  imports: [MatIconModule, FormsModule, DatePipe, RouterLink],
+  imports: [TooltipDirective, MatIconModule, FormsModule, DatePipe, RouterLink],
   template: `
     <div class="max-w-5xl mx-auto space-y-6">
       <!-- Header -->
@@ -319,7 +320,7 @@ const SECTION_INSERT_TYPES: RecommendationType[] = ['pricing', 'marketing', 'seo
             }
             <div class="divide-y divide-gray-50">
               @for (lead of needsFollowUp(); track lead.id) {
-                <a routerLink="/admin/inbox" class="p-4 flex items-center gap-4 hover:bg-gray-50 transition-colors cursor-pointer">
+                <a [bfTip]="'Opens your inbox to follow up with ' + lead.name + '.'" routerLink="/admin/inbox" class="p-4 flex items-center gap-4 hover:bg-gray-50 transition-colors cursor-pointer">
                   <div class="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
                     [class.bg-red-100]="lead.leadScore === 'Hot'" [class.text-red-600]="lead.leadScore === 'Hot'"
                     [class.bg-orange-100]="lead.leadScore === 'Warm'" [class.text-orange-600]="lead.leadScore === 'Warm'"
@@ -353,7 +354,7 @@ const SECTION_INSERT_TYPES: RecommendationType[] = ['pricing', 'marketing', 'seo
         <div class="p-5">
           <div class="grid grid-cols-2 md:grid-cols-3 gap-3 mb-5">
             @for (action of marketingActions; track action.type) {
-              <button (click)="selectMarketingAction(action.type)" [disabled]="isGeneratingMarketing()"
+              <button [bfTip]="action.desc + ' — select it, then press Generate.'" (click)="selectMarketingAction(action.type)" [disabled]="isGeneratingMarketing()"
                 class="p-4 rounded-xl border text-left transition-all hover:shadow-sm"
                 [class.border-emerald-300]="selectedMarketing() === action.type" [class.bg-emerald-50]="selectedMarketing() === action.type"
                 [class.border-gray-200]="selectedMarketing() !== action.type" [class.hover:border-gray-300]="selectedMarketing() !== action.type">

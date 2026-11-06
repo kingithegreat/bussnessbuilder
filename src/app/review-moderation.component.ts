@@ -1,3 +1,4 @@
+import { TooltipDirective } from './tooltip.directive';
 import { Component, inject, output, signal, OnInit, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { OwnerApiService } from './owner-api.service';
@@ -9,6 +10,7 @@ interface PendingReview { id: string; author: string; rating: number; text: stri
 @Component({
   selector: 'app-review-moderation',
   standalone: true,
+  imports: [TooltipDirective],
   template: `
     <section class="bg-white border border-gray-200 rounded-xl p-4 mb-4" aria-labelledby="rev-mod-title">
       <h3 id="rev-mod-title" class="text-sm font-bold text-gray-900">Reviews waiting for approval @if (pending().length) {<span class="ml-1 text-xs bg-amber-100 text-amber-900 px-2 py-0.5 rounded-full">{{ pending().length }}</span>}</h3>

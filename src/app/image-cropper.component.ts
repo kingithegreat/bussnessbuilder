@@ -1,3 +1,4 @@
+import { TooltipDirective } from './tooltip.directive';
 import { Component, ElementRef, ViewChild, signal, output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
@@ -5,7 +6,7 @@ import { MatIconModule } from '@angular/material/icon';
 @Component({
   selector: 'app-image-cropper',
   standalone: true,
-  imports: [FormsModule, MatIconModule],
+  imports: [TooltipDirective, FormsModule, MatIconModule],
   template: `
     @if (showCropper()) {
       <div class="fixed inset-0 bg-black/60 z-[9999] flex items-center justify-center p-4">
@@ -36,7 +37,7 @@ import { MatIconModule } from '@angular/material/icon';
               <div class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Max Width (px)</div>
               <div class="flex gap-2">
                 @for (w of widthPresets; track w) {
-                  <button (click)="maxWidth = w; redraw()" [class.border-blue-500]="maxWidth === w" [class.bg-blue-50]="maxWidth === w" class="flex-1 py-1.5 border rounded-lg text-xs font-bold text-gray-700 transition-colors">{{ w }}</button>
+                  <button bfTip="Sets the maximum image width in pixels. Smaller loads faster." (click)="maxWidth = w; redraw()" [class.border-blue-500]="maxWidth === w" [class.bg-blue-50]="maxWidth === w" class="flex-1 py-1.5 border rounded-lg text-xs font-bold text-gray-700 transition-colors">{{ w }}</button>
                 }
               </div>
             </div>

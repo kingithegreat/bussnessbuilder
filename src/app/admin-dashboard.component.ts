@@ -1,3 +1,4 @@
+import { TooltipDirective } from './tooltip.directive';
 import { AiActionsComponent } from './ai-actions.component';
 import { SiteStatsComponent } from './site-stats.component';
 import { SeoHelperComponent } from './seo-helper.component';
@@ -21,7 +22,7 @@ import { ShowcaseLinksComponent } from './showcase-links.component';
 @Component({
   selector: 'app-admin-dashboard',
   standalone: true,
-  imports: [DatePipe, DecimalPipe, MatIconModule, OnboardingGuideComponent, RouterLink, HeadlineChatComponent, LaunchChecklistComponent, SeoHelperComponent, SiteStatsComponent, AiActionsComponent, ShowcaseLinksComponent],
+  imports: [TooltipDirective, DatePipe, DecimalPipe, MatIconModule, OnboardingGuideComponent, RouterLink, HeadlineChatComponent, LaunchChecklistComponent, SeoHelperComponent, SiteStatsComponent, AiActionsComponent, ShowcaseLinksComponent],
   template: `
     <div class="flex flex-col gap-6">
       <!--
@@ -87,7 +88,7 @@ import { ShowcaseLinksComponent } from './showcase-links.component';
               <h2 class="mt-2 text-xl font-semibold text-gray-900">{{ action.title }}</h2>
               <p class="mt-2 text-sm text-gray-600">{{ action.reason }}</p>
               <p class="mt-3 text-sm text-gray-700"><strong>Success looks like:</strong> {{ action.successMeasure }}</p>
-              <a [routerLink]="action.route" [queryParams]="action.queryParams" class="mt-4 inline-flex rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700">{{ action.actionLabel }}</a>
+              <a bfTip="action:go" [routerLink]="action.route" [queryParams]="action.queryParams" class="mt-4 inline-flex rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700">{{ action.actionLabel }}</a>
             </article>
           }
           @if (actions().length > 1) {
@@ -97,7 +98,7 @@ import { ShowcaseLinksComponent } from './showcase-links.component';
                   <h2 class="font-semibold text-gray-900">{{ action.title }}</h2>
                   <p class="mt-2 text-sm text-gray-500">{{ action.reason }}</p>
                   <p class="mt-2 text-sm text-gray-600"><strong>Success looks like:</strong> {{ action.successMeasure }}</p>
-                  <a [routerLink]="action.route" [queryParams]="action.queryParams" class="mt-3 inline-flex text-sm font-semibold text-blue-700 hover:underline">{{ action.actionLabel }}</a>
+                  <a bfTip="action:go" [routerLink]="action.route" [queryParams]="action.queryParams" class="mt-3 inline-flex text-sm font-semibold text-blue-700 hover:underline">{{ action.actionLabel }}</a>
                 </article>
               }
             </div>

@@ -1,3 +1,4 @@
+import { TooltipDirective } from './tooltip.directive';
 import { Component, computed, inject, input, signal, OnInit, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { RouterLink } from '@angular/router';
@@ -10,7 +11,7 @@ import { scoreSite, SiteSnapshot } from './seo-inputs';
 @Component({
   selector: 'app-seo-helper',
   standalone: true,
-  imports: [RouterLink],
+  imports: [TooltipDirective, RouterLink],
   template: `
     @if (compact()) {
       <section class="bg-white border border-gray-200 rounded-2xl p-5" aria-labelledby="seo-card-title">
@@ -44,7 +45,7 @@ import { scoreSite, SiteSnapshot } from './seo-inputs';
                 <div>
                   <label [for]="'gbp-' + s.id" class="font-semibold text-gray-900 text-sm">{{ i + 1 }}. {{ s.title }}</label>
                   <p class="text-sm text-gray-700">{{ s.detail }}</p>
-                  <a [href]="s.link" target="_blank" rel="noopener" class="text-sm font-bold text-blue-700 hover:underline">{{ s.linkLabel }} ↗</a>
+                  <a bfTip="Opens this tool in a new tab." [href]="s.link" target="_blank" rel="noopener" class="text-sm font-bold text-blue-700 hover:underline">{{ s.linkLabel }} ↗</a>
                 </div>
               </li>
             }

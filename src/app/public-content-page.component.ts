@@ -1,3 +1,4 @@
+import { TooltipDirective } from './tooltip.directive';
 import { sendSiteHit } from './stats-beacon';
 import { Component, inject, signal, OnInit, PLATFORM_ID, REQUEST_CONTEXT, TransferState } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
@@ -10,7 +11,7 @@ import { PUBLIC_PAGE_STATE_KEY, readPublicPageContext } from './public-site-cont
 @Component({
   selector: 'app-public-content-page',
   standalone: true,
-  imports: [RouterLink],
+  imports: [TooltipDirective, RouterLink],
   template: `
     <div class="min-h-screen bg-[#F5F5F7] font-sans text-gray-900">
       @if (loading()) {

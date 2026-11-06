@@ -1,3 +1,4 @@
+import { TooltipDirective } from './tooltip.directive';
 import { Component, inject, signal, OnInit } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { MatIconModule } from '@angular/material/icon';
@@ -20,7 +21,7 @@ interface AdminUser {
 @Component({
   selector: 'app-admin-users',
   standalone: true,
-  imports: [MatIconModule, DatePipe],
+  imports: [TooltipDirective, MatIconModule, DatePipe],
   template: `
     <div class="max-w-6xl space-y-6">
       <div class="flex items-center justify-between">
@@ -66,7 +67,7 @@ interface AdminUser {
                       @if (user.businessName) {
                         <p class="font-medium text-gray-900">{{ user.businessName }}</p>
                         @if (user.siteSlug) {
-                          <a [href]="'/site/' + user.siteSlug" target="_blank" class="text-xs text-blue-500 font-mono hover:underline">/site/{{ user.siteSlug }}</a>
+                          <a bfTip="Opens this business’s live website in a new tab." [href]="'/site/' + user.siteSlug" target="_blank" class="text-xs text-blue-500 font-mono hover:underline">/site/{{ user.siteSlug }}</a>
                         } @else {
                           <a [href]="'/site/' + user.uid" target="_blank" class="text-xs text-blue-500 font-mono hover:underline">View site</a>
                         }

@@ -1,3 +1,4 @@
+import { TooltipDirective } from './tooltip.directive';
 import { Component, ElementRef, OnDestroy, OnInit, PLATFORM_ID, ViewChild, computed, effect, inject } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -14,7 +15,7 @@ import { ImagePickerComponent } from './image-picker.component';
 @Component({
   selector: 'app-admin-builder',
   standalone: true,
-  imports: [CommonModule, FormsModule, MatIconModule, ImagePickerComponent],
+  imports: [TooltipDirective, CommonModule, FormsModule, MatIconModule, ImagePickerComponent],
   template: `
     <div class="h-full min-h-0 flex flex-col md:flex-row bg-[#F5F5F7]">
       <!-- Sidebar / Editor -->

@@ -1,3 +1,4 @@
+import { TooltipDirective } from './tooltip.directive';
 import { Component, computed, inject, signal, OnInit, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { OwnerApiService } from './owner-api.service';
@@ -7,6 +8,7 @@ import { StatsSummary } from './stats-rules';
 @Component({
   selector: 'app-site-stats',
   standalone: true,
+  imports: [TooltipDirective],
   template: `
     <section class="bg-white border border-gray-200 rounded-2xl p-5" aria-labelledby="stats-title">
       <div class="flex flex-wrap items-center justify-between gap-2 mb-4">

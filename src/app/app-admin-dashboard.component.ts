@@ -1,3 +1,4 @@
+import { TooltipDirective } from './tooltip.directive';
 import { Component, inject, signal, computed, OnInit } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { RouterLink } from '@angular/router';
@@ -34,7 +35,7 @@ interface Metrics {
 @Component({
   selector: 'app-admin-dashboard',
   standalone: true,
-  imports: [MatIconModule, DatePipe, DecimalPipe, RouterLink],
+  imports: [TooltipDirective, MatIconModule, DatePipe, DecimalPipe, RouterLink],
   template: `
     <div class="max-w-6xl space-y-6">
       <div class="flex items-center justify-between">
@@ -232,7 +233,7 @@ interface Metrics {
                     </div>
                     <div class="flex items-center gap-3 shrink-0">
                       @if (user.siteSlug) {
-                        <a [href]="'/site/' + user.siteSlug" target="_blank" class="text-xs text-blue-500 hover:underline font-mono hidden sm:inline">
+                        <a bfTip="Opens this business’s live website in a new tab." [href]="'/site/' + user.siteSlug" target="_blank" class="text-xs text-blue-500 hover:underline font-mono hidden sm:inline">
                           /{{ user.siteSlug }}
                         </a>
                       }

@@ -1,3 +1,4 @@
+import { TooltipDirective } from './tooltip.directive';
 import { Component, inject, signal, OnInit, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -9,7 +10,7 @@ import { BookingSettings, WEEKDAYS, WEEKDAY_LABELS, Weekday, defaultBookingSetti
 @Component({
   selector: 'app-admin-bookings',
   standalone: true,
-  imports: [FormsModule, BookingRequestsComponent],
+  imports: [TooltipDirective, FormsModule, BookingRequestsComponent],
   template: `
     <div class="max-w-4xl mx-auto space-y-6">
       <div>

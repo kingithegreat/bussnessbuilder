@@ -1,3 +1,4 @@
+import { TooltipDirective } from './tooltip.directive';
 import { Component, inject, input, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
@@ -7,7 +8,7 @@ import { firstValueFrom } from 'rxjs';
 @Component({
   selector: 'app-review-form',
   standalone: true,
-  imports: [FormsModule],
+  imports: [TooltipDirective, FormsModule],
   template: `
     <section id="leave-review" class="py-12" aria-labelledby="rv-title">
       <div class="max-w-2xl mx-auto px-6">

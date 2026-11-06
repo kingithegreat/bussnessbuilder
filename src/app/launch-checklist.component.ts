@@ -1,3 +1,4 @@
+import { TooltipDirective } from './tooltip.directive';
 import { Component, computed, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
@@ -8,7 +9,7 @@ import { launchItems, launchProgress } from './launch-checklist';
 @Component({
   selector: 'app-launch-checklist',
   standalone: true,
-  imports: [RouterLink, MatIconModule],
+  imports: [TooltipDirective, RouterLink, MatIconModule],
   template: `
     @if (progress().done < progress().total) {
       <section class="rounded-2xl border border-gray-200 bg-white p-5 md:p-6" aria-labelledby="launch-title">
@@ -33,7 +34,7 @@ import { launchItems, launchProgress } from './launch-checklist';
                 }
               </div>
               @if (!item.done) {
-                <a [routerLink]="item.route" class="shrink-0 text-sm font-bold text-blue-700 hover:underline">Do this<span class="sr-only">: {{ item.title }}</span></a>
+                <a bfTip="Takes you to the place to finish this launch step." [routerLink]="item.route" class="shrink-0 text-sm font-bold text-blue-700 hover:underline">Do this<span class="sr-only">: {{ item.title }}</span></a>
               }
             </li>
           }

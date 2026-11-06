@@ -1,3 +1,4 @@
+import { TooltipDirective } from './tooltip.directive';
 import { Component, inject, signal, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
@@ -21,7 +22,7 @@ interface Discount {
 @Component({
   selector: 'app-admin-discounts',
   standalone: true,
-  imports: [FormsModule, MatIconModule, DatePipe],
+  imports: [TooltipDirective, FormsModule, MatIconModule, DatePipe],
   template: `
     <div class="max-w-4xl space-y-6">
       <div>

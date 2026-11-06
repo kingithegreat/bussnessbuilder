@@ -1,3 +1,4 @@
+import { TooltipDirective } from './tooltip.directive';
 import { Component, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { DataService } from './data.service';
@@ -10,7 +11,7 @@ import { MatIconModule } from '@angular/material/icon';
 @Component({
   selector: 'app-admin-ai-tools',
   standalone: true,
-  imports: [FormsModule, MatIconModule, RouterLink],
+  imports: [TooltipDirective, FormsModule, MatIconModule, RouterLink],
   template: `
     <div class="max-w-4xl mx-auto space-y-6">
       <div class="mb-8">

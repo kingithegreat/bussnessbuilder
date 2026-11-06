@@ -1,3 +1,4 @@
+import { TooltipDirective } from './tooltip.directive';
 import { Component, computed, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
@@ -18,7 +19,7 @@ export const WEBSITE_TOOLS = [
 ] as const;
 
 @Component({
-  selector: 'app-admin-website', standalone: true, imports: [RouterLink, MatIconModule],
+  selector: 'app-admin-website', standalone: true, imports: [TooltipDirective, RouterLink, MatIconModule],
   template: `
     <div class="max-w-5xl space-y-6">
       <div>
@@ -38,7 +39,7 @@ export const WEBSITE_TOOLS = [
       </section>
       <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         @for (tool of tools; track tool.route) {
-          <a [routerLink]="tool.route" class="rounded-2xl border border-gray-200 bg-white p-5 hover:border-blue-300 hover:shadow-sm focus-visible:outline-2 focus-visible:outline-blue-600">
+          <a [bfTip]="tool.description" [routerLink]="tool.route" class="rounded-2xl border border-gray-200 bg-white p-5 hover:border-blue-300 hover:shadow-sm focus-visible:outline-2 focus-visible:outline-blue-600">
             <mat-icon class="text-blue-600">{{ tool.icon }}</mat-icon>
             <h2 class="mt-2 font-semibold text-gray-900">{{ tool.title }}</h2>
             <p class="mt-1 text-sm text-gray-500">{{ tool.description }}</p>
