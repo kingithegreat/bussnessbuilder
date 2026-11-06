@@ -12,7 +12,14 @@ If a Notion connector is available, open "📚 Lessons & Playbook" under "Aden B
 
 # BusinessFlow Studio — Agent Handoff
 
-## Current finishing audit — 28 October 2026 NZDT
+## Current state — proposal-ready, 6 November 2026 NZDT (Pacific/Auckland)
+
+Read [docs/PROPOSAL_HANDOFF.md](docs/PROPOSAL_HANDOFF.md) first, then
+[docs/SECURITY_REVIEW.md](docs/SECURITY_REVIEW.md). PR #47 (tooltips) is merged. The remaining items
+are owner gates (G11 Stripe, G12 SMTP, G13 SMS out of the offer, G14 signed-in acceptance, NZD, domain,
+Sentry) plus the security work. Signed-in acceptance has NOT been done.
+
+## Previous finishing audit — 28 October 2026 NZDT
 
 Read [the current finishing audit](docs/FINISH_AUDIT_20261028.md). Fresh main
 9459f2c lacked the earlier local-only finishing work. This branch reconciles
