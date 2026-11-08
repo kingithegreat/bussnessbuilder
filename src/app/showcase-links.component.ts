@@ -20,6 +20,9 @@ export interface ShowcaseLink { id: string; label: string; name: string; path: s
               {{ s.label }} <span class="text-gray-500">· {{ s.name }}</span>
             </a>
           }
+          <a bfTip="Opens an interactive job-workflow demo you can customise for your business. Sample data only." href="/demo/workflow" target="_blank" rel="noopener" class="inline-flex items-center gap-1 rounded-full bg-gray-100 px-3 py-1.5 font-medium text-gray-800 hover:bg-gray-200" data-testid="workflow-demo-link">
+            Job workflow demo <span class="text-gray-500">· laundry pickup &amp; more</span>
+          </a>
         </div>
         @if (hint()) { <p class="mt-2 text-xs text-gray-500">{{ hint() }}</p> }
       </section>

@@ -12,6 +12,7 @@ export const routes: Routes = [
   { path: 'signup', loadComponent: () => import('./login.component').then(m => m.LoginComponent) },
   { path: 'privacy', loadComponent: () => import('./privacy-policy.component').then(m => m.PrivacyPolicyComponent) },
   { path: 'terms', loadComponent: () => import('./terms.component').then(m => m.TermsComponent) },
+  { path: 'demo/workflow', loadComponent: () => import('./workflow-demo.component').then(m => m.WorkflowDemoComponent) },
   { path: 'pricing', loadComponent: () => import('./pricing.component').then(m => m.PricingComponent) },
   { path: 'site/:uid', loadComponent: () => import('./site-view.component').then(m => m.SiteViewComponent) },
   { path: 'site/:uid/pages/:slug', loadComponent: () => import('./public-content-page.component').then(m => m.PublicContentPageComponent) },
