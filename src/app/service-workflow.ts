@@ -48,7 +48,13 @@ export const PAYMENT_STATUSES: { id: PaymentStatus; label: string }[] = [
   { id: 'paid', label: 'Marked paid (demo)' },
 ];
 
-export interface JobLine { serviceId: string; qty: number }
+/**
+ * A booked line. `name`, `unit` and `price` are a snapshot taken when the job
+ * is created, so later catalogue edits (price changes, renames, removing a
+ * service) never silently re-price or drop items on jobs already in progress.
+ * Lines without a snapshot (older saved demos) fall back to the catalogue.
+ */
+export interface JobLine { serviceId: string; qty: number; name?: string; unit?: string; price?: number }
 export interface JobEvent { at: string; text: string }
 export interface WorkflowJob {
   id: string; ref: string;
@@ -234,11 +240,24 @@ export function isComplete(c: WorkflowConfig, job: WorkflowJob): boolean {
   return stageIndex(c, job.stageId) === c.stages.length - 1;
 }
 
+/** Unit price for a line: the booked snapshot if present, else the current catalogue price. */
+export function linePrice(c: WorkflowConfig, l: JobLine): number {
+  if (typeof l.price === 'number' && Number.isFinite(l.price) && l.price >= 0) return l.price;
+  return c.services.find(x => x.id === l.serviceId)?.price ?? 0;
+}
+/** Display name for a line: the booked snapshot if present, else the current catalogue name. */
+export function lineName(c: WorkflowConfig, l: JobLine): string {
+  return l.name || c.services.find(x => x.id === l.serviceId)?.name || 'Removed service';
+}
 export function jobTotal(c: WorkflowConfig, job: Pick<WorkflowJob, 'lines'>): number {
-  return roundCents(job.lines.reduce((sum, l) => {
-    const s = c.services.find(x => x.id === l.serviceId);
-    return sum + (s ? s.price * Math.max(0, l.qty) : 0);
-  }, 0));
+  return roundCents(job.lines.reduce((sum, l) => sum + linePrice(c, l) * Math.max(0, l.qty), 0));
+}
+
+/** Copy the current catalogue name/unit/price onto a line (no-op if already snapshotted). */
+function snapshotLine(c: WorkflowConfig, l: JobLine): JobLine {
+  if (typeof l.price === 'number' && l.name) return l;
+  const s = c.services.find(x => x.id === l.serviceId);
+  return s ? { ...l, name: s.name, unit: s.unit, price: s.price } : l;
 }
 /** GST component when prices are GST-inclusive NZD (15%); 0 otherwise. */
 export function gstPortion(c: WorkflowConfig, total: number): number {
@@ -273,7 +292,8 @@ export function createJob(state: WorkflowState, input: NewJobInput, now = new Da
     pickupAt: input.pickupAt ?? '', dropoffAt: input.dropoffAt ?? '',
     partner: c.usesPartner ? (input.partner ?? '').trim().slice(0, 60) : '',
     notes: (input.notes ?? '').trim().slice(0, 500),
-    lines: input.lines.filter(l => l.qty > 0 && c.services.some(s => s.id === l.serviceId)).map(l => ({ serviceId: l.serviceId, qty: Math.min(99, Math.floor(l.qty)) })),
+    lines: input.lines.filter(l => l.qty > 0 && c.services.some(s => s.id === l.serviceId))
+      .map(l => snapshotLine(c, { serviceId: l.serviceId, qty: Math.min(99, Math.floor(l.qty)) })),
     stageId: c.stages[0].id, payment: 'unpaid',
     history: [{ at: now.toISOString(), text: `Created — ${c.stages[0].label}` }],
     createdAt: now.toISOString(), sample,
@@ -306,16 +326,31 @@ export function deleteJob(state: WorkflowState, id: string): WorkflowState {
 }
 
 /**
- * Apply a new config. Jobs whose stage no longer exists move to the first
- * stage (recorded in history); lines for removed services are dropped.
+ * Apply a new config mid-journey without corrupting jobs already in progress:
+ * - booked lines keep the price/name they were booked at (snapshotted from the
+ *   old config if needed), even if the service is re-priced, renamed or removed;
+ * - a job whose stage was removed moves to the nearest earlier stage that still
+ *   exists (by the old order), falling back to the first stage, and the move is
+ *   recorded in its history.
  */
 export function applyConfig(state: WorkflowState, next: WorkflowConfig, now = new Date()): WorkflowState {
   const errs = validateConfig(next);
   if (errs.length) throw new Error(errs.join(' '));
+  const prev = state.config;
+  const remap = (stageId: string): WorkflowStage => {
+    const oldIdx = prev.stages.findIndex(s => s.id === stageId);
+    for (let i = oldIdx - 1; i >= 0; i--) {
+      const kept = next.stages.find(s => s.id === prev.stages[i].id);
+      if (kept) return kept;
+    }
+    return next.stages[0];
+  };
   const jobs = state.jobs.map(j => {
-    let job = { ...j, lines: j.lines.filter(l => next.services.some(s => s.id === l.serviceId)) };
+    let job = { ...j, lines: j.lines.map(l => snapshotLine(prev, l)) };
     if (!next.stages.some(s => s.id === j.stageId)) {
-      job = { ...job, stageId: next.stages[0].id, history: [...job.history, { at: now.toISOString(), text: `Stage removed in settings — moved to ${next.stages[0].label}` }] };
+      const to = remap(j.stageId);
+      const was = prev.stages.find(s => s.id === j.stageId)?.label ?? 'Previous stage';
+      job = { ...job, stageId: to.id, history: [...job.history, { at: now.toISOString(), text: `Stage "${was}" removed in settings — moved to ${to.label}` }] };
     }
     if (!next.usesPartner) job.partner = '';
     return job;
@@ -356,7 +391,14 @@ export function parseState(json: string | null): WorkflowState {
         id: str(j['id'], 60), ref: str(j['ref'], 20), customerName: str(j['customerName'], 80),
         customerPhone: str(j['customerPhone'], 30), address: str(j['address'], 160),
         pickupAt: str(j['pickupAt'], 30), dropoffAt: str(j['dropoffAt'], 30), partner: str(j['partner'], 60), notes: str(j['notes'], 500),
-        lines: arr(j['lines']).filter(l => typeof l['serviceId'] === 'string').map(l => ({ serviceId: l['serviceId'] as string, qty: Math.max(0, Math.min(99, Number(l['qty']) || 0)) })),
+        lines: arr(j['lines']).filter(l => typeof l['serviceId'] === 'string').map((l): JobLine => {
+          const line: JobLine = { serviceId: str(l['serviceId'], 30), qty: Math.max(0, Math.min(99, Number(l['qty']) || 0)) };
+          const price = Number(l['price']);
+          if (l['price'] !== undefined && Number.isFinite(price) && price >= 0) line.price = roundCents(price);
+          if (typeof l['name'] === 'string' && l['name'].trim()) line.name = str(l['name'], 60);
+          if (typeof l['unit'] === 'string') line.unit = str(l['unit'], 40);
+          return line;
+        }),
         stageId: config.stages.some(s => s.id === j['stageId']) ? j['stageId'] as string : config.stages[0].id,
         payment: PAYMENT_STATUSES.some(p => p.id === j['payment']) ? j['payment'] as PaymentStatus : 'unpaid',
         history: arr(j['history']).slice(-50).map(h => ({ at: str(h['at'], 40), text: str(h['text'], 200) })),
