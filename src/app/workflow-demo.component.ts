@@ -38,7 +38,7 @@ type Tab = 'board' | 'new' | 'settings';
       <nav class="flex gap-1 rounded-xl bg-slate-100 p-1" aria-label="Demo sections">
         @for (t of tabs; track t.id) {
           <button type="button" (click)="tab.set(t.id)" [attr.aria-current]="tab() === t.id ? 'page' : null"
-            class="px-3 py-2 rounded-lg text-sm font-medium flex items-center gap-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1"
+            class="tab-btn px-3 py-2 rounded-lg text-sm font-medium flex items-center gap-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1"
             [class.bg-white]="tab() === t.id" [class.shadow-sm]="tab() === t.id" [attr.data-testid]="'tab-' + t.id">
             <mat-icon class="!text-[18px] !w-[18px] !h-[18px]" aria-hidden="true">{{ t.icon }}</mat-icon>{{ t.id === 'new' ? 'New ' + cfg().labels.job.toLowerCase() : t.label }}
           </button>
@@ -60,9 +60,9 @@ type Tab = 'board' | 'new' | 'settings';
           <button type="button" class="btn-accent" (click)="tab.set('new')"><mat-icon aria-hidden="true">add</mat-icon> New {{ cfg().labels.job.toLowerCase() }}</button>
         </div>
 
-        <ol class="grid gap-4 md:grid-flow-col md:auto-cols-[minmax(220px,1fr)] overflow-x-auto pb-2" aria-label="Workflow stages">
+        <ol class="grid gap-4 md:grid-flow-col md:auto-cols-[minmax(190px,1fr)] overflow-x-auto pb-2 snap-x" aria-label="Workflow stages">
           @for (s of cfg().stages; track s.id; let i = $index) {
-            <li class="rounded-2xl bg-white border border-slate-200 p-3 min-w-[220px]" [attr.data-testid]="'stage-' + s.id">
+            <li class="rounded-2xl bg-white border border-slate-200 p-3 md:min-w-[190px] snap-start" [attr.data-testid]="'stage-' + s.id">
               <h3 class="font-semibold text-sm flex items-center gap-2">
                 <span class="h-6 w-6 rounded-full grid place-items-center text-xs text-white" style="background: var(--accent)">{{ i + 1 }}</span>
                 {{ s.label }} <span class="ml-auto text-slate-500 font-normal">{{ jobsIn(s.id).length }}</span>
@@ -71,7 +71,7 @@ type Tab = 'board' | 'new' | 'settings';
               <ul class="mt-3 space-y-2">
                 @for (j of jobsIn(s.id); track j.id) {
                   <li>
-                    <button type="button" (click)="selectedId.set(j.id)" class="w-full text-left rounded-xl border p-3 hover:border-slate-400 focus:outline-none focus-visible:ring-2"
+                    <button type="button" (click)="openJob(j.id)" class="w-full text-left rounded-xl border p-3 hover:border-slate-400 focus:outline-none focus-visible:ring-2"
                       [class.border-slate-900]="selectedId() === j.id" [attr.aria-pressed]="selectedId() === j.id" [attr.data-testid]="'job-' + j.ref">
                       <span class="flex justify-between text-xs text-slate-500"><span>{{ j.ref }}</span><span [class]="payClass(j.payment)">{{ payLabel(j.payment) }}</span></span>
                       <span class="block font-medium mt-1">{{ j.customerName }}</span>
@@ -88,10 +88,11 @@ type Tab = 'board' | 'new' | 'settings';
           <section class="mt-6 rounded-2xl bg-white border border-slate-200 p-5" aria-labelledby="detail-h" data-testid="job-detail">
             <div class="flex flex-wrap justify-between gap-3">
               <div>
-                <h3 id="detail-h" class="text-lg font-semibold">{{ j.ref }} · {{ j.customerName }} @if (j.sample) {<span class="ml-2 text-xs rounded-full bg-slate-100 px-2 py-0.5 text-slate-600">sample</span>}</h3>
+                <h3 id="detail-h" tabindex="-1" class="text-lg font-semibold focus:outline-none">{{ j.ref }} · {{ j.customerName }} @if (j.sample) {<span class="ml-2 text-xs rounded-full bg-slate-100 px-2 py-0.5 text-slate-600">sample</span>}</h3>
                 <p class="text-sm text-slate-600">Stage: <strong>{{ stageLabel(cfg(), j.stageId) }}</strong> ({{ stageIndex(cfg(), j.stageId) + 1 }} of {{ cfg().stages.length }})</p>
               </div>
               <div class="flex flex-wrap gap-2">
+                <button type="button" class="btn-ghost" (click)="closeJob(j.id)" data-testid="close-detail">Close</button>
                 <button type="button" class="btn-ghost" (click)="move(j, -1)" [disabled]="stageIndex(cfg(), j.stageId) === 0">Back</button>
                 <button type="button" class="btn-accent" (click)="move(j, 1)" [disabled]="isComplete(cfg(), j)" data-testid="advance">
                   @if (isComplete(cfg(), j)) { Completed } @else { Move to {{ cfg().stages[stageIndex(cfg(), j.stageId) + 1].label }} }
@@ -127,7 +128,7 @@ type Tab = 'board' | 'new' | 'settings';
                 <ol class="mt-1 space-y-1 text-xs text-slate-600 max-h-48 overflow-auto">
                   @for (h of j.history; track $index) { <li><time [attr.datetime]="h.at">{{ when(h.at) }}</time> — {{ h.text }}</li> }
                 </ol>
-                <button type="button" class="mt-3 text-xs text-red-700 underline" (click)="remove(j)">Delete this {{ cfg().labels.job.toLowerCase() }}</button>
+                <button type="button" class="mt-3 text-xs text-red-700 underline py-2 min-h-[36px]" (click)="remove(j)">Delete this {{ cfg().labels.job.toLowerCase() }}</button>
               </div>
             </div>
           </section>
@@ -156,9 +157,9 @@ type Tab = 'board' | 'new' | 'settings';
           <div class="mt-2 divide-y rounded-xl border">
             @for (s of cfg().services; track s.id) {
               <label class="flex items-center gap-3 p-3">
-                <span class="flex-1"><span class="font-medium">{{ s.name }}</span> <span class="text-sm text-slate-500">{{ money(cfg(), s.price) }} {{ s.unit }}</span></span>
+                <span class="flex-1 min-w-0"><span class="block font-medium">{{ s.name }}</span><span class="block text-sm text-slate-500">{{ money(cfg(), s.price) }} {{ s.unit }}</span></span>
                 <span class="sr-only">Quantity of {{ s.name }}</span>
-                <input class="input w-20" type="number" min="0" max="99" [name]="'q-' + s.id" [(ngModel)]="qty[s.id]" [attr.data-testid]="'qty-' + s.id">
+                <input class="input qty" type="number" inputmode="numeric" min="0" max="99" placeholder="0" [name]="'q-' + s.id" [(ngModel)]="qty[s.id]" [attr.data-testid]="'qty-' + s.id">
               </label>
             }
           </div>
@@ -219,7 +220,7 @@ type Tab = 'board' | 'new' | 'settings';
                 <input class="input col-span-12 sm:col-span-5" [name]="'sn-' + s.id" [(ngModel)]="s.name" [attr.aria-label]="'Service ' + (i + 1) + ' name'">
                 <input class="input col-span-6 sm:col-span-4" [name]="'su-' + s.id" [(ngModel)]="s.unit" [attr.aria-label]="'Service ' + (i + 1) + ' unit'" placeholder="per item">
                 <input class="input col-span-4 sm:col-span-2" type="number" min="0" step="0.5" [name]="'sp-' + s.id" [(ngModel)]="s.price" [attr.aria-label]="'Service ' + (i + 1) + ' price'">
-                <button type="button" class="col-span-2 sm:col-span-1 text-slate-500 hover:text-red-700" (click)="removeService(i)" [attr.aria-label]="'Remove service ' + (s.name || i + 1)"><mat-icon aria-hidden="true">delete</mat-icon></button>
+                <button type="button" class="svc-remove col-span-2 sm:col-span-1 text-slate-500 hover:text-red-700" (click)="removeService(i)" [attr.aria-label]="'Remove service ' + (s.name || i + 1)"><mat-icon aria-hidden="true">delete</mat-icon></button>
               </div>
             }
           </div>
@@ -264,12 +265,23 @@ type Tab = 'board' | 'new' | 'settings';
     .btn-accent:hover { filter: brightness(.92); }
     .btn-accent:disabled, .btn-ghost:disabled, .icon-btn:disabled { opacity:.45; cursor:not-allowed; }
     .btn-ghost { display:inline-flex; align-items:center; border-radius:.75rem; padding:.55rem 1rem; font-size:.875rem; font-weight:500; border:1px solid #cbd5e1; background:#fff; }
-    .icon-btn { padding:.25rem; border-radius:.5rem; color:#475569; }
+    .icon-btn { display:inline-grid; place-items:center; min-width:40px; min-height:40px; padding:.25rem; border-radius:.5rem; color:#475569; }
     .btn-accent:focus-visible, .btn-ghost:focus-visible, .icon-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
     .input { width:100%; border:1px solid #cbd5e1; border-radius:.6rem; padding:.5rem .65rem; font-size:.9rem; background:#fff; }
     .input:focus { outline:2px solid var(--accent); outline-offset:0; }
     .field { display:flex; flex-direction:column; gap:.25rem; font-size:.875rem; color:#334155; }
     .card { border-radius:1rem; background:#fff; border:1px solid #e2e8f0; padding:1.25rem; }
+    /* .input sets width:100%, which beat Tailwind's w-20 and let the quantity box take the whole row. */
+    .input.qty { width:5rem; flex:none; text-align:center; }
+    @media (max-width: 639px) {
+      /* <16px inputs make iOS Safari zoom the page on focus. */
+      .input { font-size:16px; }
+      .tab-btn { min-height:44px; }
+      .svc-remove { min-height:40px; }
+      nav[aria-label="Demo sections"] { width:100%; }
+      nav[aria-label="Demo sections"] > .tab-btn { flex:1; justify-content:center; white-space:nowrap; padding-inline:.5rem; }
+    }
+    @media (max-width: 379px) { .tab-btn > mat-icon { display:none; } }
   `],
 })
 export class WorkflowDemoComponent {
@@ -317,6 +329,26 @@ export class WorkflowDemoComponent {
     return isNaN(d.getTime()) ? iso : d.toLocaleString('en-NZ', { dateStyle: 'medium', timeStyle: 'short' });
   }
 
+  openJob(id: string) { this.selectedId.set(id); this.revealDetail(); }
+  closeJob(id: string) {
+    this.selectedId.set(null);
+    if (this.browser) setTimeout(() => (document.querySelector(`[data-testid="job-${this.state().jobs.find(j => j.id === id)?.ref}"]`) as HTMLElement | null)?.focus());
+  }
+  /** On phones the detail panel renders below every stage column; bring it into view instead of updating off-screen. */
+  private revealDetail() {
+    if (!this.browser) return;
+    setTimeout(() => {
+      const h = document.getElementById('detail-h'); const sec = h?.closest('section');
+      if (!h || !sec) return;
+      const r = sec.getBoundingClientRect();
+      if (r.top < 0 || r.top > window.innerHeight - 120) {
+        const smooth = !window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+        sec.scrollIntoView({ behavior: smooth ? 'smooth' : 'auto', block: 'start' });
+      }
+      h.focus({ preventScroll: true });
+    });
+  }
+
   move(j: WorkflowJob, dir: 1 | -1) {
     this.commit(moveJob(this.state(), j.id, dir));
     this.announce.set(`${j.ref} moved to ${stageLabel(this.cfg(), this.selected()?.stageId ?? '')}`);
@@ -338,6 +370,7 @@ export class WorkflowDemoComponent {
     this.announce.set(`${next.jobs[0].ref} created`);
     this.draft = this.emptyDraft(); this.qty = {};
     this.tab.set('board');
+    this.revealDetail();
   }
 
   // Settings rows are replaced immutably (new arrays) and their form controls are
