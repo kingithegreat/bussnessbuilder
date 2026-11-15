@@ -174,6 +174,33 @@ export const INDUSTRY_TEMPLATES: IndustryTemplate[] = [
     heroImage: u('1534438327276-14e5300c3a48'), aboutImage: u('1549060279-7e168fcee0c2'),
     openingHours: 'Mon–Fri: 6am – 8pm\nSat: 7am – 12pm\nSun: Closed',
   },
+  {
+    id: 'mobile-detailing', label: 'Mobile car detailing', blurb: 'Valets, wash & wax, paint protection', businessType: 'other',
+    tagline: 'Showroom-clean cars, detailed at your place.',
+    heroCopy: 'Interior valets, wash and wax, full details and paint protection at your home or work. We bring our own water and power.',
+    description: 'We are an owner-operated mobile detailing service. We come to your home or workplace with everything we need, take real care with every car, and walk around it with you before you pay.',
+    ctaText: 'Request a booking', tone: 'Friendly, careful and proud of the finish',
+    trustBadges: ['Fully mobile, own water and power', 'Prices include GST', 'Walk-around check before you pay'],
+    enquiryFields: ['Vehicle make & model', 'Vehicle size (small, medium, SUV/ute)'],
+    services: [
+      { id: 'md1', name: 'Interior valet', description: 'Vacuum including boot, seats and mats, dash and trims cleaned and UV-dressed, inside glass.', price: 'from $129', duration: '2 hr' },
+      { id: 'md2', name: 'Exterior wash & wax', description: 'Hand wash, wheels and tyres cleaned and dressed, hand-applied wax for gloss and protection.', price: 'from $99', duration: '1.5 hr' },
+      { id: 'md3', name: 'Full detail (inside & out)', description: 'Interior valet plus wash and wax, clay-bar decontamination and door jambs. Great before selling.', price: 'from $289', duration: '4 hr' },
+      { id: 'md4', name: 'Ceramic paint protection (add-on)', description: 'Spray-on ceramic sealant after a wash or full detail. Up to 12 months of water beading.', price: 'from $199', duration: '1.5 hr' },
+      { id: 'md5', name: 'Pet hair removal (add-on)', description: 'Lifts embedded dog and cat hair from carpets, seats and the boot.', price: 'from $49', duration: '45 min' },
+    ],
+    faqs: [
+      { id: 'mdf1', question: 'Do I need to supply water or power?', answer: 'No. We carry our own water and power, so we just need a safe, legal spot to park next to your car.' },
+      { id: 'mdf2', question: 'How long does it take?', answer: 'About 1.5 hours for a wash and wax, 2 hours for an interior valet and around 4 hours for a full detail. Bigger or very dirty vehicles can take longer.' },
+      { id: 'mdf3', question: 'What if it rains?', answer: 'Interior work can go ahead. Wash, wax and paint protection jobs move to the next dry day at no charge.' },
+    ],
+    colors: { primary: '#0f766e', secondary: '#0f172a', background: '#f6fbfa' },
+    sections: ['hero', 'services', 'about', 'gallery', 'testimonials', 'hours', 'faq', 'contact'],
+    headings: { services: { heading: 'Detailing services', subheading: 'Prices include GST' }, gallery: { heading: 'Recent details', subheading: 'Before and after' }, faq: { heading: 'Good to know', subheading: 'Water, power, timing and weather' } },
+    heroImage: u('1552930294-6b595f4c2974'), aboutImage: u('1607860108855-64acf2078ed9'),
+    serviceImages: [u('1610647752706-3bb12232b3ab'), u('1520340356584-f9917d1eea6f'), u('1607860108855-64acf2078ed9'), u('1601362840469-51e4d8d58785'), u('1544568100-847a948585b9')],
+    openingHours: 'Mon–Fri: 7:30am – 5:30pm\nSat: 8am – 2pm\nSun: Closed',
+  },
 ];
 
 export function getIndustryTemplate(id: string | null | undefined): IndustryTemplate | undefined {

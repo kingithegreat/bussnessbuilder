@@ -7,16 +7,19 @@ Live: https://businessflow-722923667291.us-central1.run.app — not indexed (noi
 |---|---|---|
 | Mobile Mechanic — Bay Mobile Mechanics, Tauranga | `/s/demo-bay-mobile-mechanics` | `demo.mechanic@example.com` |
 | Lawn Mowing — Tauranga Lawn Co | `/s/demo-tauranga-lawn-co` | `demo.lawn@example.com` |
+| Mobile Car Detailing — Kōwhai Coast Mobile Detailing, Tauranga/BOP | `/s/demo-kowhai-coast-detailing` | `demo.detailer@example.com` |
+
+All three are fictional. The detailer showcase matches the funding proposal (supported website and booking requests for Tauranga/BOP mobile car detailers); its prices are labelled as example prices and it has no GST number. The setup wizard has a matching "Mobile car detailing" template.
 
 The owner password is the `DEMO_OWNER_PASSWORD` GitHub Actions secret (passed to Cloud Run on deploy). It is never committed. Ask Aden or the repo admin for it. Showcase accounts can't be deleted from the app.
 Re-seed after demo edits by bumping `SHOWCASE_VERSION` in `src/server-showcase.ts`. Turn showcases off with `SHOWCASE_SEED=off`.
 
 ## Click order (about 10 minutes)
-1. **Landing** (`/`): the "See it working for: Mobile Mechanic / Lawn Mowing" links sit under the hero.
+1. **Landing** (`/`): the "See it working for: Mobile Mechanic / Lawn Mowing / Mobile Car Detailing" links sit under the hero.
 2. **Showcase as a customer**: open Mobile Mechanic. Scroll services and GST-inclusive prices, reviews, hours and FAQ.
    - **Request a quote**: Contact form → submit. It lands in that owner's Inbox.
    - **Book**: pick a service, a day and a time → request. While email is off the page says the business will be in touch (no email promise), and offers a calendar (.ics) file.
-3. Repeat with Lawn Mowing (try the Fortnightly lawn plan).
+3. Repeat with Lawn Mowing (try the Fortnightly lawn plan) and Mobile Car Detailing (try requesting an Interior valet; the FAQ covers water, power and timing).
 4. **Owner view of a showcase** (optional): sign in as a demo owner → Dashboard, Inbox (sample enquiries plus anything you just sent), Quotes (2 quotes and 1 invoice, NZ GST), Bookings (3 sample bookings to accept or decline).
 5. **Main app as a new business**: Sign up (any email you control) → setup wizard → publish → Dashboard (launch checklist, stats, "See it working for" links) → Services → Quotes (create a quote, download the PDF) → Bookings (switch on, set hours) → AI tools (drafts from ready-made templates, clearly labelled, until the Gemini key is on).
 6. Delete the test account: Settings → Delete account.
