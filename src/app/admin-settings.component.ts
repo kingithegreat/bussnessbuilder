@@ -917,10 +917,10 @@ export class AdminSettingsComponent implements OnInit {
     return !!n;
   }
 
-  saveSettings() {
+  async saveSettings() {
     if (!this.checkSmsNumber()) { this.toast.error(this.smsNumberError || 'Check your mobile number.'); return; }
-    this.dataService.setNotificationPrefs(this.prefs);
-    this.toast.success('Settings saved successfully!');
+    if (await this.dataService.setNotificationPrefs(this.prefs)) this.toast.success('Settings saved successfully!');
+    else this.toast.error('Settings have not saved. Use Retry saving before leaving.');
   }
 
   async openPortal() {
@@ -936,23 +936,24 @@ export class AdminSettingsComponent implements OnInit {
     if (!name) return;
     if (this.dataService.saveCurrentAsTemplate(name)) {
       this.newTemplateName = '';
-      this.toast.success(`Template "${name}" saved!`);
+      this.toast.info(`Template "${name}" added. Check the save status before leaving.`);
     } else {
       this.toast.error('Maximum of 3 templates reached.');
     }
   }
 
-  deployTemplate(id: string) {
+  async deployTemplate(id: string) {
     if (confirm('This will switch your live public page to this template. Continue?')) {
-      this.dataService.setActiveTemplate(id);
-      this.toast.success('Template deployed! Your public page now shows this version.');
+      if (!this.dataService.setActiveTemplate(id)) { this.toast.error('Could not switch templates. Resolve any unconfirmed website change in Home.'); return; }
+      try { await this.dataService.saveNow(); this.toast.success('Template saved. Open your public page to verify it.'); }
+      catch { this.toast.error('Template changes have not saved. Use Retry saving before leaving.'); }
     }
   }
 
   loadTemplate(id: string) {
     if (confirm('This will load this template into the editor. Any unsaved changes to your current site will be lost. Continue?')) {
-      this.dataService.loadTemplate(id);
-      this.toast.info('Template loaded into editor. Make changes and save when ready.');
+      if (this.dataService.loadTemplate(id)) this.toast.info('Website template loaded. Enquiries and web address kept; changes are saving.');
+      else this.toast.error('Could not load this template. Resolve any unconfirmed website change in Home.');
     }
   }
 
@@ -960,7 +961,7 @@ export class AdminSettingsComponent implements OnInit {
     const activeId = this.dataService.activeTemplateId();
     if (activeId) {
       this.dataService.updateTemplate(activeId);
-      this.toast.success('Template updated with current changes!');
+      this.toast.info('Template updated in the editor. Check the save status before leaving.');
     }
   }
 

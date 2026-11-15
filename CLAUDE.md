@@ -12,6 +12,15 @@ If a Notion connector is available, open "📚 Lessons & Playbook" under "Aden B
 
 # BusinessFlow Studio — Agent Handoff
 
+## Reliability fixes prepared — 15 November 2026 NZDT
+
+See [docs/RELIABILITY_20261115.md](docs/RELIABILITY_20261115.md). Fresh-main work fixes invalid imports, template swaps hiding current enquiries, invisible failed saves, premature settings/page/payment success messages, sign-out before pending writes, and image URL retrieval leaving uploads stuck. Website imports/templates preserve the live inbox, claimed address and setup state. Save/Retry covers site and supplementary writes; unconfirmed server actions stay gated.
+
+Local verification: **632 tests / 85 files**, lint and production SSR build pass. Two import/template regressions were reproduced failing before the fixes. Dependency audit: **0 critical, 0 high, 22 moderate**, down from 6 high; Nodemailer 10.5.0 passes an offline stream-transport check and grpc-js is overridden forward to patched 1.x. No provider calls or credentials used. The build passed with `NG_BUILD_MAX_WORKERS=2` after a concurrent unbounded build exceeded this host's memory.
+
+This is prepared source, not a deployment receipt. Confirm the PR, main ancestry and existing deployment workflow before claiming it live. Existing workflow-demo PRs #51/#52 remain separate. Signed-in/two-owner/mobile/restore browser acceptance, live Stripe/SMTP, domains/rules and legal review remain open. No connected Notion writer was available; generated snapshots were not edited.
+
+
 ## Current state — proposal-ready, 6 November 2026 NZDT (Pacific/Auckland)
 
 Read [docs/PROPOSAL_HANDOFF.md](docs/PROPOSAL_HANDOFF.md) first, then

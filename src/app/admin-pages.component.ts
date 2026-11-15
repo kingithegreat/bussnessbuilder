@@ -129,9 +129,9 @@ export class AdminPagesComponent implements OnInit {
     this.pages.splice(index, 1);
   }
 
-  savePages() {
+  async savePages() {
     this.pages.forEach(p => p.updatedAt = new Date().toISOString());
-    this.dataService.setPages(this.pages);
-    this.toast.success('Pages saved successfully!');
+    if (await this.dataService.setPages(this.pages)) this.toast.success('Pages saved successfully!');
+    else this.toast.error('Pages have not saved. Use Retry saving before leaving.');
   }
 }
