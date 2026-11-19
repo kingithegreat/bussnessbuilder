@@ -145,8 +145,8 @@ export class AdminPaymentsComponent implements OnInit {
     this.settings.paymentLinks.splice(index, 1);
   }
 
-  save() {
-    this.dataService.setPaymentSettings(this.settings);
-    this.toast.success('Payment settings saved!');
+  async save() {
+    if (await this.dataService.setPaymentSettings(this.settings)) this.toast.success('Payment settings saved!');
+    else this.toast.error('Payment settings have not saved. Use Retry saving before leaving.');
   }
 }

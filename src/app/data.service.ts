@@ -1,3 +1,4 @@
+import { parseSiteImport } from './site-import';
 import { SiteChangeField } from './site-change';
 import { Injectable, computed, signal, effect, PLATFORM_ID, inject, DestroyRef } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
@@ -17,7 +18,18 @@ export class DataService {
   private stopInbox: (() => void) | null = null;
   private sessionVersion = 0;
   private loading: { uid: string; promise: Promise<void> } | null = null;
-  private persistedSite = '';
+  private persistedSiteValue = signal('');
+  private get persistedSite() { return this.persistedSiteValue(); }
+  private set persistedSite(value: string) { this.persistedSiteValue.set(value); }
+  private websiteSaving = signal(false);
+  private websiteSaveError = signal('');
+  private auxiliaryPending = signal(0);
+  private auxiliaryFailures = signal<Record<string, (uid: string) => Promise<void>>>({});
+  private auxiliaryTail: Promise<boolean> = Promise.resolve(true);
+  readonly saveError = computed(() => this.websiteSaveError() || (Object.keys(this.auxiliaryFailures()).length ? 'Some changes could not be saved. Retry before leaving.' : ''));
+  readonly hasUnsavedChanges = computed(() => !!this.uid() && (this.ownerSite() !== this.persistedSite || this.websiteSaving() || this.auxiliaryPending() > 0 || !!this.saveError() || this.ownerSavePaused()));
+  readonly saveStatus = computed(() => !this.uid() ? 'idle' : this.ownerSavePaused() ? 'paused' : this.saveError() ? 'error' : this.websiteSaving() || this.auxiliaryPending() > 0 ? 'saving' : this.hasUnsavedChanges() ? 'pending' : 'saved');
+
   private ownerWriteTail: Promise<void> = Promise.resolve();
   private ownerSavePaused = signal(false);
   private headlineRecoveryRequired = false;
@@ -153,11 +165,57 @@ export class DataService {
     // queue. Only successful writes advance the persisted baseline.
     const write = this.ownerWriteTail.then(async () => {
       if (!this.isOwnerSession(uid, version) || site === this.persistedSite) return;
-      await this.firestoreService.saveBusinessData(uid, JSON.parse(site));
-      if (this.isOwnerSession(uid, version)) this.persistedSite = site;
+      this.websiteSaving.set(true);
+      try {
+        await this.firestoreService.saveBusinessData(uid, JSON.parse(site));
+        if (this.isOwnerSession(uid, version)) { this.persistedSite = site; this.websiteSaveError.set(''); }
+      } catch (error) {
+        if (this.isOwnerSession(uid, version)) this.websiteSaveError.set('Website changes have not saved. Retry before leaving.');
+        throw error;
+      } finally { if (this.isOwnerSession(uid, version)) this.websiteSaving.set(false); }
     });
     this.ownerWriteTail = write.catch(() => undefined);
     return write;
+  }
+
+  /** Serialize supplementary writes and retain failed snapshots for an explicit retry. */
+  private queueAuxiliarySave(key: string, task: (uid: string) => Promise<void>): Promise<boolean> {
+    const uid = this.uid(), version = this.sessionVersion;
+    if (!uid || !isPlatformBrowser(this.platformId)) return Promise.resolve(true);
+    this.auxiliaryFailures.update(current => { const next = { ...current }; delete next[key]; return next; });
+    this.auxiliaryPending.update(n => n + 1);
+    const write = this.auxiliaryTail.then(async () => {
+      if (!this.isOwnerSession(uid, version)) return false;
+      try {
+        await task(uid);
+        if (this.isOwnerSession(uid, version)) this.auxiliaryFailures.update(current => { const next = { ...current }; delete next[key]; return next; });
+        return true;
+      } catch (error) {
+        if (this.isOwnerSession(uid, version)) this.auxiliaryFailures.update(current => ({ ...current, [key]: task }));
+        console.error('Could not save business changes', error);
+        return false;
+      } finally { if (this.isOwnerSession(uid, version)) this.auxiliaryPending.update(n => n - 1); }
+    });
+    this.auxiliaryTail = write;
+    return write;
+  }
+
+  /** Used by Save / Retry and before sign-out; never bypass an unconfirmed mutation. */
+  async saveNow(): Promise<void> {
+    const uid = this.uid(), version = this.sessionVersion;
+    if (!uid) return;
+    if (this.ownerSavePaused() || this.siteActionRunning) throw new Error('A website change is still unconfirmed or running. Resolve it in Home before leaving.');
+    if (this.saveTimeout) clearTimeout(this.saveTimeout);
+    this.saveTimeout = null;
+    await this.flushOwnerChanges(uid, version);
+    this.websiteSaveError.set('');
+    let tail: Promise<boolean>;
+    do { tail = this.auxiliaryTail; await tail; this.requireOwnerSession(uid, version); } while (tail !== this.auxiliaryTail);
+    for (const [key, task] of Object.entries(this.auxiliaryFailures())) {
+      if (this.auxiliaryFailures()[key] === task) await this.queueAuxiliarySave(key, task);
+    }
+    this.requireOwnerSession(uid, version);
+    if (Object.keys(this.auxiliaryFailures()).length) throw new Error('Some changes have not saved. Please retry before leaving.');
   }
 
   private requireOwnerSession(uid: string, version: number): void {
@@ -290,6 +348,11 @@ export class DataService {
     this.initialized = false;
     this.loading = null;
     this.persistedSite = '';
+    this.websiteSaving.set(false);
+    this.websiteSaveError.set('');
+    this.auxiliaryPending.set(0);
+    this.auxiliaryFailures.set({});
+    this.auxiliaryTail = Promise.resolve(true);
     this.headlineRecoveryRequired = false;
     this.unconfirmedMutation = null;
     this.recoveryFields = [];
@@ -351,8 +414,8 @@ export class DataService {
   }
 
   /**
-   * Full GDPR-style export of everything held for the user, not just the
-   * importable business profile. This is a complete read-only data dump; the
+   * Snapshot export of currently loaded records, not just the
+   * importable business profile. This is a read-only snapshot of loaded data; the
    * business profile portion can still be restored via importState, while the
    * remaining sections (pages, recommendations, payments, templates) are
    * included for the user's records.
@@ -372,19 +435,21 @@ export class DataService {
   }
 
   importState(jsonString: string): boolean {
-    try {
-      const parsed = JSON.parse(jsonString);
-      // Accept either a bare state export (exportState) or a full data bundle
-      // (exportAll), restoring the business profile portion in both cases.
-      const state = parsed?.businessData?.profile ? parsed.businessData : parsed;
-      if (state && state.profile) {
-        this.state.set(state);
-        return true;
-      }
-    } catch (e) {
-      console.error('Invalid JSON', e);
-    }
-    return false;
+    if (this.ownerSavePaused() || this.siteActionRunning) return false;
+    const imported = parseSiteImport(jsonString);
+    if (!imported) return false;
+    const current = this.state();
+    this.state.set(this.initialized ? { ...imported, enquiries: current.enquiries, activities: current.activities, siteSlug: current.siteSlug || '', isSetupComplete: current.isSetupComplete } : imported);
+    return true;
+  }
+
+  private applyTemplateState(state: AppState): boolean {
+    if (this.ownerSavePaused() || this.siteActionRunning) return false;
+    const imported = parseSiteImport(JSON.stringify(state));
+    if (!imported) return false;
+    const current = this.state();
+    this.state.set({ ...imported, enquiries: current.enquiries, activities: current.activities, siteSlug: current.siteSlug || '', isSetupComplete: current.isSetupComplete });
+    return true;
   }
 
   addActivity(activity: Omit<Activity, 'id' | 'date'>) {
@@ -448,12 +513,10 @@ export class DataService {
     // autosave — which no longer writes enquiries at all, because doing so
     // destroyed leads that arrived while the owner had the admin open.
     if (isPlatformBrowser(this.platformId) && this.uid()) {
-      this.firestoreService.updateEnquiryFields(
-        this.uid()!,
-        id,
-        JSON.parse(JSON.stringify(updates)),
-        activity ? JSON.parse(JSON.stringify(activity)) : undefined,
-      );
+      const fields = JSON.parse(JSON.stringify(updates)), event = activity ? JSON.parse(JSON.stringify(activity)) : undefined;
+      for (const [field, value] of Object.entries(fields)) {
+        void this.queueAuxiliarySave('enquiry:' + id + ':' + field, uid => this.firestoreService.updateEnquiryFields(uid, id, { [field]: value }, field === 'status' ? event : undefined));
+      }
     }
   }
 
@@ -473,11 +536,10 @@ export class DataService {
     return this.pages();
   }
 
-  setPages(p: ContentPage[]) {
+  setPages(p: ContentPage[]): Promise<boolean> {
     this.pages.set(p);
-    if (isPlatformBrowser(this.platformId) && this.uid()) {
-      this.firestoreService.savePages(this.uid()!, p);
-    }
+    const snapshot = structuredClone(p);
+    return this.queueAuxiliarySave('pages', uid => this.firestoreService.savePages(uid, snapshot));
   }
 
   async loadPages(uid: string) {
@@ -490,11 +552,10 @@ export class DataService {
     return this.notifPrefs();
   }
 
-  setNotificationPrefs(prefs: NotificationPreferences) {
+  setNotificationPrefs(prefs: NotificationPreferences): Promise<boolean> {
     this.notifPrefs.set(prefs);
-    if (isPlatformBrowser(this.platformId) && this.uid()) {
-      this.firestoreService.saveNotificationPrefs(this.uid()!, prefs);
-    }
+    const snapshot = structuredClone(prefs);
+    return this.queueAuxiliarySave('notifications', uid => this.firestoreService.saveNotificationPrefs(uid, snapshot));
   }
 
   async loadNotificationPrefs(uid: string) {
@@ -507,11 +568,10 @@ export class DataService {
     return this.paymentSettings();
   }
 
-  setPaymentSettings(settings: PaymentSettings) {
+  setPaymentSettings(settings: PaymentSettings): Promise<boolean> {
     this.paymentSettings.set(settings);
-    if (isPlatformBrowser(this.platformId) && this.uid()) {
-      this.firestoreService.savePaymentSettings(this.uid()!, settings);
-    }
+    const snapshot = structuredClone(settings);
+    return this.queueAuxiliarySave('payments', uid => this.firestoreService.savePaymentSettings(uid, snapshot));
   }
 
   async loadPaymentSettings(uid: string) {
@@ -529,7 +589,8 @@ export class DataService {
   setRecommendations(recs: SavedRecommendation[]) {
     this._recommendations.set(recs);
     if (isPlatformBrowser(this.platformId) && this.uid()) {
-      this.firestoreService.saveRecommendations(this.uid()!, recs);
+      const snapshot = structuredClone(recs);
+      void this.queueAuxiliarySave('recommendations', uid => this.firestoreService.saveRecommendations(uid, snapshot));
     }
   }
 
@@ -542,7 +603,8 @@ export class DataService {
   setGrowthReport(report: GrowthReport) {
     this._lastGrowthReport.set(report);
     if (isPlatformBrowser(this.platformId) && this.uid()) {
-      this.firestoreService.saveGrowthReport(this.uid()!, report);
+      const snapshot = structuredClone(report);
+      void this.queueAuxiliarySave('growth', uid => this.firestoreService.saveGrowthReport(uid, snapshot));
     }
   }
 
@@ -551,7 +613,8 @@ export class DataService {
       list.map(r => r.id === id ? { ...r, ...updates, updatedAt: new Date().toISOString() } : r)
     );
     if (isPlatformBrowser(this.platformId) && this.uid()) {
-      this.firestoreService.saveRecommendations(this.uid()!, this._recommendations());
+      const snapshot = structuredClone(this._recommendations());
+      void this.queueAuxiliarySave('recommendations', uid => this.firestoreService.saveRecommendations(uid, snapshot));
     }
   }
 
@@ -566,10 +629,8 @@ export class DataService {
 
   private saveTemplates() {
     if (isPlatformBrowser(this.platformId) && this.uid()) {
-      this.firestoreService.saveTemplates(this.uid()!, {
-        templates: this._templates(),
-        activeTemplateId: this._activeTemplateId()
-      });
+      const snapshot = structuredClone({ templates: this._templates(), activeTemplateId: this._activeTemplateId() });
+      void this.queueAuxiliarySave('templates', uid => this.firestoreService.saveTemplates(uid, snapshot));
     }
   }
 
@@ -599,20 +660,15 @@ export class DataService {
     this.saveTemplates();
   }
 
-  loadTemplate(id: string) {
+  loadTemplate(id: string): boolean {
     const template = this._templates().find(t => t.id === id);
-    if (template) {
-      this.state.set(JSON.parse(JSON.stringify(template.state)));
-    }
+    return !!template && this.applyTemplateState(template.state);
   }
 
-  setActiveTemplate(id: string) {
+  setActiveTemplate(id: string): boolean {
     const template = this._templates().find(t => t.id === id);
-    if (template) {
-      this._activeTemplateId.set(id);
-      this.state.set(JSON.parse(JSON.stringify(template.state)));
-      this.saveTemplates();
-    }
+    if (!template || !this.applyTemplateState(template.state)) return false;
+    this._activeTemplateId.set(id); this.saveTemplates(); return true;
   }
 
   deleteTemplate(id: string) {
@@ -621,7 +677,7 @@ export class DataService {
       const remaining = this._templates();
       this._activeTemplateId.set(remaining.length > 0 ? remaining[0].id : '');
       if (remaining.length > 0) {
-        this.state.set(JSON.parse(JSON.stringify(remaining[0].state)));
+        this.applyTemplateState(remaining[0].state);
       }
     }
     this.saveTemplates();

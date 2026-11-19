@@ -1,5 +1,6 @@
+import { MAX_IMPORT_BYTES } from './site-import';
 import { TooltipDirective } from './tooltip.directive';
-import { Component, inject, signal, computed, OnInit } from '@angular/core';
+import { Component, inject, signal, computed, OnInit, HostListener } from '@angular/core';
 import { RouterOutlet, RouterLink, RouterLinkActive, Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { DataService } from './data.service';
@@ -94,17 +95,27 @@ export const OUTCOME_NAVIGATION = [
            </div>
            <div class="flex items-center gap-2 md:gap-4">
              <a [href]="publicSiteUrl()" target="_blank" rel="noopener" class="flex bg-blue-600 text-white px-3 py-1.5 md:px-4 md:py-2 rounded-lg text-xs font-bold shadow-sm hover:bg-blue-700 transition-colors items-center gap-1"><mat-icon class="text-[14px]">open_in_new</mat-icon> <span class="hidden sm:inline">View live site</span></a>
-             <button (click)="exportData()" class="hidden md:flex bg-gray-100 text-gray-900 px-4 py-2 rounded-lg text-xs font-bold shadow-sm hover:bg-gray-200 transition-colors items-center gap-1"><mat-icon class="text-[14px]">download</mat-icon> Export</button>
-             <button (click)="fileInput.click()" class="hidden md:flex bg-gray-100 text-gray-900 px-4 py-2 rounded-lg text-xs font-bold shadow-sm hover:bg-gray-200 transition-colors items-center gap-1"><mat-icon class="text-[14px]">upload</mat-icon> Import</button>
              <input type="file" #fileInput (change)="importData($event)" style="display:none" accept=".json">
              <div class="flex items-center gap-2 pl-2 border-l border-gray-200">
                @if (authService.currentUser(); as user) {
-                 <div class="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold">{{ user.displayName ? user.displayName[0].toUpperCase() : user.email[0].toUpperCase() }}</div>
+                 <div class="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold">{{ (user.displayName || user.email || 'U').charAt(0).toUpperCase() }}</div>
                }
-               <button (click)="logout()" class="bg-gray-100 text-gray-900 px-3 py-1.5 md:px-4 md:py-2 rounded-lg text-xs font-bold shadow-sm hover:bg-gray-200 transition-colors">Sign Out</button>
+               <button [disabled]="saving() || importing()" (click)="logout()" class="bg-gray-100 text-gray-900 px-3 py-1.5 md:px-4 md:py-2 rounded-lg text-xs font-bold shadow-sm hover:bg-gray-200 transition-colors">Sign Out</button>
              </div>
            </div>
         </header>
+        <div class="bg-white border-b border-gray-200 px-4 md:px-8 py-2 flex flex-wrap items-center gap-3 text-xs" role="status" aria-live="polite">
+          <span [class.text-red-700]="dataService.saveStatus() === 'error'">{{ saveLabels[dataService.saveStatus()] }}</span>
+          @if (dataService.saveError()) { <span class="text-red-700">{{ dataService.saveError() }}</span> }
+          @if (dataService.saveStatus() === 'paused') { <span>Return to Home to retry the unconfirmed website change.</span> }
+          @if (dataService.hasUnsavedChanges() && dataService.saveStatus() !== 'paused') {
+            <button type="button" (click)="saveChanges()" [disabled]="saving() || dataService.saveStatus() === 'saving'" class="text-blue-700 underline disabled:opacity-50">{{ dataService.saveStatus() === 'error' ? 'Retry saving' : 'Save now' }}</button>
+          }
+          <div class="ml-auto flex items-center gap-2">
+             <button aria-label="Export data" (click)="exportData()" class="flex bg-gray-100 text-gray-900 px-4 py-2 rounded-lg text-xs font-bold shadow-sm hover:bg-gray-200 transition-colors items-center gap-1"><mat-icon aria-hidden="true" class="text-[14px]">download</mat-icon><span class="hidden lg:inline">Export</span></button>
+             <button aria-label="Import website settings" [disabled]="importing()" (click)="fileInput.click()" class="flex bg-gray-100 text-gray-900 px-4 py-2 rounded-lg text-xs font-bold shadow-sm hover:bg-gray-200 transition-colors items-center gap-1"><mat-icon aria-hidden="true" class="text-[14px]">upload</mat-icon><span class="hidden lg:inline">Import</span></button>
+          </div>
+        </div>
         <div class="flex-1 overflow-auto p-4 md:p-8">
            <router-outlet></router-outlet>
         </div>
@@ -113,7 +124,10 @@ export const OUTCOME_NAVIGATION = [
   `
 })
 export class AdminLayoutComponent implements OnInit {
-  private dataService = inject(DataService);
+  dataService = inject(DataService);
+  readonly saving = signal(false);
+  readonly importing = signal(false);
+  readonly saveLabels = { idle: '', pending: 'Unsaved changes', saving: 'Saving…', saved: 'Saved', error: 'Not saved', paused: 'Change awaiting confirmation' };
   authService = inject(AuthService);
   subService = inject(SubscriptionService);
   private toast = inject(ToastService);
@@ -165,7 +179,7 @@ export class AdminLayoutComponent implements OnInit {
       this.toast.info('Data export is available on the Pro plan.');
       return;
     }
-    // Full GDPR-style export of all the user's data (profile + pages,
+    // Snapshot of the records currently loaded (profile + pages,
     // recommendations, payments, templates). The profile portion re-imports.
     const data = this.dataService.exportAll();
     const blob = new Blob([data], { type: 'application/json' });
@@ -177,25 +191,41 @@ export class AdminLayoutComponent implements OnInit {
     window.URL.revokeObjectURL(url);
   }
 
-  importData(event: Event) {
-    const input = event.target as HTMLInputElement;
-    if (input.files && input.files.length > 0) {
-      const file = input.files[0];
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const result = e.target?.result as string;
-        if (result && this.dataService.importState(result)) {
-          this.toast.success('Profile imported successfully!');
-        } else {
-          this.toast.error('Failed to import profile. Invalid JSON.');
-        }
-      };
-      reader.readAsText(file);
-    }
+  async importData(event: Event) {
+    const input = event.target as HTMLInputElement, file = input.files?.[0];
+    input.value = '';
+    if (!file || this.importing()) return;
+    if (!this.subService.canExport()) { this.toast.info('Website import is available on the Pro plan.'); return; }
+    if (file.size > MAX_IMPORT_BYTES) { this.toast.error('Choose a BusinessFlow JSON export up to 2 MB.'); return; }
+    const uid = this.authService.currentUser()?.uid;
+    this.importing.set(true);
+    try {
+      const json = await file.text();
+      if (uid !== this.authService.currentUser()?.uid) throw new Error('Your account changed. Select the file again.');
+      if (!confirm('Replace this website’s profile, services and design from the file? Existing enquiries, activities and web address stay. Pages, payments and other account records in a full export are not restored.')) return;
+      if (!this.dataService.importState(json)) throw new Error('Invalid website export, or a website change is awaiting confirmation. Your current website was kept.');
+      await this.dataService.saveNow();
+      this.toast.success('Website settings imported and saved. Existing enquiries and account records were kept.');
+    } catch (error) { this.toast.error(error instanceof Error ? error.message : 'Could not import or save this file. Retry saving before leaving.'); }
+    finally { this.importing.set(false); }
+  }
+
+  @HostListener('window:beforeunload', ['$event'])
+  warnBeforeLeaving(event: BeforeUnloadEvent) {
+    if (this.dataService.hasUnsavedChanges()) { event.preventDefault(); event.returnValue = ''; }
+  }
+
+  async saveChanges(): Promise<boolean> {
+    this.saving.set(true);
+    try { await this.dataService.saveNow(); return true; }
+    catch (error) { this.toast.error(error instanceof Error ? error.message : 'Changes have not saved. Please retry.'); return false; }
+    finally { this.saving.set(false); }
   }
 
   async logout() {
+    if (!await this.saveChanges()) return;
     this.dataService.resetSession();
-    await this.authService.logout();
+    try { await this.authService.logout(); }
+    catch { this.toast.error('Sign-out failed. Reload to reopen your saved workspace.'); }
   }
 }

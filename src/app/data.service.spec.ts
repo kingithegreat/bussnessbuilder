@@ -77,6 +77,22 @@ describe('DataService', () => {
       expect(service.importState('{not valid')).toBe(false);
     });
 
+    it('rejects malformed profiles and typed collections without replacing the current editor', () => {
+      service.updateProfile({ name: 'Keep my site' });
+      expect(service.importState(JSON.stringify({ profile: 'broken' }))).toBe(false);
+      expect(service.importState(JSON.stringify({ profile: { name: 'Invalid site' }, services: 'broken' }))).toBe(false);
+      expect(service.profile().name).toBe('Keep my site');
+    });
+
+    it('keeps new enquiries and activities when loading an older website template', () => {
+      service.saveCurrentAsTemplate('Before a lead');
+      const id = service.templates()[0].id;
+      service.addEnquiry(baseEnquiry('High'));
+      service.loadTemplate(id);
+      expect(service.enquiries()).toHaveLength(1);
+      expect(service.activities()).toHaveLength(1);
+    });
+
     it('rejects JSON without a profile', () => {
       expect(service.importState(JSON.stringify({ services: [] }))).toBe(false);
     });
@@ -106,7 +122,8 @@ describe('DataService account loading and live inbox', () => {
   let receive: (data: { enquiries: Enquiry[]; activities: Activity[] }) => void;
   const stop = vi.fn();
   const db = {
-    loadBusinessData: vi.fn(), saveBusinessData: vi.fn(async () => undefined),
+    loadBusinessData: vi.fn(), saveBusinessData: vi.fn<FirestoreService['saveBusinessData']>(async () => undefined),
+    savePages: vi.fn(async () => undefined), saveNotificationPrefs: vi.fn<FirestoreService['saveNotificationPrefs']>(async () => undefined), saveTemplates: vi.fn(async () => undefined), updateEnquiryFields: vi.fn<FirestoreService['updateEnquiryFields']>(async () => undefined),
     watchInbox: vi.fn((_uid: string, callback: typeof receive) => { receive = callback; return stop; }),
     loadPages: async () => null, loadPaymentSettings: async () => null,
     loadTemplates: async () => null, loadNotificationPrefs: async () => null,
@@ -125,6 +142,68 @@ describe('DataService account loading and live inbox', () => {
   afterEach(() => {
     TestBed.resetTestingModule();
     vi.useRealTimers();
+  });
+
+  it('keeps the live inbox and claimed address when importing an older or different site', async () => {
+    stored.siteSlug = 'owner-a'; stored.isSetupComplete = true;
+    await service.init('owner-a');
+    receive({ enquiries: [{ id: 'new-lead', status: 'New' } as Enquiry], activities: [{ id: 'new-event' } as Activity] });
+    const other = structuredClone(stored); other.profile.name = 'Imported website'; other.siteSlug = 'other-owner'; other.isSetupComplete = false;
+    expect(service.importState(JSON.stringify(other))).toBe(true);
+    expect(service.profile().name).toBe('Imported website');
+    expect(service.siteSlug()).toBe('owner-a');
+    expect(service.isSetupComplete()).toBe(true);
+    expect(service.enquiries()[0].id).toBe('new-lead');
+    expect(service.activities()[0].id).toBe('new-event');
+  });
+
+  it('shows failed website saves and retries without advancing the saved baseline', async () => {
+    await service.init('owner-a'); TestBed.tick();
+    db.saveBusinessData.mockRejectedValueOnce(new Error('offline'));
+    service.updateProfile({ name: 'Keep this change' }); TestBed.tick();
+    expect(service.hasUnsavedChanges()).toBe(true);
+    await vi.advanceTimersByTimeAsync(1600);
+    expect(service.saveStatus()).toBe('error');
+    expect(service.saveError()).toContain('not saved');
+    await service.saveNow(); TestBed.tick();
+    expect(db.saveBusinessData.mock.calls.at(-1)?.[1].profile.name).toBe('Keep this change');
+    expect(service.saveStatus()).toBe('saved');
+    expect(service.hasUnsavedChanges()).toBe(false);
+  });
+
+  it('tracks failed supplementary saves and retries their captured data', async () => {
+    await service.init('owner-a');
+    db.saveNotificationPrefs.mockRejectedValueOnce(new Error('offline'));
+    const prefs = { emailOnNewEnquiry: true, notificationEmail: 'owner@example.com' };
+    expect(await service.setNotificationPrefs(prefs)).toBe(false);
+    prefs.notificationEmail = 'later-local-mutation@example.com';
+    expect(service.saveStatus()).toBe('error');
+    expect(service.hasUnsavedChanges()).toBe(true);
+    await service.saveNow();
+    expect(db.saveNotificationPrefs.mock.calls.at(-1)?.[1].notificationEmail).toBe('owner@example.com');
+    expect(service.saveStatus()).toBe('saved');
+  });
+
+  it('serializes supplementary writes and does not replay a superseded failed snapshot', async () => {
+    await service.init('owner-a');
+    db.savePages.mockRejectedValueOnce(new Error('offline'));
+    expect(await service.setPages([])).toBe(false);
+    expect(await service.setPages([{ id: 'p', title: 'New page' } as never])).toBe(true);
+    const calls = db.savePages.mock.calls.length;
+    await service.saveNow();
+    expect(db.savePages).toHaveBeenCalledTimes(calls);
+    expect(service.saveStatus()).toBe('saved');
+  });
+
+  it('does not lose a failed enquiry field when a different field later saves', async () => {
+    await service.init('owner-a');
+    receive({ enquiries: [{ id: 'lead', status: 'New' } as Enquiry], activities: [] });
+    db.updateEnquiryFields.mockRejectedValueOnce(new Error('offline'));
+    service.updateEnquiry('lead', { status: 'Contacted' });
+    service.updateEnquiry('lead', { customerNotes: 'Keep note' });
+    await service.saveNow();
+    expect(db.updateEnquiryFields.mock.calls.at(-1)?.[2]).toEqual({ status: 'Contacted' });
+    expect(service.saveStatus()).toBe('saved');
   });
 
   it('loads a new saved site with absent server-owned arrays safely', async () => {
@@ -366,6 +445,16 @@ describe('DataService server action save coordination', () => {
     TestBed.tick();
     await vi.advanceTimersByTimeAsync(2000);
     expect(db.saveBusinessData.mock.calls[0][1].profile.tagline).toBe('Already applied on server');
+  });
+
+  it('refuses template or import replacement while a server change is unconfirmed', async () => {
+    service.saveCurrentAsTemplate('Existing');
+    const exported = service.exportState();
+    await expect(service.runSiteAction('owner-a', async () => { throw new Error('lost response'); }, () => null, { mayChangeHeadline: true, operationKey: 'approve' })).rejects.toThrow('lost response');
+    expect(service.saveStatus()).toBe('paused');
+    expect(service.importState(exported)).toBe(false);
+    expect(service.loadTemplate(service.templates()[0].id)).toBe(false);
+    await expect(service.saveNow()).rejects.toThrow('unconfirmed');
   });
 
   it('holds autosave after a lost response even when history and an early saved-state read show the old headline', async () => {
