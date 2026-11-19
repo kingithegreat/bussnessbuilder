@@ -1,11 +1,14 @@
-import { Injectable, inject, PLATFORM_ID, signal } from '@angular/core';
+import { Injectable, inject, PLATFORM_ID, signal, InjectionToken } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { Storage, ref, uploadBytesResumable, getDownloadURL, deleteObject } from '@angular/fire/storage';
+
+export const STORAGE_UPLOAD_SDK = new InjectionToken('Storage upload SDK', { providedIn: 'root', factory: () => ({ ref, uploadBytesResumable, getDownloadURL }) });
 
 @Injectable({ providedIn: 'root' })
 export class StorageService {
   private platformId = inject(PLATFORM_ID);
   private storage = inject(Storage);
+  private uploadSdk = inject(STORAGE_UPLOAD_SDK);
 
   readonly uploading = signal(false);
   readonly progress = signal(0);
@@ -15,13 +18,13 @@ export class StorageService {
 
     const ext = file.name.split('.').pop() || 'jpg';
     const fileName = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}.${ext}`;
-    const storageRef = ref(this.storage, `users/${uid}/images/${path}/${fileName}`);
+    const storageRef = this.uploadSdk.ref(this.storage, `users/${uid}/images/${path}/${fileName}`);
 
     this.uploading.set(true);
     this.progress.set(0);
 
     return new Promise<string>((resolve, reject) => {
-      const task = uploadBytesResumable(storageRef, file);
+      const task = this.uploadSdk.uploadBytesResumable(storageRef, file);
 
       task.on('state_changed',
         (snapshot) => {
@@ -33,10 +36,9 @@ export class StorageService {
           reject(error);
         },
         async () => {
-          const url = await getDownloadURL(task.snapshot.ref);
-          this.uploading.set(false);
-          this.progress.set(0);
-          resolve(url);
+          try { resolve(await this.uploadSdk.getDownloadURL(task.snapshot.ref)); }
+          catch (error) { reject(error); }
+          finally { this.uploading.set(false); this.progress.set(0); }
         }
       );
     });

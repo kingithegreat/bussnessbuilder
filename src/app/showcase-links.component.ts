@@ -5,13 +5,13 @@ import { MatIconModule } from '@angular/material/icon';
 
 export interface ShowcaseLink { id: string; label: string; name: string; path: string }
 
-/** "See it working for: Mobile Mechanic / Lawn Mowing" — links to the seeded demo showcase sites. */
+/** "See it working for: Mobile Mechanic / Lawn Mowing / Mobile Car Detailing" — links to the seeded demo showcase sites. */
 @Component({
   selector: 'app-showcase-links',
   standalone: true,
   imports: [TooltipDirective, MatIconModule],
   template: `
-    @if (showcases().length) {
+    @if (ready()) {
       <section class="rounded-2xl border border-gray-200 bg-white p-4 text-sm" aria-label="Example sites" data-testid="showcase-links">
         <p class="font-semibold text-gray-900 flex items-center gap-2"><mat-icon class="text-[18px]">visibility</mat-icon> See it working for:</p>
         <div class="mt-2 flex flex-wrap gap-2">
@@ -20,6 +20,9 @@ export interface ShowcaseLink { id: string; label: string; name: string; path: s
               {{ s.label }} <span class="text-gray-500">· {{ s.name }}</span>
             </a>
           }
+          <a bfTip="Opens an interactive job-workflow demo you can customise for your business. Sample data only." href="/demo/workflow" target="_blank" rel="noopener" class="inline-flex items-center gap-1 rounded-full bg-gray-100 px-3 py-1.5 font-medium text-gray-800 hover:bg-gray-200" data-testid="workflow-demo-link">
+            Job workflow demo <span class="text-gray-500">· laundry pickup &amp; more</span>
+          </a>
         </div>
         @if (hint()) { <p class="mt-2 text-xs text-gray-500">{{ hint() }}</p> }
       </section>
@@ -30,9 +33,12 @@ export class ShowcaseLinksComponent implements OnInit {
   private platformId = inject(PLATFORM_ID);
   hint = input<string>('Example businesses with real prices, bookings and quote forms. Try booking a time or requesting a quote.');
   showcases = signal<ShowcaseLink[]>([]);
+  /** True once in the browser: the workflow demo link always shows, even if /api/showcases fails or is empty. */
+  ready = signal(false);
 
   async ngOnInit() {
     if (!isPlatformBrowser(this.platformId)) return;
+    this.ready.set(true);
     try {
       const res = await fetch('/api/showcases');
       if (!res.ok) return;

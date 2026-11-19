@@ -1,7 +1,8 @@
 /**
- * Demo showcases: two fully filled-in example businesses (a Tauranga mobile
- * mechanic and a Tauranga lawn-mowing round) that a funder, customer or beta
- * tester can click through with no placeholders.
+ * Demo showcases: three fully filled-in, clearly fictional example businesses
+ * (a Tauranga mobile mechanic, a Tauranga lawn-mowing round and a Tauranga/BOP
+ * mobile car detailer) that a funder, customer or beta tester can click through
+ * with no placeholders. Every name, review, phone number and price is made up.
  *
  * The seed is idempotent: each showcase carries a `showcaseVersion` on its main
  * doc and is only (re)written when that version changes, so bookings/enquiries
@@ -162,6 +163,65 @@ function lawnState(): AppState {
   return s;
 }
 
+// ── (c) Mobile car detailing ───────────────────────────────────────────────
+// Fictional business for the funding-proposal walkthrough (mobile car detailers
+// in Tauranga/BOP). The name was checked against real NZ detailers. Prices are
+// labelled as example prices. No GST number: it is left blank on purpose.
+export const DETAILER_IMAGES = {
+  hero: img('1552930294-6b595f4c2974'),
+  about: img('1607860108855-64acf2078ed9'),
+  interior: img('1610647752706-3bb12232b3ab'),
+  exterior: img('1520340356584-f9917d1eea6f'),
+  full: img('1607860108855-64acf2078ed9'),
+  ceramic: img('1601362840469-51e4d8d58785'),
+  pet: img('1544568100-847a948585b9'),
+  maintenance: img('1617469767053-d3b523a0b982'),
+};
+
+function detailerState(): AppState {
+  const s = clone(defaultState);
+  s.profile = {
+    ...s.profile,
+    name: 'Kōwhai Coast Mobile Detailing', type: 'other',
+    tagline: 'Showroom-clean cars, detailed in your driveway.',
+    description: 'Kōwhai Coast Mobile Detailing is a one-van, owner-operated detailer run by Mere, who spent eight years preparing cars for a Tauranga dealership before going mobile. She brings the water, power and gear to your home or work, so you never lose half a day at a car wash. Every job ends with a walk-around before payment.',
+    email: 'hello@kowhaicoastdetailing.example', phone: '021 555 0163',
+    address: 'Mobile, based in Tauranga 3110', serviceArea: 'Tauranga, Mount Maunganui, Papamoa, Bethlehem and Pyes Pa',
+    openingHours: 'Mon–Fri: 7:30am – 5:30pm\nSat: 8am – 2pm\nSun: Closed',
+    toneOfVoice: 'Friendly, careful and proud of the finish', brandColor: '#0f766e',
+    heroCopy: 'Interior valets, wash and wax, full details and paint protection at your home or work. We bring our own water and power.',
+    ctaText: 'Request a booking', trustBadges: ['Fully mobile, own water and power', 'Prices include GST', 'Walk-around check before you pay'],
+    enquiryFields: ['Vehicle make & model', 'Vehicle size (small, medium, SUV/ute)'], currency: 'NZD', pricesIncludeGst: true,
+  };
+  s.services = [
+    { id: 'kd-int', name: 'Interior valet', description: 'Full vacuum including boot, seats and mats, dash and door trims cleaned and UV-dressed, inside glass, and a fresh-smelling finish. Example price for a small to medium car; SUVs and vans are a little more.', price: 'from $129', duration: '2 hr', imageUrl: DETAILER_IMAGES.interior },
+    { id: 'kd-ext', name: 'Exterior wash & wax', description: 'Snow-foam pre-wash, two-bucket hand wash, wheels and tyres cleaned and dressed, then a hand-applied wax for gloss and a few months of protection. Example price for a small to medium car.', price: 'from $99', duration: '1.5 hr', imageUrl: DETAILER_IMAGES.exterior },
+    { id: 'kd-full', name: 'Full detail (inside & out)', description: 'Our interior valet and exterior wash and wax together, plus clay-bar decontamination, door jambs and engine bay wipe-down. The one to book before selling or after a road trip. Example price.', price: 'from $289', duration: '4 hr', imageUrl: DETAILER_IMAGES.full },
+    { id: 'kd-cer', name: 'Ceramic paint protection (add-on)', description: 'A spray-on ceramic sealant applied after a wash and wax or full detail. Water beads off and the car stays cleaner for up to 12 months. Example add-on price; needs a dry day.', price: 'from $199', duration: '1.5 hr', imageUrl: DETAILER_IMAGES.ceramic },
+    { id: 'kd-pet', name: 'Pet hair removal (add-on)', description: 'Rubber-brush and vacuum treatment that lifts embedded dog and cat hair from carpets, seats and the boot. Add it to any interior valet or full detail. Example add-on price.', price: 'from $49', duration: '45 min', imageUrl: DETAILER_IMAGES.pet },
+    { id: 'kd-maint', name: 'Maintenance wash (regulars)', description: 'For cars we have already detailed: a hand wash, quick vacuum and wipe-down every two or four weeks to keep it looking new. Example price per visit; no contract.', price: '$69 per visit', duration: '1 hr', imageUrl: DETAILER_IMAGES.maintenance },
+  ];
+  s.testimonials = [
+    { id: 'kt1', author: 'Hannah R., Papamoa', rating: 5, text: 'Two kids, a dog and a beach car. Mere got the sand and hair out of places I didn\u2019t know existed. Done in the driveway while I worked.' },
+    { id: 'kt2', author: 'Steve L., Bethlehem', rating: 5, text: 'Booked the full detail before selling my Hilux. Looked years younger in the photos and sold in a week.' },
+    { id: 'kt3', author: 'Anika S., Mount Maunganui', rating: 5, text: 'Came to my work car park on Totara St. Booking online took a minute and the ceramic coat is still beading months later.' },
+  ];
+  s.faqs = [
+    { id: 'kf1', question: 'Do I need to supply water or power?', answer: 'No. The van carries its own water tank and quiet generator, so we can work on the street, at your work car park or in an apartment visitor park. We just need a safe, legal spot with room to open the doors.' },
+    { id: 'kf2', question: 'How long does it take?', answer: 'About 1.5 hours for an exterior wash and wax, 2 hours for an interior valet and around 4 hours for a full detail. Larger vehicles or very dirty interiors can take longer, and we will tell you before we start.' },
+    { id: 'kf3', question: 'Do I need to be home?', answer: 'Only at the start and the end. Leave us the keys, carry on with your day, and we will walk around the car with you before you pay.' },
+    { id: 'kf4', question: 'What if it rains?', answer: 'Interior work goes ahead in light rain. For wash, wax and ceramic jobs we will move you to the next dry slot, free of charge.' },
+    { id: 'kf5', question: 'Are these real prices?', answer: 'This is a fictional demo business. The prices are examples of what a Tauranga mobile detailer might charge, GST included.' },
+  ];
+  s.customization.branding = { ...s.customization.branding, primaryColor: '#0f766e', secondaryColor: '#0f172a', backgroundColor: '#f6fbfa', ctaText: 'Request a booking' };
+  sections(s, ['hero', 'services', 'about', 'testimonials', 'hours', 'faq', 'contact'],
+    { services: ['Detailing services', 'Example prices, GST included'], about: ['About Mere', 'Your local mobile detailer'], testimonials: ['What customers say', 'Driveways around the Bay'], hours: ['Hours', 'Request a booking online any time'], faq: ['Good to know', 'Water, power, timing and weather'] },
+    DETAILER_IMAGES.hero, DETAILER_IMAGES.about);
+  s.isSetupComplete = true;
+  s.siteSlug = 'demo-kowhai-coast-detailing';
+  return s;
+}
+
 const booking = (now: Date, id: string, svc: [string, string], day: number, hour: number, dur: number, name: string, notes: string, status: Booking['status']): Booking => ({
   id, serviceId: svc[0], serviceName: svc[1], ...nzSlot(now, day, hour, dur), name,
   email: `${name.split(' ')[0].toLowerCase()}@example.com`, phone: '021 000 0000', notes, status,
@@ -224,6 +284,38 @@ export const SHOWCASES: ShowcaseDef[] = [
     enquiries: (now) => [
       enquiry(now, 0, { id: 'demo-e1', name: 'Tom Harris', email: 'tom@example.com', phone: '027 000 0003', serviceInterest: 'Fortnightly lawn plan', message: 'Just bought in Bethlehem, lawn is knee-high. Can you do a first cut and then fortnightly?', urgency: 'High', leadScore: 'Hot', status: 'Quoted' }),
       enquiry(now, 1, { id: 'demo-e2', name: 'Jo Patel', email: 'jo@example.com', phone: '027 000 0004', serviceInterest: 'Medium section mow', message: 'One-off mow before we sell, ideally this weekend.' }),
+    ],
+  },
+  {
+    id: 'detailer', uid: 'showcase-kowhai-coast-detailing', slug: 'demo-kowhai-coast-detailing', label: 'Mobile Car Detailing',
+    ownerEmail: 'demo.detailer@example.com', state: detailerState(),
+    booking: {
+      enabled: true, timezone: 'Pacific/Auckland', weekly: weekdays('07:30', '17:30', ['08:00', '14:00']),
+      services: [
+        { id: 'kd-int', name: 'Interior valet', durationMin: 120, price: 'from $129' },
+        { id: 'kd-ext', name: 'Exterior wash & wax', durationMin: 90, price: 'from $99' },
+        { id: 'kd-full', name: 'Full detail (inside & out)', durationMin: 240, price: 'from $289' },
+        { id: 'kd-cer', name: 'Ceramic paint protection (add-on)', durationMin: 90, price: 'from $199' },
+        { id: 'kd-pet', name: 'Pet hair removal (add-on)', durationMin: 45, price: 'from $49' },
+        { id: 'kd-maint', name: 'Maintenance wash (regulars)', durationMin: 60, price: '$69 per visit' },
+      ],
+      // 2h minimum notice matches the platform default and the other showcases.
+      // Owners change it in Bookings → Minimum notice (hours); Aden may prefer 12h.
+      blackouts: [], slotStepMin: 30, leadTimeHours: 2, maxDaysAhead: 60,
+    },
+    bookings: (now) => [
+      booking(now, 'demo-b1', ['kd-full', 'Full detail (inside & out)'], 1, 8, 240, 'Steve Lawson', '2018 Toyota Hilux, selling next week. At home in Bethlehem, driveway is flat.', 'accepted'),
+      booking(now, 'demo-b2', ['kd-int', 'Interior valet'], 2, 10, 120, 'Hannah Reid', 'Family SUV, lots of sand. Add pet hair removal please (labrador).', 'pending'),
+      booking(now, 'demo-b3', ['kd-ext', 'Exterior wash & wax'], 3, 13, 90, 'Anika Shah', 'Work car park on Totara St, Mount Maunganui. Silver Corolla.', 'pending'),
+    ],
+    quotes: (now) => [
+      quote(now, { ageDays: 2, id: 'demo-q1', number: 'Q-0001', kind: 'quote', status: 'sent', customerName: 'Hannah Reid', customerEmail: 'hannah@example.com', notes: '2017 Mazda CX-5. Example prices, GST included. Valid 30 days.', lines: [{ description: 'Interior valet (SUV)', quantity: 1, unitPrice: 149 }, { description: 'Pet hair removal add-on', quantity: 1, unitPrice: 49 }], sentAt: new Date(now.getTime() - 2 * 86_400_000).toISOString() }),
+      quote(now, { ageDays: 4, id: 'demo-q2', number: 'Q-0002', kind: 'quote', status: 'accepted', customerName: 'Steve Lawson', customerEmail: 'steve@example.com', notes: 'Pre-sale detail, 2018 Toyota Hilux.', lines: [{ description: 'Full detail (inside & out), ute', quantity: 1, unitPrice: 319 }, { description: 'Ceramic paint protection add-on', quantity: 1, unitPrice: 199 }], acceptedAt: new Date(now.getTime() - 3 * 86_400_000).toISOString() }),
+      quote(now, { ageDays: 7, id: 'demo-i1', number: 'INV-0001', kind: 'invoice', status: 'sent', customerName: 'Anika Shah', customerEmail: 'anika@example.com', notes: 'Thanks! Bank transfer to 12-3456-7890123-00.', lines: [{ description: 'Exterior wash & wax', quantity: 1, unitPrice: 99 }, { description: 'Maintenance wash (regulars)', quantity: 1, unitPrice: 69 }], sentAt: new Date(now.getTime() - 7 * 86_400_000).toISOString() }),
+    ],
+    enquiries: (now) => [
+      enquiry(now, 0, { id: 'demo-e1', name: 'Tama Ngata', email: 'tama@example.com', phone: '027 000 0005', serviceInterest: 'Full detail (inside & out)', message: 'Picking up a 2015 Outlander in Pyes Pa that needs a proper clean before the family road trip. Can you do Saturday?', urgency: 'High', leadScore: 'Hot' }),
+      enquiry(now, 1, { id: 'demo-e2', name: 'Olivia Brown', email: 'olivia@example.com', phone: '027 000 0006', serviceInterest: 'Maintenance wash (regulars)', message: 'Apartment in Mount Maunganui with a visitor park. Could you wash my car every fortnight?', status: 'Quoted' }),
     ],
   },
 ];

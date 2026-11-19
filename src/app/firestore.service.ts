@@ -118,6 +118,7 @@ export class FirestoreService {
       });
     } catch (e) {
       console.error('Failed to update enquiry', e);
+      throw e;
     }
   }
 
@@ -140,6 +141,7 @@ export class FirestoreService {
       await setDoc(ref, { items: JSON.parse(JSON.stringify(pages)) });
     } catch (e) {
       console.error('Failed to save pages', e);
+      throw e;
     }
   }
 
@@ -162,6 +164,7 @@ export class FirestoreService {
       await setDoc(ref, JSON.parse(JSON.stringify(prefs)));
     } catch (e) {
       console.error('Failed to save notification prefs', e);
+      throw e;
     }
   }
 
@@ -184,6 +187,7 @@ export class FirestoreService {
       await setDoc(ref, JSON.parse(JSON.stringify(settings)));
     } catch (e) {
       console.error('Failed to save payment settings', e);
+      throw e;
     }
   }
 
@@ -206,6 +210,7 @@ export class FirestoreService {
       await setDoc(ref, { items: JSON.parse(JSON.stringify(recommendations)) });
     } catch (e) {
       console.error('Failed to save recommendations', e);
+      throw e;
     }
   }
 
@@ -228,6 +233,7 @@ export class FirestoreService {
       await setDoc(ref, { report: JSON.parse(JSON.stringify(report)) });
     } catch (e) {
       console.error('Failed to save growth report', e);
+      throw e;
     }
   }
 
@@ -250,6 +256,7 @@ export class FirestoreService {
       await setDoc(ref, JSON.parse(JSON.stringify(data)));
     } catch (e) {
       console.error('Failed to save templates', e);
+      throw e;
     }
   }
 }

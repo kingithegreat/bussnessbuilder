@@ -30,7 +30,7 @@ import {
   standalone: true,
   imports: [TooltipDirective, ReactiveFormsModule, MatIconModule],
   template: `
-    <div class="min-h-screen bg-[#F5F5F7] pt-8 pb-40 lg:pt-12 lg:pb-32 px-4 sm:px-6 lg:px-8 font-sans flex justify-center">
+    <main class="min-h-screen bg-[#F5F5F7] pt-8 pb-40 lg:pt-12 lg:pb-32 px-4 sm:px-6 lg:px-8 font-sans flex justify-center">
       <div class="max-w-6xl w-full grid grid-cols-1 lg:grid-cols-12 gap-8">
 
         <!-- Left Column: Form -->
@@ -43,7 +43,7 @@ import {
                  </div>
                  <span class="font-bold text-gray-900 tracking-tight">BusinessFlow</span>
                </div>
-               <span class="text-xs font-bold text-gray-600 uppercase tracking-wider">Setup Wizard</span>
+               <h1 class="text-xs font-bold text-gray-600 uppercase tracking-wider">Setup Wizard</h1>
              </div>
 
              <!-- Progress Indicator — reflects what's actually filled in -->
@@ -221,9 +221,10 @@ import {
                    <mat-icon class="text-[14px]">location_on</mat-icon>
                    {{ form.value.serviceArea || 'Your City / Area' }}
                  </div>
-                 <h1 class="text-4xl font-black text-gray-900 tracking-tight leading-tight mb-4">
+                 <!-- Preview copy is styled like a hero but is not this page's h1 (a11y: the wizard owns the h1). -->
+                 <p class="text-4xl font-black text-gray-900 tracking-tight leading-tight mb-4" data-testid="preview-hero">
                    {{ getPreviewHeroCopy() || 'Great work, done right — for customers who expect the best.' }}
-                 </h1>
+                 </p>
                  <p class="text-gray-500 text-sm mb-8 leading-relaxed">
                    {{ form.value.tagline || 'Professional, reliable, and high-quality solutions tailored for you.' }}
                  </p>
@@ -290,7 +291,7 @@ import {
         }
 
       </div>
-    </div>
+    </main>
   `
 })
 export class SetupWizardComponent implements OnInit {

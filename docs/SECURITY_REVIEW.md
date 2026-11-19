@@ -3,6 +3,11 @@
 This is an honest engineering self-review. It is **not** a pen test or an audit. Owner: the incoming
 security developer.
 
+
+## Dependency correction — 15 November 2026 NZDT
+
+The reliability branch upgrades Nodemailer to ^10.5.0 and overrides grpc-js forward to ^1.14.7 within its existing major. A fresh npm audit reports **0 critical / 0 high / 22 moderate**, replacing the older six-high dependency count below for this branch. Lint, 632 tests and the production SSR build pass. An actual Nodemailer stream transport generated a message offline without an SMTP connection. Production Firebase/SMTP acceptance remains unperformed; this is dependency remediation, not an external security certification. The remaining moderate dependency findings, CSP/frame-policy work, distributed rate limiting, rules/emulator checks and other manual gates below remain outstanding.
+
 ## Auth model
 - Firebase Auth on the client. Server routes verify the Firebase ID token (`Authorization: Bearer`) and
   derive the `uid` from the token, never from a query parameter alone. Unauthenticated owner routes are

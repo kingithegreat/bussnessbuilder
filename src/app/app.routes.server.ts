@@ -13,6 +13,8 @@ export const serverRoutes: ServerRoute[] = [
   // Live-preview iframe content for the page builder — also auth-only, zero
   // SEO value, and deliberately skips DataService.init() (see app.routes.ts).
   { path: 'preview-frame', renderMode: RenderMode.Client },
+  // Browser-local proposal demo (localStorage state) — render client-side only.
+  { path: 'demo/workflow', renderMode: RenderMode.Client },
   {
     // Render every remaining route on the server at request time. The app's
     // state lives in the browser (localStorage), so server-side rendering
