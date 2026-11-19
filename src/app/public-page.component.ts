@@ -408,7 +408,7 @@ import { ToastService } from './toast.service';
                               <div class="pt-4 border-t border-gray-50 mt-auto">
                                 @if (service.price) {
                           <p class="font-bold text-gray-900 flex items-center justify-between text-sm">
-                                  @if (priceLabelFor(service.price); as pl) {<span class="text-gray-400 text-[10px] uppercase tracking-wider">{{ pl }}</span>}
+                                  @if (priceLabelFor(service.price); as pl) {<span class="text-gray-600 text-[10px] uppercase tracking-wider">{{ pl }}</span>}
                                   {{ price(service.price) }}
                                 </p>
                         }
@@ -429,7 +429,7 @@ import { ToastService } from './toast.service';
                               <div class="pt-4 border-t border-gray-50 mt-auto">
                                 @if (service.price) {
                           <p class="font-bold text-gray-900 flex items-center justify-between text-sm">
-                                  @if (priceLabelFor(service.price); as pl) {<span class="text-gray-400 text-[10px] uppercase tracking-wider">{{ pl }}</span>}
+                                  @if (priceLabelFor(service.price); as pl) {<span class="text-gray-600 text-[10px] uppercase tracking-wider">{{ pl }}</span>}
                                   {{ price(service.price) }}
                                 </p>
                         }
@@ -459,7 +459,7 @@ import { ToastService } from './toast.service';
                           </div>
                           <div class="shrink-0 text-left md:text-right">
                             @if (service.price) {
-                              @if (priceLabelFor(service.price); as pl) {<span class="text-gray-400 text-[10px] uppercase tracking-wider block">{{ pl }}</span>}
+                              @if (priceLabelFor(service.price); as pl) {<span class="text-gray-600 text-[10px] uppercase tracking-wider block">{{ pl }}</span>}
                               <p class="font-bold text-gray-900 text-lg">{{ price(service.price) }}</p>
                             }
                             @if (getPaymentLink(service.name); as payUrl) {
@@ -1102,14 +1102,14 @@ import { ToastService } from './toast.service';
         <app-review-form [siteId]="publicSiteId()"></app-review-form>
       }
 
-      <footer class="mt-auto py-8 border-t border-gray-200/60 text-center text-gray-400 text-xs">
+      <footer class="mt-auto py-8 border-t border-gray-200/60 text-center text-gray-600 text-xs">
          <div class="max-w-5xl mx-auto px-6">
            <div class="flex items-center justify-center gap-4 mb-3">
-             <a bfTip="privacy policy" routerLink="/privacy" class="hover:text-gray-600 transition-colors text-[12px] font-medium">Privacy</a>
+             <a bfTip="privacy policy" routerLink="/privacy" class="underline underline-offset-2 hover:text-gray-900 transition-colors text-[12px] font-medium">Privacy</a>
              <span class="text-gray-300">|</span>
-             <a bfTip="terms" routerLink="/terms" class="hover:text-gray-600 transition-colors text-[12px] font-medium">Terms</a>
+             <a bfTip="terms" routerLink="/terms" class="underline underline-offset-2 hover:text-gray-900 transition-colors text-[12px] font-medium">Terms</a>
            </div>
-           <p class="text-[11px] text-gray-400">&copy; {{ currentYear }} {{ profile().name }}. @if (!hideBranding()) {Powered by BusinessFlow Studio.}</p>
+           <p class="text-[11px] text-gray-600">&copy; {{ currentYear }} {{ profile().name }}. @if (!hideBranding()) {Powered by BusinessFlow Studio.}</p>
          </div>
       </footer>
     </div>
