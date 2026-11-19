@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import {
-  JobLine, PAYMENT_STATUSES, PaymentStatus, WORKFLOW_PRESETS, WORKFLOW_STORAGE_KEY,
+  JobLine, PAYMENT_STATUSES, lineName, PaymentStatus, WORKFLOW_PRESETS, WORKFLOW_STORAGE_KEY,
   WorkflowConfig, WorkflowJob, WorkflowState, applyConfig, createJob, deleteJob, gstPortion,
   initialState, isComplete, jobTotal, money, moveJob, newJobErrors, parseState, setPayment,
   slugId, stageIndex, stageLabel, validateConfig, withSampleJobs, MAX_STAGES, MIN_STAGES,
@@ -60,7 +60,7 @@ type Tab = 'board' | 'new' | 'settings';
           <button type="button" class="btn-accent" (click)="tab.set('new')"><mat-icon aria-hidden="true">add</mat-icon> New {{ cfg().labels.job.toLowerCase() }}</button>
         </div>
 
-        <ol class="grid gap-4 md:grid-flow-col md:auto-cols-fr overflow-x-auto pb-2" aria-label="Workflow stages">
+        <ol class="grid gap-4 md:grid-flow-col md:auto-cols-[minmax(220px,1fr)] overflow-x-auto pb-2" aria-label="Workflow stages">
           @for (s of cfg().stages; track s.id; let i = $index) {
             <li class="rounded-2xl bg-white border border-slate-200 p-3 min-w-[220px]" [attr.data-testid]="'stage-' + s.id">
               <h3 class="font-semibold text-sm flex items-center gap-2">
@@ -111,7 +111,7 @@ type Tab = 'board' | 'new' | 'settings';
                 <table class="w-full"><caption class="sr-only">Services</caption>
                   <tbody>
                     @for (l of j.lines; track l.serviceId) {
-                      <tr><td>{{ l.qty }} × {{ serviceName(l.serviceId) }}</td><td class="text-right">{{ money(cfg(), lineTotal(l)) }}</td></tr>
+                      <tr><td>{{ l.qty }} × {{ lineName(cfg(), l) }}</td><td class="text-right">{{ money(cfg(), lineTotal(l)) }}</td></tr>
                     }
                     <tr class="border-t font-semibold"><td>Total</td><td class="text-right" data-testid="job-total">{{ money(cfg(), jobTotal(cfg(), j)) }}</td></tr>
                     @if (gstPortion(cfg(), jobTotal(cfg(), j)); as g) { <tr class="text-xs text-slate-500"><td>Includes GST</td><td class="text-right">{{ money(cfg(), g) }}</td></tr> }
@@ -213,12 +213,13 @@ type Tab = 'board' | 'new' | 'settings';
         <section class="card">
           <h3 class="font-semibold">Services and example prices ({{ edit.business.currency }}, {{ edit.business.pricesIncludeGst ? 'incl. GST' : 'excl. GST' }})</h3>
           <div class="mt-2 space-y-2">
+            <!-- Inputs are named by the row's stable id (not its position) so reordering/removing rows can't re-wire NgModel controls and shuffle typed values. -->
             @for (s of edit.services; track s.id; let i = $index) {
-              <div class="grid grid-cols-12 gap-2 items-center">
-                <input class="input col-span-5" [name]="'sn' + i" [(ngModel)]="s.name" [attr.aria-label]="'Service ' + (i + 1) + ' name'">
-                <input class="input col-span-4" [name]="'su' + i" [(ngModel)]="s.unit" [attr.aria-label]="'Service ' + (i + 1) + ' unit'" placeholder="per item">
-                <input class="input col-span-2" type="number" min="0" step="0.5" [name]="'sp' + i" [(ngModel)]="s.price" [attr.aria-label]="'Service ' + (i + 1) + ' price'">
-                <button type="button" class="col-span-1 text-slate-500 hover:text-red-700" (click)="edit.services.splice(i, 1)" [attr.aria-label]="'Remove service ' + (s.name || i + 1)"><mat-icon aria-hidden="true">delete</mat-icon></button>
+              <div class="grid grid-cols-12 gap-2 items-center border-b border-slate-100 pb-2 sm:border-0 sm:pb-0">
+                <input class="input col-span-12 sm:col-span-5" [name]="'sn-' + s.id" [(ngModel)]="s.name" [attr.aria-label]="'Service ' + (i + 1) + ' name'">
+                <input class="input col-span-6 sm:col-span-4" [name]="'su-' + s.id" [(ngModel)]="s.unit" [attr.aria-label]="'Service ' + (i + 1) + ' unit'" placeholder="per item">
+                <input class="input col-span-4 sm:col-span-2" type="number" min="0" step="0.5" [name]="'sp-' + s.id" [(ngModel)]="s.price" [attr.aria-label]="'Service ' + (i + 1) + ' price'">
+                <button type="button" class="col-span-2 sm:col-span-1 text-slate-500 hover:text-red-700" (click)="removeService(i)" [attr.aria-label]="'Remove service ' + (s.name || i + 1)"><mat-icon aria-hidden="true">delete</mat-icon></button>
               </div>
             }
           </div>
@@ -228,20 +229,20 @@ type Tab = 'board' | 'new' | 'settings';
           <h3 class="font-semibold">Workflow stages (in order, {{ minStages }}–{{ maxStages }})</h3>
           <div class="mt-2 space-y-2">
             @for (s of edit.stages; track s.id; let i = $index) {
-              <div class="grid grid-cols-12 gap-2 items-center">
+              <div class="grid grid-cols-12 gap-2 items-center border-b border-slate-100 pb-2 sm:border-0 sm:pb-0">
                 <span class="col-span-1 text-sm text-slate-500 text-center">{{ i + 1 }}</span>
-                <input class="input col-span-3" [name]="'stl' + i" [(ngModel)]="s.label" [attr.aria-label]="'Stage ' + (i + 1) + ' name'">
-                <input class="input col-span-5" [name]="'std' + i" [(ngModel)]="s.description" [attr.aria-label]="'Stage ' + (i + 1) + ' description'">
-                <span class="col-span-3 flex gap-1">
+                <input class="input col-span-7 sm:col-span-3" [name]="'stl-' + s.id" [(ngModel)]="s.label" [attr.aria-label]="'Stage ' + (i + 1) + ' name'">
+                <input class="input col-span-12 order-last sm:order-none sm:col-span-5" [name]="'std-' + s.id" [(ngModel)]="s.description" [attr.aria-label]="'Stage ' + (i + 1) + ' description'">
+                <span class="col-span-4 sm:col-span-3 flex gap-1 justify-end sm:justify-start">
                   <button type="button" class="icon-btn" (click)="moveStage(i, -1)" [disabled]="i === 0" [attr.aria-label]="'Move stage ' + (i + 1) + ' up'"><mat-icon aria-hidden="true">arrow_upward</mat-icon></button>
                   <button type="button" class="icon-btn" (click)="moveStage(i, 1)" [disabled]="i === edit.stages.length - 1" [attr.aria-label]="'Move stage ' + (i + 1) + ' down'"><mat-icon aria-hidden="true">arrow_downward</mat-icon></button>
-                  <button type="button" class="icon-btn" (click)="edit.stages.splice(i, 1)" [attr.aria-label]="'Remove stage ' + (i + 1)"><mat-icon aria-hidden="true">delete</mat-icon></button>
+                  <button type="button" class="icon-btn" (click)="removeStage(i)" [attr.aria-label]="'Remove stage ' + (i + 1)"><mat-icon aria-hidden="true">delete</mat-icon></button>
                 </span>
               </div>
             }
           </div>
           <button type="button" class="btn-ghost mt-2" (click)="addStage()" [disabled]="edit.stages.length >= maxStages">+ Add stage</button>
-          <p class="text-xs text-slate-500 mt-2">Jobs in a removed stage move back to the first stage. Payment is tracked separately from stages.</p>
+          <p class="text-xs text-slate-500 mt-2">Jobs in a removed stage move back to the nearest earlier stage. Prices on existing jobs stay as booked. Payment is tracked separately from stages.</p>
         </section>
         @if (settingsErrors().length) { <ul class="text-sm text-red-700" role="alert">@for (e of settingsErrors(); track e) { <li>{{ e }}</li> }</ul> }
         <div class="flex flex-wrap gap-2">
@@ -283,7 +284,7 @@ export class WorkflowDemoComponent {
     { id: 'settings', label: 'Settings', icon: 'tune' },
   ];
   // template helpers
-  readonly money = money; readonly jobTotal = jobTotal; readonly gstPortion = gstPortion;
+  readonly money = money; readonly jobTotal = jobTotal; readonly lineName = lineName; readonly gstPortion = gstPortion;
   readonly stageIndex = stageIndex; readonly stageLabel = stageLabel; readonly isComplete = isComplete;
 
   state = signal<WorkflowState>(this.load());
@@ -306,7 +307,6 @@ export class WorkflowDemoComponent {
   partnersText = this.edit.partners.join(', ');
 
   jobsIn(stageId: string): WorkflowJob[] { return this.state().jobs.filter(j => j.stageId === stageId); }
-  serviceName(id: string) { return this.cfg().services.find(s => s.id === id)?.name ?? 'Removed service'; }
   lineTotal(l: JobLine) { return jobTotal(this.cfg(), { lines: [l] }); }
   draftTotal() { return jobTotal(this.cfg(), { lines: this.draftLines() }); }
   payLabel(p: PaymentStatus) { return p === 'paid' ? 'Paid' : p === 'invoiced' ? 'Invoiced' : 'Unpaid'; }
@@ -340,12 +340,17 @@ export class WorkflowDemoComponent {
     this.tab.set('board');
   }
 
-  addService() { this.edit.services.push({ id: slugId('service', this.edit.services.map(s => s.id)), name: '', unit: '', price: 0 }); }
-  addStage() { this.edit.stages.push({ id: slugId('stage', this.edit.stages.map(s => s.id)), label: '', description: '' }); }
+  // Settings rows are replaced immutably (new arrays) and their form controls are
+  // named by stable id, so reordering/removing rows never shuffles typed values.
+  addService() { this.edit.services = [...this.edit.services, { id: slugId('service', this.edit.services.map(s => s.id)), name: '', unit: '', price: 0 }]; }
+  removeService(i: number) { this.edit.services = this.edit.services.filter((_, k) => k !== i); }
+  addStage() { this.edit.stages = [...this.edit.stages, { id: slugId('stage', this.edit.stages.map(s => s.id)), label: '', description: '' }]; }
+  removeStage(i: number) { this.edit.stages = this.edit.stages.filter((_, k) => k !== i); }
   moveStage(i: number, dir: 1 | -1) {
-    const a = this.edit.stages; const k = i + dir;
+    const a = [...this.edit.stages]; const k = i + dir;
     if (k < 0 || k >= a.length) return;
     [a[i], a[k]] = [a[k], a[i]];
+    this.edit.stages = a;
   }
   saveSettings() {
     const next: WorkflowConfig = { ...structuredClone(this.edit), partners: this.partnersText.split(',').map(p => p.trim()).filter(Boolean) };

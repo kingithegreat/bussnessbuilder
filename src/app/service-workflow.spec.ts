@@ -1,6 +1,6 @@
 import {
   WORKFLOW_PRESETS, applyConfig, createJob, gstPortion, initialState, isComplete, jobTotal,
-  moveJob, newJobErrors, normaliseConfig, parseState, presetConfig, setPayment, validateConfig,
+  lineName, moveJob, newJobErrors, normaliseConfig, parseState, presetConfig, setPayment, validateConfig,
   WorkflowState,
 } from './service-workflow';
 
@@ -42,18 +42,56 @@ describe('service workflow (configurable demo)', () => {
     expect(() => createJob(empty(), { customerName: '', lines: [] })).toThrow();
   });
 
-  it('applying a new config remaps jobs in removed stages and drops removed services', () => {
+  it('applying a new config remaps jobs in removed stages to the nearest earlier stage and keeps booked lines', () => {
     let s = createJob(empty(), { customerName: 'A', address: 'x', lines: [{ serviceId: 'duvet', qty: 1 }, { serviceId: 'express', qty: 1 }] }, NOW);
     s = moveJob(moveJob(s, s.jobs[0].id, 1, NOW), s.jobs[0].id, 1, NOW);
+    expect(s.jobs[0].stageId).toBe('at-partner');
     const next = structuredClone(s.config);
     next.stages = next.stages.filter(x => x.id !== 'at-partner');
     next.services = next.services.filter(x => x.id !== 'duvet');
     next.usesPartner = false;
     next.business.name = 'Any Business Ltd';
     s = applyConfig(s, next, NOW);
-    expect(s.jobs[0].stageId).toBe('booked');
-    expect(s.jobs[0].lines).toEqual([{ serviceId: 'express', qty: 1 }]);
+    expect(s.jobs[0].stageId).toBe('collected');
+    expect(s.jobs[0].history.at(-1)!.text).toBe('Stage "Cleaning & drying" removed in settings — moved to Picked up');
+    expect(s.jobs[0].lines.map(l => l.serviceId)).toEqual(['duvet', 'express']);
+    expect(lineName(s.config, s.jobs[0].lines[0])).toBe('Duvet / bedding');
+    expect(jobTotal(s.config, s.jobs[0])).toBe(55);
     expect(s.config.business.name).toBe('Any Business Ltd');
+  });
+
+  it('falls back to the first stage when no earlier stage survives', () => {
+    let s = createJob(empty(), { customerName: 'A', address: 'x', lines: [{ serviceId: 'express', qty: 1 }] }, NOW);
+    const next = structuredClone(s.config);
+    next.stages = next.stages.filter(x => x.id !== 'booked');
+    s = applyConfig(s, next, NOW);
+    expect(s.jobs[0].stageId).toBe('collected');
+  });
+
+  it('mid-journey price changes and renames do not re-price jobs already booked (or paid)', () => {
+    let s = createJob(empty(), { customerName: 'A', address: 'x', lines: [{ serviceId: 'wash-fold', qty: 2 }, { serviceId: 'dry-clean', qty: 1 }] }, NOW);
+    const id = s.jobs[0].id;
+    s = moveJob(s, id, 1, NOW);
+    s = setPayment(s, id, 'paid', NOW);
+    const next = structuredClone(s.config);
+    next.services[0].price = 45; next.services[0].name = 'Wash & fold premium';
+    s = applyConfig(s, next, NOW);
+    expect(jobTotal(s.config, s.jobs[0])).toBe(88);
+    expect(lineName(s.config, s.jobs[0].lines[0])).toBe('Wash, dry & fold');
+    // a job booked after the change uses the new price and name
+    s = createJob(s, { customerName: 'B', address: 'y', lines: [{ serviceId: 'wash-fold', qty: 2 }] }, NOW);
+    expect(jobTotal(s.config, s.jobs[0])).toBe(90);
+    expect(lineName(s.config, s.jobs[0].lines[0])).toBe('Wash & fold premium');
+  });
+
+  it('snapshots legacy (un-snapshotted) lines from the old config before a service is removed', () => {
+    let s = createJob(empty(), { customerName: 'A', address: 'x', lines: [{ serviceId: 'dry-clean', qty: 3 }] }, NOW);
+    s = { ...s, jobs: s.jobs.map(j => ({ ...j, lines: j.lines.map(l => ({ serviceId: l.serviceId, qty: l.qty })) })) };
+    const next = structuredClone(s.config);
+    next.services = next.services.filter(x => x.id !== 'dry-clean');
+    s = applyConfig(s, next, NOW);
+    expect(jobTotal(s.config, s.jobs[0])).toBe(54);
+    expect(lineName(s.config, s.jobs[0].lines[0])).toBe('Dry cleaning');
   });
 
   it('rejects invalid configs', () => {
@@ -83,6 +121,17 @@ describe('service workflow (configurable demo)', () => {
     expect(back.jobs[0].stageId).toBe('booked');
     expect(back.jobs[0].payment).toBe('unpaid');
     expect(back.nextRef).toBe(4);
+  });
+
+  it('keeps line snapshots through storage and rejects bad snapshot prices', () => {
+    const s = initialState('laundry-pickup', NOW);
+    const raw = JSON.parse(JSON.stringify(s));
+    expect(typeof raw.jobs[0].lines[0].price).toBe('number');
+    raw.jobs[1].lines[0].price = -5; raw.jobs[1].lines[0].name = 7;
+    const back = parseState(JSON.stringify(raw));
+    expect(back.jobs[0].lines[0]).toEqual(s.jobs[0].lines[0]);
+    expect(back.jobs[1].lines[0].price).toBeUndefined();
+    expect(back.jobs[1].lines[0].name).toBeUndefined();
   });
 
   it('sample data is clearly fictional', () => {

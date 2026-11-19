@@ -52,4 +52,36 @@ describe('WorkflowDemoComponent', () => {
     expect(f.nativeElement.textContent).toContain('Cleaning windows');
     expect(f.nativeElement.textContent).not.toContain('Cleaning partner');
   });
+
+  it('reordering and adding stages in settings keeps each stage name with its stage', async () => {
+    const f = TestBed.createComponent(WorkflowDemoComponent); const c = f.componentInstance;
+    c.tab.set('settings'); f.detectChanges(); await f.whenStable();
+    const click = async (label: string) => { (f.nativeElement.querySelector(`[aria-label="${label}"]`) as HTMLButtonElement).click(); f.detectChanges(); await f.whenStable(); f.detectChanges(); };
+    const addBtn = [...f.nativeElement.querySelectorAll('button')].find((b: HTMLButtonElement) => b.textContent!.includes('Add stage')) as HTMLButtonElement;
+    addBtn.click(); f.detectChanges(); await f.whenStable();
+    const input = (n: number) => f.nativeElement.querySelector(`input[aria-label="Stage ${n} name"]`) as HTMLInputElement;
+    input(6).value = 'Drying'; input(6).dispatchEvent(new Event('input')); f.detectChanges(); await f.whenStable();
+    await click('Move stage 6 up');
+    await click('Move stage 5 up');
+    const expected = ['Booked', 'Picked up', 'Cleaning & drying', 'Drying', 'Ready', 'Returned'];
+    expect(c.edit.stages.map(s => s.label)).toEqual(expected);
+    expect([1, 2, 3, 4, 5, 6].map(n => input(n).value)).toEqual(expected);
+    c.saveSettings();
+    expect(c.settingsErrors()).toEqual([]);
+    expect(c.cfg().stages.map(s => s.label)).toEqual(expected);
+  });
+
+  it('removing a service in settings keeps the booked line and price on in-flight jobs', async () => {
+    const f = TestBed.createComponent(WorkflowDemoComponent); const c = f.componentInstance;
+    c.draft.customerName = 'Demo Person'; c.draft.address = '5 Example Rd'; c.qty = { 'wash-fold': 2, 'dry-clean': 1 };
+    c.submitJob();
+    const id = c.selected()!.id;
+    c.tab.set('settings'); f.detectChanges(); await f.whenStable();
+    c.edit.services = c.edit.services.filter(s => s.id !== 'dry-clean');
+    c.edit.services[0].price = 45;
+    c.saveSettings();
+    c.tab.set('board'); c.selectedId.set(id); f.detectChanges();
+    expect(f.nativeElement.querySelector('[data-testid="job-total"]').textContent).toContain('88.00');
+    expect(f.nativeElement.querySelector('[data-testid="job-detail"]').textContent).toContain('Dry cleaning');
+  });
 });
