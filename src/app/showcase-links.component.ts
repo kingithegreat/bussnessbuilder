@@ -5,7 +5,7 @@ import { MatIconModule } from '@angular/material/icon';
 
 export interface ShowcaseLink { id: string; label: string; name: string; path: string }
 
-/** "See it working for: Mobile Mechanic / Lawn Mowing" — links to the seeded demo showcase sites. */
+/** "See it working for: Mobile Mechanic / Lawn Mowing / Mobile Car Detailing" — links to the seeded demo showcase sites. */
 @Component({
   selector: 'app-showcase-links',
   standalone: true,

@@ -1,7 +1,7 @@
 import { SHOWCASES, SHOWCASE_VERSION, buildShowcaseDocs, seedShowcases, showcaseBySlugOrUid } from './server-showcase';
 import { buildPublicSiteData } from './server-site';
 import { quoteTotals } from './app/quote-rules';
-import { sanitizeBookingSettings } from './app/booking-rules';
+import { availableSlots, busyFromBookings, sanitizeBookingSettings, type Booking } from './app/booking-rules';
 
 const NOW = new Date('2026-10-21T00:00:00Z');
 
@@ -18,8 +18,12 @@ function fakeDb(existing: Record<string, Record<string, unknown>> = {}) {
 }
 
 describe('demo showcases', () => {
-  it('has a Tauranga mobile mechanic and a Tauranga lawn-mowing business', () => {
-    expect(SHOWCASES.map(s => s.state.profile.type)).toEqual(['mechanic', 'lawn mowing']);
+  it('has a Tauranga mobile mechanic, a lawn-mowing round and a mobile car detailer', () => {
+    expect(SHOWCASES.map(s => s.id)).toEqual(['mechanic', 'lawn', 'detailer']);
+    expect(SHOWCASES.map(s => s.state.profile.type)).toEqual(['mechanic', 'lawn mowing', 'other']);
+    expect(new Set(SHOWCASES.map(s => s.slug)).size).toBe(SHOWCASES.length);
+    expect(new Set(SHOWCASES.map(s => s.uid)).size).toBe(SHOWCASES.length);
+    expect(new Set(SHOWCASES.map(s => s.ownerEmail)).size).toBe(SHOWCASES.length);
     for (const s of SHOWCASES) {
       expect(s.state.profile.address).toContain('Tauranga');
       expect(s.state.profile.currency).toBe('NZD');
@@ -34,6 +38,9 @@ describe('demo showcases', () => {
     const lawn = showcaseBySlugOrUid('showcase-tauranga-lawn-co')!;
     const lnames = lawn.state.services.map(s => s.name).join('|');
     for (const n of ['Small section', 'Medium section', 'Large section', 'Edging', 'Green-waste', 'Fortnightly']) expect(lnames).toContain(n);
+    const det = showcaseBySlugOrUid('demo-kowhai-coast-detailing')!;
+    const dnames = det.state.services.map(s => s.name).join('|');
+    for (const n of ['Interior valet', 'Exterior wash & wax', 'Full detail', 'Ceramic paint protection', 'Pet hair']) expect(dnames).toContain(n);
     for (const s of SHOWCASES) for (const svc of s.state.services) {
       expect(svc.price).toMatch(/\$\d/);
       expect(svc.imageUrl).toMatch(/^https:\/\//);
@@ -71,7 +78,7 @@ describe('demo showcases', () => {
   it('seeding is idempotent and can be switched off', async () => {
     const db = fakeDb();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    expect(await seedShowcases(db as any, {}, undefined, NOW)).toEqual(['mechanic', 'lawn']);
+    expect(await seedShowcases(db as any, {}, undefined, NOW)).toEqual(['mechanic', 'lawn', 'detailer']);
     const writes = db.writes.length;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     expect(await seedShowcases(db as any, {}, undefined, NOW)).toEqual([]);
@@ -94,12 +101,87 @@ describe('demo showcases', () => {
     expect(created).toEqual([]);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await seedShowcases(fakeDb() as any, { DEMO_OWNER_PASSWORD: 'long-enough-pass' }, auth, NOW);
-    expect(created).toEqual(['showcase-bay-mobile-mechanics', 'showcase-tauranga-lawn-co']);
+    expect(created).toEqual(['showcase-bay-mobile-mechanics', 'showcase-tauranga-lawn-co', 'showcase-kowhai-coast-detailing']);
+  });
+
+  it('only seeds a newly added showcase, leaving existing walkthrough data alone', async () => {
+    const det = SHOWCASES.find(s => s.id === 'detailer')!;
+    const existing: Record<string, Record<string, unknown>> = {};
+    for (const s of SHOWCASES.filter(x => x.id !== 'detailer')) Object.assign(existing, buildShowcaseDocs(s, NOW));
+    const db = fakeDb(existing);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    expect(await seedShowcases(db as any, {}, undefined, NOW)).toEqual(['detailer']);
+    expect(db.writes.every(p => p.includes(det.uid) || p === `slugs/${det.slug}`)).toBe(true);
   });
 
   it('never throws when Firestore fails', async () => {
     const db = { doc: () => ({ get: async () => { throw new Error('down'); }, set: async () => undefined }) };
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     expect(await seedShowcases(db as any, {}, undefined, NOW)).toEqual([]);
+  });
+});
+
+describe('mobile car detailer showcase', () => {
+  const det = showcaseBySlugOrUid('showcase-kowhai-coast-detailing')!;
+  const p = det.state.profile;
+
+  it('is a clearly fictional Tauranga/BOP mobile detailer with no real GST number', () => {
+    expect(det.slug).toBe('demo-kowhai-coast-detailing');
+    expect(det.label).toBe('Mobile Car Detailing');
+    expect(p.name).toBe('Kōwhai Coast Mobile Detailing');
+    for (const area of ['Tauranga', 'Mount Maunganui', 'Papamoa', 'Bethlehem', 'Pyes Pa']) expect(p.serviceArea).toContain(area);
+    expect(p.email).toMatch(/\.example$/);
+    expect(det.ownerEmail).toMatch(/@example\.com$/);
+    expect(p.phone).toMatch(/^021 555 /);
+    expect(p.gstNumber ?? '').toBe('');
+    expect(p.openingHours).toContain('Sat');
+    expect(p.description.length).toBeGreaterThan(100);
+  });
+
+  it('labels every price as an example in NZD and shows a photo for each service', () => {
+    expect(det.state.services).toHaveLength(6);
+    for (const svc of det.state.services) {
+      expect(svc.price).toMatch(/\$\d/);
+      expect(svc.description).toMatch(/example/i);
+      expect(svc.duration).toBeTruthy();
+      expect(svc.imageUrl).toMatch(/^https:\/\/images\.unsplash\.com\/photo-/);
+    }
+    const servicesSection = det.state.customization.sections.find(s => s.id === 'services')!;
+    expect(servicesSection.subheading).toMatch(/example prices/i);
+  });
+
+  it('answers the water/power and how-long questions and says it is fictional', () => {
+    const qs = det.state.faqs.map(f => f.question.toLowerCase()).join('|');
+    expect(qs).toContain('water or power');
+    expect(qs).toContain('how long');
+    expect(det.state.faqs.map(f => f.answer).join(' ')).toMatch(/fictional demo business/);
+  });
+
+  it('shows hero, services, about, reviews, hours, FAQ and contact sections in order', () => {
+    const visible = det.state.customization.sections.filter(s => s.visible).sort((a, b) => a.order - b.order).map(s => s.id);
+    expect(visible).toEqual(['hero', 'services', 'about', 'testimonials', 'hours', 'faq', 'contact']);
+    const hero = det.state.customization.sections.find(s => s.id === 'hero')!;
+    expect(hero.imageUrl).toMatch(/^https:\/\/images\.unsplash\.com\//);
+  });
+
+  it('offers bookable slots for every service, matching the listed services and prices', () => {
+    const docs = buildShowcaseDocs(det, NOW);
+    const raw = docs[`users/${det.uid}/businessData/bookings`] as { settings: unknown; bookings: Booking[] };
+    const settings = sanitizeBookingSettings(raw.settings);
+    expect(settings.services.map(s => s.id)).toEqual(det.state.services.map(s => s.id));
+    expect(settings.services.map(s => s.price)).toEqual(det.state.services.map(s => s.price));
+    const busy = busyFromBookings(raw.bookings);
+    // A week out, on a weekday and on the Saturday, every service still has free slots.
+    for (const day of ['2026-10-29', '2026-10-31']) {
+      for (const svc of settings.services) expect(availableSlots(settings, svc.id, day, busy, NOW).length).toBeGreaterThan(0);
+    }
+    expect(availableSlots(settings, 'kd-full', '2026-11-01', busy, NOW)).toEqual([]); // Sunday closed
+    for (const b of raw.bookings) expect(settings.services.some(s => s.id === b.serviceId)).toBe(true);
+  });
+
+  it('is listed with the public site path the landing links use', () => {
+    const site = buildPublicSiteData(buildShowcaseDocs(det, NOW)[`users/${det.uid}/businessData/main`], null, null)!;
+    expect(site.showcase).toBe(true);
+    expect(JSON.stringify(site)).toContain('Kōwhai Coast Mobile Detailing');
   });
 });
