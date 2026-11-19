@@ -299,7 +299,9 @@ export const SHOWCASES: ShowcaseDef[] = [
         { id: 'kd-pet', name: 'Pet hair removal (add-on)', durationMin: 45, price: 'from $49' },
         { id: 'kd-maint', name: 'Maintenance wash (regulars)', durationMin: 60, price: '$69 per visit' },
       ],
-      blackouts: [], slotStepMin: 30, leadTimeHours: 12, maxDaysAhead: 60,
+      // 2h minimum notice matches the platform default and the other showcases.
+      // Owners change it in Bookings → Minimum notice (hours); Aden may prefer 12h.
+      blackouts: [], slotStepMin: 30, leadTimeHours: 2, maxDaysAhead: 60,
     },
     bookings: (now) => [
       booking(now, 'demo-b1', ['kd-full', 'Full detail (inside & out)'], 1, 8, 240, 'Steve Lawson', '2018 Toyota Hilux, selling next week. At home in Bethlehem, driveway is flat.', 'accepted'),

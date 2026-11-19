@@ -13,7 +13,11 @@ export const OUTCOME_NAVIGATION = [
   { label: 'Home', route: '/admin/dashboard', icon: 'home' },
   { label: 'Website', route: '/admin/website', icon: 'language' },
   { label: 'Leads', route: '/admin/inbox', icon: 'inbox' },
-  { label: 'Marketing', route: '/admin/ai', icon: 'campaign' },
+  // Bookings and Quotes were only reachable through the Website hub grid (UX audit F7).
+  { label: 'Bookings', route: '/admin/bookings', icon: 'event' },
+  { label: 'Quotes', route: '/admin/quotes', icon: 'request_quote' },
+  // Route is the AI writing tools; "Marketing" overlapped with Growth (UX audit F4).
+  { label: 'AI writing', route: '/admin/ai', icon: 'edit_note' },
   { label: 'Growth', route: '/admin/growth', icon: 'trending_up' },
   { label: 'Analytics', route: '/admin/analytics', icon: 'analytics' },
   { label: 'Settings', route: '/admin/settings', icon: 'tune' },

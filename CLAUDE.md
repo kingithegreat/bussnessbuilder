@@ -12,6 +12,14 @@ If a Notion connector is available, open "📚 Lessons & Playbook" under "Aden B
 
 # BusinessFlow Studio — Agent Handoff
 
+## Finish integration — 19 November 2026 NZDT
+
+One integration PR (branch `loop-lead/finish-businessflow-20261119`) lands, in stack order: #51 configurable workflow demo → #52 mid-job settings safety → #57 demo UI audit fixes → #58 Kōwhai Coast detailer showcase → #54 reliability fixes (includes Nodemailer 10 + grpc-js override, superseding #55/#56) → #53 Angular 21.2.26 patch. Plus UX-audit fixes: workflow-demo link always visible (F1), compact one-row cookie bar (F2), Bookings + Quotes in the admin sidebar (F7), "Marketing" renamed "AI writing" (F4), `<main>` landmarks on login/setup, setup's h1 is "Setup Wizard" (preview hero is no longer an h1), and AA colour contrast (gray-500 darkened in `@theme`, legal links underlined).
+
+Detailer showcase minimum booking notice defaults to **2 hours** (same as the platform default and other showcases); owners change it in Bookings → Minimum notice (hours). Switch to 12 if Aden prefers.
+
+Verification: **661 tests / 88 files**, lint and SSR build pass. Playwright (1440×900, 768×1024, 390×844, 360×740) on `/`, `/setup`, `/login`, `/pricing`, `/demo/workflow` (+ Settings, New order): no horizontal overflow, 0 serious/critical axe violations, 0 console errors. Signed-in admin screens still not browser-verified (invite-only, no fixture mode). Workforce auto-merge fails on every recent run (last 40 checked): checkout with `WORKFORCE_MERGE_PAT` cannot authenticate, so `claude/**` branches no longer land by themselves (Aden must rotate the secret).
+
 ## Reliability fixes prepared — 15 November 2026 NZDT
 
 See [docs/RELIABILITY_20261115.md](docs/RELIABILITY_20261115.md). Fresh-main work fixes invalid imports, template swaps hiding current enquiries, invisible failed saves, premature settings/page/payment success messages, sign-out before pending writes, and image URL retrieval leaving uploads stuck. Website imports/templates preserve the live inbox, claimed address and setup state. Save/Retry covers site and supplementary writes; unconfirmed server actions stay gated.

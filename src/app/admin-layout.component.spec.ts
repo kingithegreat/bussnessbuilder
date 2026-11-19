@@ -27,7 +27,7 @@ describe('Outcome navigation and session exit', () => {
   it('renders all seven persistent outcome destinations as real links', () => {
     const fixture = TestBed.createComponent(AdminLayoutComponent); fixture.detectChanges();
     const nav: HTMLElement = fixture.nativeElement.querySelector('nav[aria-label="Workspace"]');
-    expect(Array.from(nav.querySelectorAll('a')).map(link => link.getAttribute('aria-label'))).toEqual(['Home', 'Website', 'Leads', 'Marketing', 'Growth', 'Analytics', 'Settings']);
+    expect(Array.from(nav.querySelectorAll('a')).map(link => link.getAttribute('aria-label'))).toEqual(['Home', 'Website', 'Leads', 'Bookings', 'Quotes', 'AI writing', 'Growth', 'Analytics', 'Settings']);
     expect(nav.querySelector('a[aria-label="Website"]')?.getAttribute('href')).toBe('/admin/website');
     expect(nav.querySelector('a[aria-label="Analytics"]')?.getAttribute('href')).toBe('/admin/analytics');
   });

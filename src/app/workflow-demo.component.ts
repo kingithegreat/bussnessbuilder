@@ -78,7 +78,7 @@ type Tab = 'board' | 'new' | 'settings';
                       <span class="block text-sm text-slate-600">{{ money(cfg(), jobTotal(cfg(), j)) }}</span>
                     </button>
                   </li>
-                } @empty { <li class="text-xs text-slate-400 italic">Nothing here</li> }
+                } @empty { <li class="text-xs text-slate-500 italic">Nothing here</li> }
               </ul>
             </li>
           }

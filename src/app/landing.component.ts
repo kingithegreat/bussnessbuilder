@@ -61,7 +61,7 @@ import { ShowcaseLinksComponent } from './showcase-links.component';
                 <mat-icon>arrow_forward</mat-icon>
               </a>
               @if (!auth.isLoggedIn()) {
-                <p class="text-sm text-gray-400 flex items-center gap-1.5">
+                <p class="text-sm text-gray-600 flex items-center gap-1.5">
                   <mat-icon class="text-[16px] text-green-600">check_circle</mat-icon>
                   No sign-up needed to start · no credit card
                 </p>
@@ -208,11 +208,11 @@ import { ShowcaseLinksComponent } from './showcase-links.component';
         </section>
       </main>
 
-      <footer class="py-8 md:py-12 text-center text-gray-400 text-sm border-t border-gray-200">
+      <footer class="py-8 md:py-12 text-center text-gray-600 text-sm border-t border-gray-200">
         <div class="flex items-center justify-center gap-4 mb-3">
-          <a routerLink="/privacy" class="hover:text-gray-600 transition-colors">Privacy Policy</a>
+          <a routerLink="/privacy" class="underline underline-offset-2 hover:text-gray-900 transition-colors">Privacy Policy</a>
           <span class="text-gray-300">|</span>
-          <a routerLink="/terms" class="hover:text-gray-600 transition-colors">Terms of Service</a>
+          <a routerLink="/terms" class="underline underline-offset-2 hover:text-gray-900 transition-colors">Terms of Service</a>
         </div>
         <p>&copy; 2026 BusinessFlow Studio.</p>
       </footer>

@@ -11,7 +11,7 @@ export interface ShowcaseLink { id: string; label: string; name: string; path: s
   standalone: true,
   imports: [TooltipDirective, MatIconModule],
   template: `
-    @if (showcases().length) {
+    @if (ready()) {
       <section class="rounded-2xl border border-gray-200 bg-white p-4 text-sm" aria-label="Example sites" data-testid="showcase-links">
         <p class="font-semibold text-gray-900 flex items-center gap-2"><mat-icon class="text-[18px]">visibility</mat-icon> See it working for:</p>
         <div class="mt-2 flex flex-wrap gap-2">
@@ -33,9 +33,12 @@ export class ShowcaseLinksComponent implements OnInit {
   private platformId = inject(PLATFORM_ID);
   hint = input<string>('Example businesses with real prices, bookings and quote forms. Try booking a time or requesting a quote.');
   showcases = signal<ShowcaseLink[]>([]);
+  /** True once in the browser: the workflow demo link always shows, even if /api/showcases fails or is empty. */
+  ready = signal(false);
 
   async ngOnInit() {
     if (!isPlatformBrowser(this.platformId)) return;
+    this.ready.set(true);
     try {
       const res = await fetch('/api/showcases');
       if (!res.ok) return;
