@@ -180,7 +180,8 @@ import {
               </details>
             </div>
 
-            <div class="pt-6 mt-4 flex flex-col-reverse items-stretch gap-3 border-t border-gray-100">
+            <!-- On phones the button lives in the pinned bar below (UX audit F12). -->
+            <div class="pt-6 mt-4 hidden lg:flex flex-col-reverse items-stretch gap-3 border-t border-gray-100">
               <div class="text-[13px] text-gray-600 flex items-center justify-center gap-1">
                  <mat-icon class="text-[16px]" aria-hidden="true">auto_awesome</mat-icon> AI will write the rest for you
               </div>
@@ -195,8 +196,22 @@ import {
           </form>
         </div>
 
+        <!--
+          UX audit F12: on phones the live preview stays tucked away (it used to
+          push "Review & continue" a whole screen down). A toggle appears once
+          the first field is filled. Desktop is unchanged.
+        -->
+        @if (hasStarted()) {
+          <button type="button" (click)="previewOpen.set(!previewOpen())" [attr.aria-expanded]="previewOpen()" aria-controls="setup-live-preview"
+            data-testid="preview-toggle"
+            class="lg:hidden min-h-[44px] w-full inline-flex items-center justify-center gap-2 rounded-full border border-gray-300 bg-white px-5 py-2.5 text-sm font-bold text-gray-900 hover:bg-gray-50 transition-colors">
+            <mat-icon class="text-[18px]" aria-hidden="true">{{ previewOpen() ? 'visibility_off' : 'visibility' }}</mat-icon>
+            {{ previewOpen() ? 'Hide live preview' : 'Show live preview' }}
+          </button>
+        }
         <!-- Right Column: Live Preview -->
-        <div class="lg:col-span-7 bg-white rounded-[2rem] shadow-sm border border-gray-100 overflow-hidden flex flex-col h-[800px] sticky top-8">
+        <div id="setup-live-preview" data-testid="live-preview" [class]="previewOpen() ? '' : 'max-lg:hidden'"
+          class="lg:col-span-7 bg-white rounded-[2rem] shadow-sm border border-gray-100 overflow-hidden flex flex-col h-[560px] lg:h-[800px] lg:sticky lg:top-8">
           <div class="px-6 py-4 border-b border-gray-100 bg-gray-50/50 flex items-center gap-2">
              <div class="flex gap-1.5">
                <div class="w-3 h-3 rounded-full bg-red-400"></div>
@@ -206,7 +221,7 @@ import {
              <div class="mx-auto bg-white px-3 py-1 rounded-md text-xs font-medium text-gray-500 shadow-sm border border-gray-100">Live Preview</div>
              <div class="w-10"></div>
           </div>
-          <div class="flex-grow overflow-y-auto bg-white relative">
+          <div class="flex-grow overflow-y-auto bg-white relative" tabindex="0" role="region" aria-label="Live preview of your site">
             <div class="absolute inset-0 pointer-events-none">
 
                <!-- Preview Header -->
@@ -245,6 +260,17 @@ import {
 
             </div>
           </div>
+        </div>
+
+        <!-- F12: "Review & continue" pinned to the bottom on phones. -->
+        <div class="lg:hidden fixed bottom-0 inset-x-0 z-40 border-t border-gray-200 bg-white/95 backdrop-blur px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]" data-testid="mobile-review-bar">
+          @if (formError()) {
+            <p class="text-red-700 text-sm font-medium text-center mb-2" role="alert">{{ formError() }}</p>
+          }
+          <button type="button" (click)="onReview()" class="w-full min-h-[48px] bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-full font-medium transition-colors flex items-center justify-center gap-2 shadow-sm">
+            <span>Review &amp; continue</span>
+            <mat-icon class="text-sm" aria-hidden="true">arrow_forward</mat-icon>
+          </button>
         </div>
 
         <!-- Review & Publish confirmation (preview-before-publish gate) -->
@@ -327,6 +353,10 @@ export class SetupWizardComponent implements OnInit {
   });
 
   extrasOpen = signal(false);
+  /** F12: has the visitor filled anything yet? (Shows the mobile preview toggle.) */
+  hasStarted = computed(() => hasContent(this.draft()));
+  /** F12: phones only — the live preview is collapsed until asked for. */
+  previewOpen = signal(false);
   readonly templates = INDUSTRY_TEMPLATES;
 
   /** Fill the wizard from an industry template without overwriting what the visitor typed. */

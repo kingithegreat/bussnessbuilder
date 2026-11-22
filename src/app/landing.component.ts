@@ -1,5 +1,6 @@
 import { TooltipDirective } from './tooltip.directive';
-import { Component, inject, afterNextRender } from '@angular/core';
+import { Component, inject, afterNextRender, signal } from '@angular/core';
+import { CORE_FEATURES, MORE_FEATURES } from './landing-features';
 import { RouterLink } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { AuthService } from './auth.service';
@@ -80,70 +81,38 @@ import { ShowcaseLinksComponent } from './showcase-links.component';
             <h2 class="text-2xl md:text-4xl font-bold tracking-tight text-gray-900 mb-4">Everything you need to grow</h2>
             <p class="text-gray-500 max-w-2xl mx-auto text-sm md:text-base">Built for small businesses — no design skills or coding required. Get online fast with tools that actually help you run your business.</p>
           </div>
-          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-            <div class="bg-white rounded-2xl p-6 md:p-8 border border-gray-100/80 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
-              <div class="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center mb-4">
-                <mat-icon>view_quilt</mat-icon>
+          <!-- UX audit F11: six core features first (enquiries, bookings and quotes lead), the rest behind "See all features". -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6" data-testid="core-features">
+            @for (f of coreFeatures; track f.title) {
+              <div class="bg-white rounded-2xl p-6 md:p-8 border border-gray-100/80 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
+                <div class="w-12 h-12 rounded-xl flex items-center justify-center mb-4" [class]="f.tone">
+                  <mat-icon aria-hidden="true">{{ f.icon }}</mat-icon>
+                </div>
+                <h3 class="text-lg font-bold text-gray-900 mb-2">{{ f.title }}</h3>
+                <p class="text-gray-500 text-sm leading-relaxed">{{ f.body }}</p>
               </div>
-              <h3 class="text-lg font-bold text-gray-900 mb-2">Page Builder</h3>
-              <p class="text-gray-500 text-sm leading-relaxed">Drag, drop, and customise sections. Choose layouts, colours, and fonts — your site, your way.</p>
+            }
+          </div>
+          @if (showAllFeatures()) {
+            <div id="more-features" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 mt-4 md:mt-6" data-testid="more-features">
+              @for (f of moreFeatures; track f.title) {
+                <div class="bg-white rounded-2xl p-6 md:p-8 border border-gray-100/80 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
+                  <div class="w-12 h-12 rounded-xl flex items-center justify-center mb-4" [class]="f.tone">
+                    <mat-icon aria-hidden="true">{{ f.icon }}</mat-icon>
+                  </div>
+                  <h3 class="text-lg font-bold text-gray-900 mb-2">{{ f.title }}</h3>
+                  <p class="text-gray-500 text-sm leading-relaxed">{{ f.body }}</p>
+                </div>
+              }
             </div>
-            <div class="bg-white rounded-2xl p-6 md:p-8 border border-gray-100/80 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
-              <div class="w-12 h-12 rounded-xl bg-green-50 text-green-600 flex items-center justify-center mb-4">
-                <mat-icon>inbox</mat-icon>
-              </div>
-              <h3 class="text-lg font-bold text-gray-900 mb-2">Enquiry Inbox</h3>
-              <p class="text-gray-500 text-sm leading-relaxed">Every lead goes straight to your dashboard. Track, reply, and manage enquiries from one place.</p>
-            </div>
-            <div class="bg-white rounded-2xl p-6 md:p-8 border border-gray-100/80 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
-              <div class="w-12 h-12 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center mb-4">
-                <mat-icon>auto_awesome</mat-icon>
-              </div>
-              <h3 class="text-lg font-bold text-gray-900 mb-2">AI Content Tools</h3>
-              <p class="text-gray-500 text-sm leading-relaxed">Generate service descriptions, taglines, and FAQ answers using AI tailored to your business type.</p>
-            </div>
-            <div class="bg-white rounded-2xl p-6 md:p-8 border border-gray-100/80 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
-              <div class="w-12 h-12 rounded-xl bg-orange-50 text-orange-600 flex items-center justify-center mb-4">
-                <mat-icon>dynamic_form</mat-icon>
-              </div>
-              <h3 class="text-lg font-bold text-gray-900 mb-2">Custom Forms</h3>
-              <p class="text-gray-500 text-sm leading-relaxed">Build enquiry forms with dropdowns, checkboxes, file uploads, and conditional logic.</p>
-            </div>
-            <div class="bg-white rounded-2xl p-6 md:p-8 border border-gray-100/80 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
-              <div class="w-12 h-12 rounded-xl bg-pink-50 text-pink-600 flex items-center justify-center mb-4">
-                <mat-icon>palette</mat-icon>
-              </div>
-              <h3 class="text-lg font-bold text-gray-900 mb-2">Full Customisation</h3>
-              <p class="text-gray-500 text-sm leading-relaxed">Branding, colours, fonts, dark mode, multiple layout variants — make it look exactly how you want.</p>
-            </div>
-            <div class="bg-white rounded-2xl p-6 md:p-8 border border-gray-100/80 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
-              <div class="w-12 h-12 rounded-xl bg-cyan-50 text-cyan-600 flex items-center justify-center mb-4">
-                <mat-icon>photo_library</mat-icon>
-              </div>
-              <h3 class="text-lg font-bold text-gray-900 mb-2">Stock Photos & Uploads</h3>
-              <p class="text-gray-500 text-sm leading-relaxed">Browse curated Unsplash images by business type or upload your own photos.</p>
-            </div>
-            <div class="bg-white rounded-2xl p-6 md:p-8 border border-gray-100/80 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
-              <div class="w-12 h-12 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center mb-4">
-                <mat-icon>event_available</mat-icon>
-              </div>
-              <h3 class="text-lg font-bold text-gray-900 mb-2">Online Bookings</h3>
-              <p class="text-gray-500 text-sm leading-relaxed">Customers pick a time on your site. You accept or decline each request.</p>
-            </div>
-            <div class="bg-white rounded-2xl p-6 md:p-8 border border-gray-100/80 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
-              <div class="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center mb-4">
-                <mat-icon>request_quote</mat-icon>
-              </div>
-              <h3 class="text-lg font-bold text-gray-900 mb-2">Quotes & Invoices</h3>
-              <p class="text-gray-500 text-sm leading-relaxed">Build quotes and invoices with NZ GST, download a PDF and track whether they are accepted.</p>
-            </div>
-            <div class="bg-white rounded-2xl p-6 md:p-8 border border-gray-100/80 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
-              <div class="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center mb-4">
-                <mat-icon>travel_explore</mat-icon>
-              </div>
-              <h3 class="text-lg font-bold text-gray-900 mb-2">Reviews & Google</h3>
-              <p class="text-gray-500 text-sm leading-relaxed">Collect customer reviews, approve what shows, and follow a simple checklist to get found on Google.</p>
-            </div>
+          }
+          <div class="mt-6 md:mt-8 text-center">
+            <button type="button" (click)="showAllFeatures.set(!showAllFeatures())" [attr.aria-expanded]="showAllFeatures()" aria-controls="more-features"
+              data-testid="see-all-features"
+              class="min-h-[44px] inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl border border-gray-300 bg-white text-sm font-bold text-gray-900 hover:bg-gray-50 transition-colors">
+              {{ showAllFeatures() ? 'Show fewer features' : 'See all features' }}
+              <mat-icon class="text-[18px]" aria-hidden="true">{{ showAllFeatures() ? 'expand_less' : 'expand_more' }}</mat-icon>
+            </button>
           </div>
         </section>
 
@@ -222,6 +191,10 @@ import { ShowcaseLinksComponent } from './showcase-links.component';
 export class LandingComponent {
   auth = inject(AuthService);
   private funnel = inject(FunnelService);
+  readonly coreFeatures = CORE_FEATURES;
+  readonly moreFeatures = MORE_FEATURES;
+  /** F11: the extra feature cards stay tucked away until asked for. */
+  showAllFeatures = signal(false);
 
   constructor() {
     afterNextRender(() => this.funnel.step('landing_viewed'));

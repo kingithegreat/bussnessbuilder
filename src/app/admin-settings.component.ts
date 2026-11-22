@@ -5,7 +5,8 @@ import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { MatIconModule } from '@angular/material/icon';
-import { RouterLink, Router } from '@angular/router';
+import { RouterLink, Router, ActivatedRoute } from '@angular/router';
+import { SETTINGS_TABS, SettingsTab, settingsTab } from './settings-tabs';
 import { Firestore, doc, getDoc } from '@angular/fire/firestore';
 import { DataService } from './data.service';
 import { SubscriptionService } from './subscription.service';
@@ -32,8 +33,20 @@ import { DatePipe } from '@angular/common';
         <p class="text-sm text-gray-500 font-medium">Manage your account, domain, and notification preferences.</p>
       </div>
 
+      <!-- UX audit F10: one section at a time instead of a long single scroll. -->
+      <div role="tablist" aria-label="Settings sections" class="flex gap-1 overflow-x-auto border-b border-gray-200 -mx-1 px-1" data-testid="settings-tabs">
+        @for (t of tabs; track t.id) {
+          <button type="button" role="tab" [id]="'settings-tab-' + t.id" [attr.aria-selected]="tab() === t.id"
+            [attr.aria-controls]="t.panels" [attr.tabindex]="tab() === t.id ? 0 : -1"
+            (click)="selectTab(t.id)" (keydown)="onTabKey($event)"
+            class="min-h-[44px] px-4 py-2 text-sm font-bold whitespace-nowrap border-b-2 -mb-px transition-colors"
+            [class.border-blue-600]="tab() === t.id" [class.text-blue-700]="tab() === t.id"
+            [class.border-transparent]="tab() !== t.id" [class.text-gray-600]="tab() !== t.id">{{ t.label }}</button>
+        }
+      </div>
+
       <!-- Business Profile -->
-      <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+      <div role="tabpanel" id="settings-panel-profile" aria-labelledby="settings-tab-profile" [hidden]="tab() !== 'profile'" class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
         <div class="p-6 border-b border-gray-100 bg-gray-50/50">
           <h2 class="font-bold text-gray-900 flex items-center gap-2"><mat-icon class="text-[18px] text-gray-500">store</mat-icon> Business Profile</h2>
           <p class="text-xs text-gray-500 mt-1">These details were set during setup — you can change them any time.</p>
@@ -107,7 +120,7 @@ import { DatePipe } from '@angular/common';
       </div>
 
       <!-- Public Site Link -->
-      <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+      <div role="tabpanel" id="settings-panel-site" aria-labelledby="settings-tab-site" [hidden]="tab() !== 'site'" class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
         <div class="p-6 border-b border-gray-100 bg-gray-50/50">
           <h2 class="font-bold text-gray-900 flex items-center gap-2"><mat-icon class="text-[18px] text-gray-500">language</mat-icon> Your Public Site</h2>
         </div>
@@ -162,7 +175,7 @@ import { DatePipe } from '@angular/common';
       </div>
 
       <!-- Subscription -->
-      <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+      <div role="tabpanel" id="settings-panel-plan" aria-labelledby="settings-tab-plan" [hidden]="tab() !== 'plan'" class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
         <div class="p-6 border-b border-gray-100 bg-gray-50/50">
           <h2 class="font-bold text-gray-900 flex items-center gap-2"><mat-icon class="text-[18px] text-gray-500">credit_card</mat-icon> Subscription</h2>
         </div>
@@ -189,7 +202,7 @@ import { DatePipe } from '@angular/common';
       </div>
 
       <!-- Site Templates -->
-      <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+      <div role="tabpanel" id="settings-panel-advanced" aria-labelledby="settings-tab-advanced" [hidden]="tab() !== 'advanced'" class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
         <div class="p-6 border-b border-gray-100 bg-gray-50/50 flex items-center justify-between">
           <h2 class="font-bold text-gray-900 flex items-center gap-2"><mat-icon class="text-[18px] text-gray-500">layers</mat-icon> Site Templates</h2>
           <span class="text-xs font-bold text-gray-500">{{ dataService.templates().length }} / 3</span>
@@ -261,7 +274,7 @@ import { DatePipe } from '@angular/common';
       </div>
 
       <!-- Custom Domain -->
-      <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+      <div role="tabpanel" id="settings-panel-domain" aria-labelledby="settings-tab-domain" [hidden]="tab() !== 'domain'" class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
         <div class="p-6 border-b border-gray-100 bg-gray-50/50">
           <h2 class="font-bold text-gray-900 flex items-center gap-2"><mat-icon class="text-[18px] text-gray-500">language</mat-icon> Custom Domain</h2>
           <p class="text-xs text-gray-500 mt-1">Connect a domain you own and we'll point it at your public site.</p>
@@ -418,7 +431,7 @@ import { DatePipe } from '@angular/common';
 
 
       <!-- Email Notifications -->
-      <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+      <div role="tabpanel" id="settings-panel-notifications" aria-labelledby="settings-tab-notifications" [hidden]="tab() !== 'notifications'" class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
         <div class="p-6 border-b border-gray-100 bg-gray-50/50">
           <h2 class="font-bold text-gray-900 flex items-center gap-2"><mat-icon class="text-[18px] text-gray-500">notifications</mat-icon> Email Notifications</h2>
         </div>
@@ -446,7 +459,7 @@ import { DatePipe } from '@angular/common';
       </div>
 
       <!-- Text alerts -->
-      <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+      <div role="tabpanel" id="settings-panel-notifications-sms" aria-labelledby="settings-tab-notifications" [hidden]="tab() !== 'notifications'" class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
         <div class="p-6 border-b border-gray-100 bg-gray-50/50">
           <h2 class="font-bold text-gray-900 flex items-center gap-2"><mat-icon class="text-[18px] text-gray-500" aria-hidden="true">sms</mat-icon> Text alerts</h2>
         </div>
@@ -473,7 +486,7 @@ import { DatePipe } from '@angular/common';
       </div>
 
       <!-- Danger Zone -->
-      <div class="bg-white rounded-2xl border border-red-200 shadow-sm overflow-hidden">
+      <div role="tabpanel" id="settings-panel-advanced-danger" aria-labelledby="settings-tab-advanced" [hidden]="tab() !== 'advanced'" class="bg-white rounded-2xl border border-red-200 shadow-sm overflow-hidden">
         <div class="p-6 border-b border-red-100 bg-red-50/50">
           <h2 class="font-bold text-red-900 flex items-center gap-2"><mat-icon class="text-[18px] text-red-400">warning</mat-icon> Danger Zone</h2>
         </div>
@@ -488,11 +501,13 @@ import { DatePipe } from '@angular/common';
         </div>
       </div>
 
-      <div class="flex justify-end">
-        <button (click)="saveSettings()" class="bg-blue-600 text-white px-6 py-2.5 rounded-xl text-sm font-bold shadow-md hover:bg-blue-700 transition-colors flex items-center gap-2">
-          <mat-icon class="text-[18px]">save</mat-icon> Save Settings
-        </button>
-      </div>
+      @if (tab() === 'domain' || tab() === 'notifications') {
+        <div class="flex justify-end">
+          <button (click)="saveSettings()" data-testid="save-settings" class="bg-blue-600 text-white px-6 py-2.5 rounded-xl text-sm font-bold shadow-md hover:bg-blue-700 transition-colors flex items-center gap-2">
+            <mat-icon class="text-[18px]">save</mat-icon> Save Settings
+          </button>
+        </div>
+      }
     </div>
   `
 })
@@ -505,6 +520,31 @@ export class AdminSettingsComponent implements OnInit {
   private http = inject(HttpClient);
   private router = inject(Router);
   private firestore = inject(Firestore);
+  private route = inject(ActivatedRoute, { optional: true });
+
+  /** F10: which settings section is showing. Deep-linkable with ?tab=. */
+  readonly tabs = SETTINGS_TABS;
+  tab = signal<SettingsTab>(settingsTab(
+    this.route?.snapshot?.queryParamMap?.get('tab') ?? null,
+    !!this.route?.snapshot?.queryParamMap?.get('session_id'),
+  ));
+  selectTab(id: SettingsTab) {
+    this.tab.set(id);
+    if (this.route) void this.router.navigate([], { relativeTo: this.route, queryParams: { tab: id }, queryParamsHandling: 'merge', replaceUrl: true });
+  }
+  onTabKey(event: KeyboardEvent) {
+    const order = this.tabs.map(t => t.id);
+    const i = order.indexOf(this.tab());
+    let next = -1;
+    if (event.key === 'ArrowRight') next = (i + 1) % order.length;
+    else if (event.key === 'ArrowLeft') next = (i - 1 + order.length) % order.length;
+    else if (event.key === 'Home') next = 0;
+    else if (event.key === 'End') next = order.length - 1;
+    if (next < 0) return;
+    event.preventDefault();
+    this.selectTab(order[next]);
+    (globalThis.document?.getElementById('settings-tab-' + order[next]) as HTMLElement | null)?.focus();
+  }
 
   newTemplateName = '';
   siteUrl = '';

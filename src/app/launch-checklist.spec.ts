@@ -19,4 +19,10 @@ describe('launch checklist', () => {
     const items = launchItems({ ...empty, openingHours: '  ', logoUrl: ' ', photoUrls: [' '] });
     expect(launchProgress(items).done).toBe(0);
   });
+  it('sends "Set your web address" to the Site link settings tab (F10)', () => {
+    const domain = launchItems(empty).find(i => i.id === 'domain')!;
+    expect(domain.route).toBe('/admin/settings');
+    expect(domain.queryParams).toEqual({ tab: 'site' });
+    expect(launchItems(empty).find(i => i.id === 'hours')!.queryParams).toBeUndefined();
+  });
 });
