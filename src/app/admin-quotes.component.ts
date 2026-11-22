@@ -1,5 +1,9 @@
 import { TooltipDirective } from './tooltip.directive';
-import { Component, inject, signal, computed, OnInit, PLATFORM_ID, DestroyRef } from '@angular/core';
+import { Component, inject, signal, computed, effect, OnInit, PLATFORM_ID, DestroyRef } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { quotePrefillFromEnquiry } from './enquiry-handoff';
+import { Enquiry } from './types';
 import { isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { OwnerApiService } from './owner-api.service';
@@ -148,6 +152,32 @@ export class AdminQuotesComponent implements OnInit {
   }
 
   private flash(msg: string, error = false) { this.message.set(msg); this.isError.set(error); }
+
+  /** Enquiry id from ?lead= (Inbox "Create quote"), consumed once the enquiry is loaded. */
+  private pendingLead = signal<string | null>(null);
+
+  constructor() {
+    inject(ActivatedRoute, { optional: true })?.queryParamMap.pipe(takeUntilDestroyed()).subscribe(params => {
+      this.pendingLead.set(params.get('lead'));
+    });
+    effect(() => {
+      const id = this.pendingLead();
+      if (!id) return;
+      const enquiry = this.data.enquiries().find(e => e.id === id);
+      if (!enquiry) return;
+      this.pendingLead.set(null);
+      this.startFromEnquiry(enquiry);
+    });
+  }
+
+  /** New quote with the enquiry's customer and service carried across; the owner adds the price. */
+  startFromEnquiry(enquiry: Pick<Enquiry, 'name' | 'email' | 'serviceInterest'>) {
+    this.startNew('quote');
+    const pre = quotePrefillFromEnquiry(enquiry);
+    this.draft.update(d => d ? { ...d, customerName: pre.customerName, customerEmail: pre.customerEmail,
+      lines: [{ description: pre.description, quantity: 1, unitPrice: 0 }] } : d);
+    this.flash(pre.customerName ? `New quote for ${pre.customerName}. Add your price, then Save.` : 'New quote started. Add your price, then Save.');
+  }
 
   startNew(kind: 'quote' | 'invoice') {
     const today = new Date().toISOString().slice(0, 10);

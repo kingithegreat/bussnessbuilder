@@ -9,6 +9,7 @@ import { DataService } from './data.service';
 import { ToastService } from './toast.service';
 import { SubscriptionService } from './subscription.service';
 import { Enquiry, ReplyIntent } from './types';
+import { bookingLink, bookingOfferMailto, publicSitePath } from './enquiry-handoff';
 import { DatePipe, isPlatformBrowser } from '@angular/common';
 import { AiService } from './ai.service';
 import { FormsModule } from '@angular/forms';
@@ -128,6 +129,28 @@ import { BookingRequestsComponent } from './booking-requests.component';
                   }
                 </select>
               </div>
+
+              <section class="mb-8 flex flex-wrap items-center gap-3 bg-blue-50 border border-blue-100 rounded-xl p-4" aria-label="Next step for this enquiry" data-testid="enquiry-next-step">
+                <p class="text-sm font-bold text-gray-900 mr-auto">Next step</p>
+                <a routerLink="/admin/quotes" [queryParams]="{ lead: enquiry.id }" data-testid="create-quote"
+                   bfTip="Starts a new quote with this customer's name, email and service filled in."
+                   class="inline-flex items-center gap-1.5 min-h-[44px] bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-bold transition-colors">
+                  <mat-icon class="text-[18px]" aria-hidden="true">request_quote</mat-icon> Create quote
+                </a>
+                @if (bookingOfferHref(enquiry); as href) {
+                  <a [href]="href" data-testid="offer-booking"
+                     bfTip="Opens your email app with a message inviting this customer to pick a time on your booking form."
+                     class="inline-flex items-center gap-1.5 min-h-[44px] bg-white border border-gray-200 hover:bg-gray-50 text-gray-900 px-4 py-2 rounded-lg text-sm font-bold transition-colors">
+                    <mat-icon class="text-[18px]" aria-hidden="true">event_available</mat-icon> Offer booking
+                  </a>
+                } @else if (bookingsEnabled() === false) {
+                  <a routerLink="/admin/bookings" data-testid="setup-bookings"
+                     bfTip="Turn on online bookings first, then you can send customers your booking link."
+                     class="inline-flex items-center gap-1.5 min-h-[44px] text-blue-700 hover:underline px-2 py-2 text-sm font-bold">
+                    <mat-icon class="text-[18px]" aria-hidden="true">event</mat-icon> Set up bookings to offer a time
+                  </a>
+                }
+              </section>
 
               <div class="grid grid-cols-2 gap-6 mb-8">
                 <div class="bg-gray-50 p-4 rounded-xl border border-gray-100">
@@ -268,6 +291,9 @@ export class AdminInboxComponent {
   subService = inject(SubscriptionService);
   /** True when the server reports SMTP isn't configured (no email alerts). */
   emailAlertsOff = signal(false);
+  /** Online bookings switched on? null until known (then the offer button stays hidden). */
+  bookingsEnabled = signal<boolean | null>(null);
+  private origin = '';
 
   enquiriesCount = () => this.dataService.enquiries().length;
   searchQuery = signal('');
@@ -285,6 +311,10 @@ export class AdminInboxComponent {
       fetch('/api/email-alerts/status')
         .then(r => (r.ok ? r.json() : null))
         .then((body: { enabled?: boolean } | null) => this.emailAlertsOff.set(body?.enabled === false))
+        .catch(() => undefined);
+      this.origin = window.location.origin;
+      this.ownerApi.get<{ settings?: { enabled?: boolean } }>('/api/bookings')
+        .then(body => this.bookingsEnabled.set(body?.settings?.enabled === true))
         .catch(() => undefined);
     }
     inject(ActivatedRoute).queryParamMap.pipe(takeUntilDestroyed()).subscribe(params => {
@@ -333,6 +363,14 @@ export class AdminInboxComponent {
       );
     }
     return list;
+  }
+
+  /** mailto: link inviting the customer to book, or '' when bookings are off or there's no email/site link. */
+  bookingOfferHref(enquiry: Enquiry): string {
+    if (this.bookingsEnabled() !== true) return '';
+    const path = publicSitePath(this.dataService.siteSlug?.(), this.ownerApi.uid?.());
+    const url = bookingLink(this.origin, path);
+    return bookingOfferMailto(enquiry, { businessName: this.dataService.profile?.().name, bookingUrl: url });
   }
 
   selectEnquiry(enquiry: Enquiry) {

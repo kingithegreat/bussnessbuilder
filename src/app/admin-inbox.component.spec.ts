@@ -15,6 +15,7 @@ describe('Inbox navigation and attention', () => {
   const lead = { id: 'lead-1', name: 'Jane', status: 'New' } as Enquiry;
   const enquiries = signal<Enquiry[]>([]);
   const updateEnquiry = vi.fn();
+  const bookingsGet = vi.fn(async () => ({ settings: { enabled: false } }));
   let params: BehaviorSubject<ReturnType<typeof convertToParamMap>>;
   let component: AdminInboxComponent;
   beforeEach(() => {
@@ -23,9 +24,9 @@ describe('Inbox navigation and attention', () => {
     params = new BehaviorSubject(convertToParamMap({ filter: 'new', lead: 'lead-1' }));
     TestBed.configureTestingModule({ providers: [
       { provide: ActivatedRoute, useValue: { queryParamMap: params } },
-      { provide: DataService, useValue: { enquiries, updateEnquiry, customization: signal({}) } },
+      { provide: DataService, useValue: { enquiries, updateEnquiry, customization: signal({}), siteSlug: signal('kowhai'), profile: signal({ name: 'Kōwhai Coast' }) } },
       { provide: AiService, useValue: {} },
-      { provide: OwnerApiService, useValue: { download: async () => undefined } },
+      { provide: OwnerApiService, useValue: { download: async () => undefined, uid: () => 'u1', get: bookingsGet } },
       { provide: SubscriptionService, useValue: {} },
       { provide: ToastService, useValue: {} },
     ] });
@@ -49,5 +50,21 @@ describe('Inbox navigation and attention', () => {
     enquiries.set([lead, { ...lead, id: 'lead-2', name: 'Sam' }]);
     TestBed.tick();
     expect(component.selectedEnquiry()?.name).toBe('Sam');
+  });
+  it('offers "Offer booking" only once bookings are on, with the site booking link', () => {
+    const full = { ...lead, email: 'jane@example.co.nz', serviceInterest: 'Wash' } as Enquiry;
+    component.bookingsEnabled.set(false);
+    expect(component.bookingOfferHref(full)).toBe('');
+    component.bookingsEnabled.set(true);
+    const href = component.bookingOfferHref(full);
+    expect(href.startsWith('mailto:jane@example.co.nz?')).toBe(true);
+    const body = new URLSearchParams(href.split('?')[1]).get('body') || '';
+    expect(body).toContain('/s/kowhai#book');
+    expect(body).toContain('Kōwhai Coast');
+  });
+  it('asks the server whether bookings are on', async () => {
+    expect(bookingsGet).toHaveBeenCalledWith('/api/bookings');
+    await Promise.resolve(); await Promise.resolve();
+    expect(component.bookingsEnabled()).toBe(false);
   });
 });
