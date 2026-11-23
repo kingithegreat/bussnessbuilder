@@ -34,7 +34,7 @@ import { launchItems, launchProgress } from './launch-checklist';
                 }
               </div>
               @if (!item.done) {
-                <a bfTip="Takes you to the place to finish this launch step." [routerLink]="item.route" class="shrink-0 text-sm font-bold text-blue-700 hover:underline">Do this<span class="sr-only">: {{ item.title }}</span></a>
+                <a bfTip="Takes you to the place to finish this launch step." [routerLink]="item.route" [queryParams]="item.queryParams || {}" class="shrink-0 text-sm font-bold text-blue-700 hover:underline">Do this<span class="sr-only">: {{ item.title }}</span></a>
               }
             </li>
           }

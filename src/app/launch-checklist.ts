@@ -27,7 +27,7 @@ export function launchItems(s: LaunchState): LaunchItem[] {
     { id: 'hours', title: 'Add your opening hours', hint: 'So customers know when to call or visit.', route: '/admin/settings', done: !!(s.openingHours || '').trim() },
     { id: 'logo', title: 'Upload your logo', hint: 'Shows on your site and in the browser tab.', route: '/admin/customisation', done: !!(s.logoUrl || '').trim() },
     { id: 'photos', title: 'Add photos of your work', hint: 'Real photos win more enquiries than stock images.', route: '/admin/builder', done: s.photoUrls.some(u => !!(u || '').trim()) },
-    { id: 'domain', title: 'Set your web address', hint: 'Choose a short, easy address in Settings (or connect your own domain on the Business plan).', route: '/admin/settings', done: s.customDomainActive || s.hasShortAddress },
+    { id: 'domain', title: 'Set your web address', hint: 'Choose a short, easy address in Settings (or connect your own domain on the Business plan).', route: '/admin/settings', queryParams: { tab: 'site' }, done: s.customDomainActive || s.hasShortAddress },
     { id: 'enquiry', title: 'Send yourself a test enquiry', hint: 'Fill in your own contact form to check it reaches your inbox.', route: '/admin/inbox', done: s.enquiryCount > 0 },
   ];
 }

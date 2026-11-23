@@ -19,6 +19,8 @@ import { localDateKey } from './inbox-workflow';
 import { HeadlineChatComponent } from './headline-chat.component';
 import { ShowcaseLinksComponent } from './showcase-links.component';
 
+export const MORE_TOOLS_KEY = 'bf_home_more_tools_open';
+
 @Component({
   selector: 'app-admin-dashboard',
   standalone: true,
@@ -71,12 +73,12 @@ import { ShowcaseLinksComponent } from './showcase-links.component';
       }
 
       @if (!analyticsOnly) {
-        <app-headline-chat></app-headline-chat>
-        <app-launch-checklist></app-launch-checklist>
-        <app-showcase-links></app-showcase-links>
-        <app-site-stats></app-site-stats>
-        <app-ai-actions></app-ai-actions>
-        <app-seo-helper [compact]="true"></app-seo-helper>
+        <!--
+          UX audit F6: Home leads with one "do this next" card, then the launch
+          checklist and the headline assistant. AI actions, SEO, site stats and
+          showcase links sit behind "More tools" so the first screen isn't a
+          stack of eight widgets.
+        -->
         <section class="space-y-4" aria-label="Home action center">
           <div>
             <h1 class="text-2xl font-semibold tracking-tight text-gray-900">What should you do next?</h1>
@@ -104,9 +106,34 @@ import { ShowcaseLinksComponent } from './showcase-links.component';
             </div>
           }
         </section>
+        <app-launch-checklist></app-launch-checklist>
+        <!-- The headline conversation stays visible: conversation is the default
+             interface (docs/brain-snapshot.md) and it shows any unconfirmed change. -->
+        <app-headline-chat></app-headline-chat>
       }
       @if (!analyticsOnly && showOnboarding()) {
         <app-onboarding-guide (guideDismissed)="dismissOnboarding()"></app-onboarding-guide>
+      }
+      @if (!analyticsOnly) {
+        <section class="rounded-2xl border border-gray-200 bg-white" aria-label="More tools">
+          <button type="button" (click)="toggleMoreTools()" [attr.aria-expanded]="moreToolsOpen()" aria-controls="home-more-tools"
+            data-testid="more-tools-toggle"
+            class="w-full min-h-[44px] flex items-center justify-between gap-3 px-5 py-3 text-left rounded-2xl hover:bg-gray-50 transition-colors">
+            <span>
+              <span class="block font-semibold text-gray-900">More tools</span>
+              <span class="block text-sm text-gray-600">AI actions, SEO check, site stats and example sites.</span>
+            </span>
+            <mat-icon aria-hidden="true" class="text-gray-600">{{ moreToolsOpen() ? 'expand_less' : 'expand_more' }}</mat-icon>
+          </button>
+          @if (moreToolsOpen()) {
+            <div id="home-more-tools" class="flex flex-col gap-6 px-5 pb-5" data-testid="more-tools">
+              <app-ai-actions></app-ai-actions>
+              <app-seo-helper [compact]="true"></app-seo-helper>
+              <app-site-stats></app-site-stats>
+              <app-showcase-links></app-showcase-links>
+            </div>
+          }
+        </section>
       }
       <div>
         <h2 class="text-2xl font-semibold tracking-tight text-gray-900">{{ analyticsOnly ? 'Analytics' : 'Business snapshot' }}</h2>
@@ -332,6 +359,16 @@ export class AdminDashboardComponent implements OnInit {
     if (!isPlatformBrowser(this.platformId)) return path;
     return `${window.location.origin}${path}`;
   });
+
+  /** "More tools" on Home (F6): closed by default, remembered per browser. */
+  moreToolsOpen = signal(isPlatformBrowser(inject(PLATFORM_ID)) && localStorage.getItem(MORE_TOOLS_KEY) === '1');
+  toggleMoreTools() {
+    const open = !this.moreToolsOpen();
+    this.moreToolsOpen.set(open);
+    if (isPlatformBrowser(this.platformId)) {
+      if (open) localStorage.setItem(MORE_TOOLS_KEY, '1'); else localStorage.removeItem(MORE_TOOLS_KEY);
+    }
+  }
 
   private onboardingDismissed = signal(false);
   showOnboarding = computed(() => {
