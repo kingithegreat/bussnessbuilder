@@ -27,7 +27,7 @@ These Terms of Service ("**Terms**") govern your access to and use of BusinessFl
 
 2.1 The Service allows you to sign up, complete a setup wizard, and create and publish a customizable public website for your business, together with features that may include an enquiry inbox/CRM, AI-assisted content tools, and payment links and subscription tools.
 
-2.2 The Service is offered in multiple tiers (currently **Free**, **Pro**, and **Business**) with different features and limits as described on our pricing page, which may change from time to time.
+2.2 The Service is offered in multiple tiers (currently **Free**, **Starter**, **Pro**, and **Business**) with different features and limits as described on our pricing page, which may change from time to time.
 
 2.3 We may add, modify, or discontinue features at any time. We will use commercially reasonable efforts to provide notice of material adverse changes to paid tiers.
 
@@ -47,7 +47,7 @@ These Terms of Service ("**Terms**") govern your access to and use of BusinessFl
 
 ## 4. Subscriptions, Billing, and Auto-Renewal
 
-4.1 **Paid plans.** Paid tiers (Pro and Business) are billed in advance on a recurring basis (monthly unless otherwise stated) at the prices listed on our pricing page, plus any applicable taxes.
+4.1 **Paid plans.** Paid tiers (Starter, Pro and Business) are billed in advance on a recurring basis (monthly unless otherwise stated) at the New Zealand dollar prices listed on our pricing page, which are shown excluding GST, plus any applicable taxes.
 
 4.2 **Payment processor.** Payments are processed by our third-party payment processor, **Stripe**. By providing payment information, you authorize us and Stripe to charge your payment method for all fees due. You agree to Stripe's applicable terms. We do not store full payment card details on our own servers.
 

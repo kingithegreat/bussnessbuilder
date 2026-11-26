@@ -169,7 +169,7 @@ import { ShowcaseLinksComponent } from './showcase-links.component';
         <!-- Bottom CTA -->
         <section class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-20 text-center">
           <h2 class="text-2xl md:text-4xl font-bold tracking-tight text-gray-900 mb-4">Ready to build your site?</h2>
-          <p class="text-gray-500 mb-8 text-sm md:text-base max-w-xl mx-auto">Build it first — you only need an account when you're ready to publish. No credit card required. <a routerLink="/pricing" class="text-blue-600 font-medium hover:underline">See pricing</a></p>
+          <p class="text-gray-500 mb-8 text-sm md:text-base max-w-xl mx-auto">Build it first — you only need an account when you're ready to publish. No credit card required. Paid plans from NZ$29/month (NZD, excl. GST) with a 0% booking fee. <a routerLink="/pricing" class="text-blue-600 font-medium hover:underline">See pricing</a></p>
           <a [routerLink]="auth.isLoggedIn() ? '/admin/dashboard' : '/setup'" (click)="onCtaClick()" class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-full text-base md:text-lg font-medium transition-colors shadow-sm">
             {{ auth.isLoggedIn() ? 'Go to Dashboard' : 'Get Started Free' }}
             <mat-icon>arrow_forward</mat-icon>

@@ -26,7 +26,7 @@ Security detail: [SECURITY_REVIEW.md](SECURITY_REVIEW.md).
 | Gate | Env vars | Runbook |
 |---|---|---|
 | G11 Stripe live | `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_ID_PRO`, `STRIPE_PRICE_ID_BUSINESS` | [GO_LIVE_STRIPE.md](GO_LIVE_STRIPE.md) |
-| NZD prices | the Stripe NZD prices plus the `/api/pricing` values (currently USD 14/22) | [STRIPE_NZD.md](STRIPE_NZD.md) |
+| NZD prices (F13) | `STRIPE_PRICE_ID_STARTER_NZD`, `STRIPE_PRICE_ID_PRO_NZD`, `STRIPE_PRICE_ID_BUSINESS_NZD` (NZ$29 / NZ$59 / NZ$99 monthly, created by Aden in Stripe). `/api/pricing` already shows the NZD amounts; each plan stays unavailable until its ID is set | [STRIPE_NZD.md](STRIPE_NZD.md) |
 | G12 SMTP email alerts | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM` | [EMAIL_ALERTS_SETUP.md](EMAIL_ALERTS_SETUP.md) |
 | G13 SMS (**out of the initial offer**) | `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_FROM_NUMBER` or `TWILIO_MESSAGING_SERVICE_SID`, `SMS_DAILY_LIMIT_PER_BUSINESS` | [SMS_SETUP.md](SMS_SETUP.md) |
 | Monitoring | `SENTRY_DSN`, `SENTRY_ENVIRONMENT` | [RELEASE_FINISHING.md](RELEASE_FINISHING.md) |
@@ -34,7 +34,7 @@ Security detail: [SECURITY_REVIEW.md](SECURITY_REVIEW.md).
 | Custom domain | DNS and certificate | [domain-mapping-setup-runbook.md](domain-mapping-setup-runbook.md) |
 | Firebase rules | `firestore.rules` and `storage.rules`. Deploy them with `firebase deploy --only firestore:rules,storage` if the CI deploy is denied | [wif-setup-runbook.md](wif-setup-runbook.md) |
 
-Managed funding offer: **NZ$750 setup + NZ$129/month**, separate from the self-serve Stripe tiers. SMS is not included.
+Managed funding offer: **NZ$750 setup + NZ$129/month**, separate from the self-serve Stripe tiers (NZ$29 / NZ$59 / NZ$99 a month, NZD excl. GST, 0% booking fee). SMS is not included.
 
 ## Remaining, by owner
 **Aden only (manual):** G11 Stripe live keys and Dashboard products, NZD price decision, G12 SMTP

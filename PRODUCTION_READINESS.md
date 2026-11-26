@@ -72,7 +72,7 @@ by a checked-in implementation.
 - [x] Graceful fallback when API key missing or generation fails
 - [x] Rate-limited to prevent abuse
 - [x] Client-side fallback to template-only for free tier
-- [x] Atomic per-user daily/monthly allowances across all server AI routes (Pro 20/200, Business 60/600)
+- [x] Atomic per-user daily/monthly allowances across all server AI routes (Pro 20/200, Business 60/600; Free and Starter have no managed AI)
 - [x] Server input cap, output token cap and disabled extra thinking; BYOK shares output/thinking caps
 - [x] Shared platform USD reservation envelope and kill switches, atomically combined with user quotas; actual provider bills/margins still require measurement (see `docs/RELEASE_FINISHING.md`)
 

@@ -16,7 +16,7 @@ and **Stripe** subscriptions.
 - **Database:** Firestore — per-user data at `/users/{uid}/businessData/main`
 - **Storage:** Firebase Storage for user image uploads
 - **AI:** Google Gemini (`@google/genai`) with template fallback
-- **Payments:** Stripe subscriptions (Free / Pro $14/mo / Business $22/mo)
+- **Payments:** Stripe subscriptions in NZD (Free / Starter NZ$29/mo / Pro NZ$59/mo / Business NZ$99/mo, all NZD excl. GST, 0% booking fee). See `docs/STRIPE_NZD.md`
 - **Deploy:** Google Cloud Run (project: `sitebuilder-b2ee6`)
 
 ## Run locally

@@ -198,7 +198,7 @@ export interface CustomizationSettings {
   };
 }
 
-export type SubscriptionTier = 'free' | 'pro' | 'business';
+export type SubscriptionTier = 'free' | 'starter' | 'pro' | 'business';
 
 export interface SubscriptionData {
   tier: SubscriptionTier;

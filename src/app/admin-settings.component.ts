@@ -184,7 +184,7 @@ import { DatePipe } from '@angular/common';
             <div>
               <span class="text-sm font-bold text-gray-900">Current Plan: </span>
               <span class="px-2 py-0.5 rounded-full text-xs font-bold uppercase"
-                    [class]="subService.tier() === 'free' ? 'bg-gray-100 text-gray-600' : subService.tier() === 'pro' ? 'bg-blue-100 text-blue-600' : 'bg-purple-100 text-purple-600'">
+                    [class]="subService.tier() === 'free' ? 'bg-gray-100 text-gray-600' : subService.tier() === 'starter' ? 'bg-teal-100 text-teal-700' : subService.tier() === 'pro' ? 'bg-blue-100 text-blue-600' : 'bg-purple-100 text-purple-600'">
                 {{ subService.tierLabel() }}
               </span>
             </div>

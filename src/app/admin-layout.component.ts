@@ -55,7 +55,7 @@ export const OUTCOME_NAVIGATION = [
           <span class="font-semibold tracking-tight text-[15px]">{{ profile().name || 'BusinessFlow' }}</span>
           @if (subService.tier() !== 'free') {
             <span class="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider"
-                  [class]="subService.tier() === 'pro' ? 'bg-blue-100 text-blue-600' : 'bg-purple-100 text-purple-600'">
+                  [class]="subService.tier() === 'starter' ? 'bg-teal-100 text-teal-700' : subService.tier() === 'pro' ? 'bg-blue-100 text-blue-600' : 'bg-purple-100 text-purple-600'">
               {{ subService.tierLabel() }}
             </span>
           }

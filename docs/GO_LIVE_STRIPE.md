@@ -30,12 +30,21 @@ also work as fallbacks — use the primary names). The webhook route is
 
 Stripe Dashboard → toggle **from Test to Live mode** (top-right) → Products:
 
-1. Create **BusinessFlow Pro** with its recurring monthly price → copy the live
-   price ID (`price_...`).
-2. Create **BusinessFlow Business** with its recurring monthly price → copy its ID.
+> **Pricing changed on 27 Nov 2026 (F13).** Self-service plans are now NZD:
+> Starter NZ$29, Pro NZ$59, Business NZ$99 a month. Follow
+> [STRIPE_NZD.md](STRIPE_NZD.md) for the price IDs
+> (`STRIPE_PRICE_ID_STARTER_NZD`, `STRIPE_PRICE_ID_PRO_NZD`,
+> `STRIPE_PRICE_ID_BUSINESS_NZD`). The `STRIPE_PRICE_ID_PRO` /
+> `STRIPE_PRICE_ID_BUSINESS` values below are the **legacy USD** prices: only
+> set them if existing USD subscribers need to keep their tier.
 
-Live mode has none of your test products — these are fresh creations; match the
-amounts to what the pricing page advertises.
+1. Create **BusinessFlow Starter**, **Pro** and **Business**, each with a
+   recurring monthly **NZD** price (29.00 / 59.00 / 99.00) → copy the live
+   price IDs (`price_...`).
+
+Live mode has none of your test products — these are fresh creations. The app
+refuses to start a checkout unless the Stripe price is monthly, NZD, and the
+exact advertised amount.
 
 ## Step 2 — Create the live webhook endpoint
 

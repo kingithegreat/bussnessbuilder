@@ -1,4 +1,4 @@
-import { checkoutSubscriptionStatus, effectiveTier, tierForPrices } from './effective-tier';
+import { checkoutSubscriptionStatus, effectiveTier, hasManagedAi, tierForPrices } from './effective-tier';
 
 describe('effective subscription entitlements', () => {
   it('does not grant paid access from an unpaid completed checkout', () => {
@@ -30,5 +30,17 @@ describe('effective subscription entitlements', () => {
     expect(tierForPrices(['price_business', 'price_pro'], prices)).toBe('free');
     expect(tierForPrices([''], { pro: '', business: '' })).toBe('free');
     expect(tierForPrices(['same'], { pro: 'same', business: 'same' })).toBe('free');
+  });
+
+  it('recognises the Starter plan and keeps managed AI to Pro and Business', () => {
+    expect(effectiveTier({ tier: 'starter', status: 'active' })).toBe('starter');
+    expect(effectiveTier({ tier: 'starter', status: 'past_due' })).toBe('free');
+    expect(['free', 'starter', 'pro', 'business'].map(t => hasManagedAi(t as 'free'))).toEqual([false, false, true, true]);
+    const prices = { starter: 's', pro: 'p', business: 'b' };
+    expect(tierForPrices(['s'], prices)).toBe('starter');
+    expect(tierForPrices(['p'], prices)).toBe('pro');
+    expect(tierForPrices(['b'], prices)).toBe('business');
+    expect(tierForPrices(['x'], { starter: 'x', pro: 'x', business: 'b' })).toBe('free');
+    expect(tierForPrices(['s'], { pro: 'p', business: 'b' })).toBe('free');
   });
 });

@@ -1,96 +1,111 @@
-# Charging BusinessFlow subscriptions in NZD
+# BusinessFlow self-service pricing (NZD) and Stripe setup
 
-Today the Pro (US$14/mo) and Business (US$22/mo) plans are **USD** Stripe
-prices, and the pricing page says so. The app can now also sell the same plans
-in **NZD**, but only after you create NZD prices in Stripe and tell Cloud Run
-their IDs. Until then nothing changes: the pricing page and checkout keep
-using the USD prices.
+**Status (27 Nov 2026, F13):** the app now advertises NZD-native plans. Nothing
+in the code creates, edits or archives anything in Stripe, and no Stripe
+products, prices or webhooks were touched by this change. You create the
+Stripe prices yourself, then tell Cloud Run their IDs.
 
-Nothing in the code creates, edits or archives anything in Stripe. You do the
-Stripe part yourself.
+Source of the numbers: *Beta-to-Live Execution Plan* (Gate 2 and section 3) and
+the *Grand Master Plan* (section 2.1).
 
-## What the app does once NZD is configured
+## The price list
 
-* `GET /api/pricing` reads the two NZD prices from Stripe (read-only, cached
-  for 1 hour) and the pricing page shows `NZ$<amount>` plus "Prices are in New
-  Zealand dollars (NZD), including GST".
-* Checkout uses the NZD price for that plan.
-* Webhooks and subscription sync recognise **both** USD and NZD price IDs, so
-  existing USD subscribers keep their tier and new NZD subscribers get the
-  right tier.
-* If Stripe can't be reached, or either price isn't actually `nzd`, the page
-  quietly falls back to USD.
+| Plan | Price | Booking fee | Notes |
+|---|---|---|---|
+| Free | NZ$0 | 0% | 3 services, 10 enquiries, template-only AI |
+| **Starter** | **NZ$29 / month** | 0% | Unlimited services and enquiries, data export and import. No managed AI. |
+| **Pro** | **NZ$59 / month** | 0% | Everything in Starter, plus managed AI tools and email notifications |
+| **Business** | **NZ$99 / month** | 0% | Everything in Pro, plus custom domain and removable branding |
+| Done-for-you setup | NZ$750 one-time | n/a | Sold directly, no in-app checkout |
+| Managed care | NZ$129 / month | n/a | Sold directly, no in-app checkout |
 
-## 1. Create the NZD prices in Stripe (Dashboard, about 5 minutes)
+**GST wording.** The plans don't say whether these prices include GST, so every
+price in the app is labelled **"NZD, excl. GST"**. If you decide on GST-inclusive
+prices, change `PRICE_GST_NOTE` in `src/app/plans.ts` (and the amounts, if
+needed) and create the Stripe prices as tax-inclusive.
 
-Do this in **test mode** first, then repeat in live mode.
+**Product decision to confirm:** the plans define the prices but not which
+features sit in Starter. This change gives Starter the old Pro limits without
+managed AI (AI stays Pro and up, because platform AI calls cost money). Change
+`TIER_LIMITS` in `src/app/subscription.service.ts` and `hasManagedAi` in
+`src/app/effective-tier.ts` if you want it different.
 
-1. Stripe Dashboard → **Product catalogue** → open the existing **Pro**
-   product (the one whose USD price is `STRIPE_PRICE_ID_PRO`).
-2. Click **+ Add another price**.
-3. Set:
-   * **Pricing model:** Flat rate (Standard pricing)
-   * **Amount:** your NZD price, e.g. `25.00`
-   * **Currency:** `NZD`
-   * **Billing period:** Monthly (recurring)
-   * **Include tax in price:** **Yes / Inclusive** if you want the amount
-     shown to be GST-inclusive (normal for NZ consumer pricing).
-4. Save. Copy the new price ID (`price_...`).
-5. Repeat for the **Business** product.
+Where the amounts live (change them in one place): `src/app/plans.ts`. The
+pricing page, landing line, dashboard labels, `/api/pricing` and the checkout
+price check all read from it.
 
-Keep the USD prices **active**. Existing subscribers are on them.
+## What the app does
 
-> GST: if BusinessFlow is GST-registered, turn on Stripe Tax or add a NZ GST
-> tax rate so invoices show GST. If it isn't registered, untick the GST
-> wording by setting `STRIPE_NZD_GST_INCLUSIVE=false` (see below).
+* `/pricing` and `GET /api/pricing` show the NZD amounts above. They no longer
+  read amounts from Stripe and never fall back to USD.
+* Checkout uses **NZD price IDs only**. If a plan's NZD ID isn't set, that plan
+  can't be bought yet and checkout answers `plan_unavailable` (503). It never
+  falls back to a legacy USD price.
+* Before creating a Checkout session the server reads the configured Stripe
+  price (read-only) and refuses unless it is **monthly, NZD, and exactly the
+  advertised amount** (NZ$29 / NZ$59 / NZ$99). A wrong or archived price can't
+  sell a plan at the wrong amount.
+* Webhooks and subscription sync recognise the three NZD IDs **and** the legacy
+  USD Pro/Business IDs, so existing USD subscribers keep their tier. An ID set
+  for two plans grants nothing.
+
+## 1. Create the NZD prices in Stripe (you do this, test mode first)
+
+1. Stripe Dashboard, **Product catalogue**. Create (or open) products for
+   **Starter**, **Pro** and **Business**.
+2. On each, **Add price**: flat rate, **NZD**, **monthly** recurring, amount
+   `29.00`, `59.00` and `99.00` respectively. Copy each `price_...` ID.
+3. Optional, for your own records only (no app checkout uses them): a one-time
+   NZ$750.00 price for done-for-you setup and a monthly NZ$129.00 price for
+   managed care.
+4. Keep the legacy USD Pro/Business prices **active**. Existing subscribers are
+   on them. Repeat in live mode only when you are ready to go live (see
+   [GO_LIVE_STRIPE.md](GO_LIVE_STRIPE.md)).
+
+The Beta-to-Live plan lists placeholders `price_1Q...StarterNZD`,
+`price_1Q...ProNZD` and `price_1Q...BusinessNZD`. Replace them with the real IDs
+below; never commit real IDs or keys into the repo.
 
 ## 2. Tell Cloud Run the price IDs
 
-Price IDs aren't secrets, so plain env vars are fine. Use
-`--update-env-vars`, which **merges**. Never use `--set-env-vars`, because it
-would wipe the existing Stripe keys.
+Price IDs aren't secrets, so plain env vars are fine. Use `--update-env-vars`,
+which **merges**. Never use `--set-env-vars`: it would wipe the Stripe keys.
 
 ```bash
 gcloud run services update businessflow \
   --region us-central1 --project sitebuilder-b2ee6 \
-  --update-env-vars "STRIPE_PRICE_ID_PRO_NZD=price_XXXX,STRIPE_PRICE_ID_BUSINESS_NZD=price_YYYY"
+  --update-env-vars "STRIPE_PRICE_ID_STARTER_NZD=price_XXXX,STRIPE_PRICE_ID_PRO_NZD=price_YYYY,STRIPE_PRICE_ID_BUSINESS_NZD=price_ZZZZ"
 ```
 
-Optional:
+| Env var | Meaning |
+|---|---|
+| `STRIPE_PRICE_ID_STARTER_NZD` | Monthly NZ$29 price for Starter |
+| `STRIPE_PRICE_ID_PRO_NZD` | Monthly NZ$59 price for Pro |
+| `STRIPE_PRICE_ID_BUSINESS_NZD` | Monthly NZ$99 price for Business |
+| `STRIPE_PRICE_ID_PRO`, `STRIPE_PRICE_ID_BUSINESS` | **Legacy USD** IDs. Keep them set so existing subscribers keep their tier. Not used for new checkouts. |
 
-| Env var | Default | Meaning |
-|---|---|---|
-| `STRIPE_PRICE_ID_PRO_NZD` | unset | NZD monthly price for Pro. **Both** NZD IDs must be set or NZD stays off. |
-| `STRIPE_PRICE_ID_BUSINESS_NZD` | unset | NZD monthly price for Business. |
-| `STRIPE_NZD_GST_INCLUSIVE` | `true` | Set to `false` to drop "including GST" from the pricing page. |
+Each plan is independent: you can set just one and the others stay "opens after
+the beta".
 
-Console alternative: Cloud Run → **businessflow** → **Edit & deploy new
-revision** → **Variables & secrets** → add the variables → **Deploy**.
+## 3. Check it (test mode)
 
-The deploy workflow merges env vars (`env_vars_update_strategy: merge`), so
-these survive every merge-to-main deploy.
-
-## 3. Check it
-
-1. Open `https://<app>/api/pricing`. You should see
-   `{"currency":"NZD","pro":25,"business":39,"gstInclusive":true}`.
-   It's cached for up to an hour per instance, so redeploy or wait if you
-   just changed it.
-2. Open `/pricing`. Prices should show as `NZ$…`.
-3. In **test mode**, click Upgrade and check that Stripe Checkout shows NZD.
-   Pay with `4242 4242 4242 4242`, then confirm the dashboard shows the right
-   plan.
+1. `https://<app>/api/pricing` should return `"currency":"NZD"`,
+   `"plans":{"starter":29,"pro":59,"business":99}`, `"bookingFeePercent":0`,
+   `"gstNote":"NZD, excl. GST"`, and `checkoutAvailable` true for each plan
+   whose ID you set.
+2. `/pricing` shows NZ$29 / NZ$59 / NZ$99, "NZD, excl. GST", the NZ$750 and
+   NZ$129/month services, and the 0% booking fee line.
+3. In **test mode**, upgrade and confirm Stripe Checkout shows the same NZD
+   amount. Pay with `4242 4242 4242 4242` and confirm the tier flips.
 
 ## Rolling back
 
-Remove the two variables:
+Remove the NZD IDs for a plan and it stops being purchasable:
 
 ```bash
 gcloud run services update businessflow --region us-central1 --project sitebuilder-b2ee6 \
-  --remove-env-vars STRIPE_PRICE_ID_PRO_NZD,STRIPE_PRICE_ID_BUSINESS_NZD
+  --remove-env-vars STRIPE_PRICE_ID_STARTER_NZD,STRIPE_PRICE_ID_PRO_NZD,STRIPE_PRICE_ID_BUSINESS_NZD
 ```
 
-The page goes back to USD. Anyone already subscribed in NZD keeps their tier
-only while their price ID is still recognised, so **don't** remove the
-variables while NZD subscribers exist. Leave them set and stop *showing* NZD
-instead (ask a developer to pin `/api/pricing` to USD).
+Don't remove an NZD ID while subscribers are on it: their tier is recognised by
+that ID, and removing it would drop them to Free.

@@ -7,6 +7,8 @@ import { effectiveTier } from './effective-tier';
 
 const TIER_LIMITS = {
   free:     { services: 3,  enquiries: 10, ai: false, exportImport: false, growthAi: false, marketing: false },
+  // Starter: unlimited services/enquiries and export/import; managed AI stays Pro and up.
+  starter:  { services: -1, enquiries: -1, ai: false, exportImport: true,  growthAi: false, marketing: false },
   pro:      { services: -1, enquiries: -1, ai: true,  exportImport: true,  growthAi: true,  marketing: true  },
   business: { services: -1, enquiries: -1, ai: true,  exportImport: true,  growthAi: true,  marketing: true  },
 } as const;
@@ -60,11 +62,13 @@ export class SubscriptionService {
   }
 
   tierLabel(): string {
-    return this.tier() === 'free' ? 'Free' : this.tier() === 'pro' ? 'Pro' : 'Business';
+    const labels = { free: 'Free', starter: 'Starter', pro: 'Pro', business: 'Business' } as const;
+    return labels[this.tier()];
   }
 
   tierColor(): string {
-    return this.tier() === 'free' ? 'gray' : this.tier() === 'pro' ? 'blue' : 'purple';
+    const colors = { free: 'gray', starter: 'teal', pro: 'blue', business: 'purple' } as const;
+    return colors[this.tier()];
   }
 
   private async authHeaders(): Promise<HeadersInit | null> {
@@ -88,14 +92,14 @@ export class SubscriptionService {
     }
   }
 
-  async createCheckoutSession(uid: string, tier: 'pro' | 'business', discountCode?: string, currency?: 'nzd'): Promise<string | null> {
+  async createCheckoutSession(uid: string, tier: 'starter' | 'pro' | 'business', discountCode?: string): Promise<string | null> {
     try {
       const headers = await this.authHeaders();
       if (!headers) return null;
       const resp = await fetch('/api/stripe/create-checkout-session', {
         method: 'POST',
         headers,
-        body: JSON.stringify({ uid, tier, discountCode, ...(currency ? { currency } : {}) }),
+        body: JSON.stringify({ uid, tier, discountCode }),
       });
       const data = await resp.json();
       return data.url || null;

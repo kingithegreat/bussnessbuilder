@@ -172,7 +172,7 @@ Covered by the existing wildcard rule: `match /businessData/{docId}`.
 - **Pro/Business**: AI-generated draft via Gemini 2.5 Flash with JSON response mode
 
 ### `POST /api/ai/generate` (existing, used for all other AI)
-Used by the client for lead replies, marketing content, and other AI features. The client builds the prompt and sends it to the server for Gemini processing. **Server-side tier enforcement:** the endpoint reads the user's subscription from Firestore and returns `{ text: null, fallback: true }` for free-tier users, which triggers template fallbacks on the client. Pro and Business users proceed to Gemini.
+Used by the client for lead replies, marketing content, and other AI features. The client builds the prompt and sends it to the server for Gemini processing. **Server-side tier enforcement:** the endpoint reads the user's subscription from Firestore and returns `{ text: null, fallback: true }` for free-tier users, which triggers template fallbacks on the client. Pro and Business users proceed to Gemini. (Starter, added in F13, gets templates only, like Free.)
 
 ## Tier Gating
 

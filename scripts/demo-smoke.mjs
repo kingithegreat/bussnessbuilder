@@ -48,9 +48,9 @@ for (const path of ['/', '/setup', '/login', '/pricing', '/privacy', '/terms']) 
   await check(path, b => /<app-root[\s>]/.test(b) && /<script[\s>]/.test(b) && 'HTML app shell served; browser interaction requires separate acceptance', 200, 'html');
 }
 await check('/api/pricing', b =>
-  ['USD', 'NZD'].includes(b?.currency) && Number.isFinite(b.pro) && b.pro > 0 &&
-  Number.isFinite(b.business) && b.business > 0 && typeof b.gstInclusive === 'boolean' &&
-  { currency: b.currency, pro: b.pro, business: b.business, gstInclusive: b.gstInclusive });
+  b?.currency === 'NZD' && b.plans?.starter === 29 && b.plans?.pro === 59 && b.plans?.business === 99 &&
+  b.bookingFeePercent === 0 && typeof b.gstNote === 'string' &&
+  { currency: b.currency, plans: b.plans, bookingFeePercent: b.bookingFeePercent, gstNote: b.gstNote });
 for (const path of ['/api/email-alerts/status', '/api/sms/status']) {
   await check(path, b => typeof b?.enabled === 'boolean' &&
     { configured: b.enabled, deliveryTested: false });

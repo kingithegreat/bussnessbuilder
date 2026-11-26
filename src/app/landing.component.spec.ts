@@ -49,4 +49,11 @@ describe('Landing feature grid (F11)', () => {
     expect(icon?.className).toContain('rounded-xl');
     expect(icon?.className).toContain('bg-green-50');
   });
+
+  it('mentions NZD pricing from NZ$29 with 0% booking fee and GST wording (F13)', () => {
+    const fixture = TestBed.createComponent(LandingComponent); fixture.detectChanges();
+    const t = ((fixture.nativeElement as HTMLElement).textContent ?? '').replace(/\s+/g, ' ');
+    expect(t).toContain('Paid plans from NZ$29/month (NZD, excl. GST) with a 0% booking fee');
+    expect(t).not.toMatch(/US\$|USD/);
+  });
 });

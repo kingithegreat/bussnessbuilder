@@ -55,7 +55,7 @@ A missing permission is reported as `needs_account_access`, never marked done.
 | Gate | Exact action/reference |
 | --- | --- |
 | Real platform subscriptions | Owner completes `docs/GO_LIVE_STRIPE.md`; test upgrade, webhook entitlement, portal and cancellation before charging customers. |
-| NZD subscription pricing | Owner chooses amounts and creates prices via `docs/STRIPE_NZD.md`. Existing USD customers must keep recognized price IDs. |
+| NZD subscription pricing | Amounts are set (NZ$29 / NZ$59 / NZ$99, NZD excl. GST). Owner creates the three monthly NZD prices in Stripe and sets their IDs via `docs/STRIPE_NZD.md`. Existing USD customers keep recognized legacy price IDs. |
 | Email/SMS delivery | `docs/EMAIL_ALERTS_SETUP.md` and `docs/SMS_SETUP.md`; credentials and sender provisioning belong to the owner. No paid SMS/email was sent during automated tests. |
 | Rules access denied | Grant the existing deploy identity Firebase Rules permissions or run `firebase deploy --only firestore:rules,storage` from the owner's authenticated setup. The release receipt distinguishes denied access from matching rules. |
 | Custom domains | `docs/domain-mapping-setup-runbook.md`; enable Site Verification, confirm runtime IAM and exercise TXT verification → mapping → certificate using a domain the owner controls. No domain was supplied for acceptance. |

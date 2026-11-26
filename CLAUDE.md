@@ -188,9 +188,14 @@ GitHub Actions (`deploy.yml`) uses configured WIF and deploys code pushes to mai
 
 ## Pricing tiers
 
+Prices are NZD, shown as "NZD, excl. GST", with a 0% booking fee. Amounts live in `src/app/plans.ts`; Stripe setup is in `docs/STRIPE_NZD.md`.
+
 - **Free**: Template-only AI, 3 services, 10 enquiries
-- **Pro ($14/mo)**: Real AI, unlimited services/enquiries, export/import
-- **Business ($22/mo)**: Priority AI, custom domain, analytics, remove branding
+- **Starter (NZ$29/mo)**: Unlimited services/enquiries, export/import, no managed AI
+- **Pro (NZ$59/mo)**: Real AI, everything in Starter
+- **Business (NZ$99/mo)**: Priority AI, custom domain, analytics, remove branding
+- Optional managed services (sold directly, no in-app checkout): NZ$750 done-for-you setup, NZ$129/mo managed care
+- Legacy US$14 Pro / US$22 Business subscribers keep their tier via the legacy `STRIPE_PRICE_ID_PRO` / `STRIPE_PRICE_ID_BUSINESS` ids
 
 ## Env vars (Cloud Run)
 
