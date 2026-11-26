@@ -21,6 +21,7 @@ interface Metrics {
   setupComplete: number;
   totalEnquiries: number;
   totalServices: number;
+  starterUsers?: number;
   proUsers: number;
   businessUsers: number;
   totalTestimonials: number;
@@ -28,7 +29,7 @@ interface Metrics {
   totalPageViews: number;
   signupsByDate: Record<string, number>;
   enquiriesByDate: Record<string, number>;
-  tierBreakdown: { free: number; pro: number; business: number };
+  tierBreakdown: { free: number; starter?: number; pro: number; business: number };
   recentUsers: RecentUser[];
 }
 
@@ -188,7 +189,16 @@ interface Metrics {
               </div>
               <div>
                 <div class="flex justify-between text-xs font-bold mb-1.5">
-                  <span class="text-blue-600">Pro — US$14/mo</span>
+                  <span class="text-teal-700">Starter — NZ$29/mo</span>
+                  <span class="text-gray-500">{{ metrics()?.starterUsers || 0 }}</span>
+                </div>
+                <div class="w-full bg-gray-100 rounded-full h-3">
+                  <div class="bg-teal-500 h-3 rounded-full transition-all" [style.width.%]="tierPercent('starter')"></div>
+                </div>
+              </div>
+              <div>
+                <div class="flex justify-between text-xs font-bold mb-1.5">
+                  <span class="text-blue-600">Pro — NZ$59/mo</span>
                   <span class="text-gray-500">{{ metrics()?.proUsers || 0 }}</span>
                 </div>
                 <div class="w-full bg-gray-100 rounded-full h-3">
@@ -197,7 +207,7 @@ interface Metrics {
               </div>
               <div>
                 <div class="flex justify-between text-xs font-bold mb-1.5">
-                  <span class="text-purple-600">Business — US$22/mo</span>
+                  <span class="text-purple-600">Business — NZ$99/mo</span>
                   <span class="text-gray-500">{{ metrics()?.businessUsers || 0 }}</span>
                 </div>
                 <div class="w-full bg-gray-100 rounded-full h-3">
@@ -223,7 +233,7 @@ interface Metrics {
                   <div class="flex items-center justify-between py-2 border-b border-gray-50 last:border-0">
                     <div class="flex items-center gap-3 min-w-0">
                       <div class="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
-                           [class]="user.tier === 'pro' ? 'bg-blue-100 text-blue-600' : user.tier === 'business' ? 'bg-purple-100 text-purple-600' : 'bg-gray-100 text-gray-600'">
+                           [class]="user.tier === 'starter' ? 'bg-teal-100 text-teal-700' : user.tier === 'pro' ? 'bg-blue-100 text-blue-600' : user.tier === 'business' ? 'bg-purple-100 text-purple-600' : 'bg-gray-100 text-gray-600'">
                         {{ (user.displayName || user.email)[0].toUpperCase() }}
                       </div>
                       <div class="min-w-0">
@@ -238,7 +248,7 @@ interface Metrics {
                         </a>
                       }
                       <span class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase"
-                            [class]="user.tier === 'free' ? 'bg-gray-100 text-gray-500' : user.tier === 'pro' ? 'bg-blue-100 text-blue-600' : 'bg-purple-100 text-purple-600'">
+                            [class]="user.tier === 'free' ? 'bg-gray-100 text-gray-500' : user.tier === 'starter' ? 'bg-teal-100 text-teal-700' : user.tier === 'pro' ? 'bg-blue-100 text-blue-600' : 'bg-purple-100 text-purple-600'">
                         {{ user.tier }}
                       </span>
                       <span class="text-[10px] text-gray-500 hidden md:inline">{{ user.createdAt | date:'shortDate' }}</span>
@@ -303,10 +313,11 @@ export class AppAdminDashboardComponent implements OnInit {
     });
   }
 
-  tierPercent(tier: 'free' | 'pro' | 'business'): number {
+  tierPercent(tier: 'free' | 'starter' | 'pro' | 'business'): number {
     const m = this.metrics();
     if (!m || m.totalUsers === 0) return 0;
     const count = tier === 'free' ? (m.tierBreakdown?.free || 0) :
+                  tier === 'starter' ? (m.starterUsers || 0) :
                   tier === 'pro' ? m.proUsers : m.businessUsers;
     return (count / m.totalUsers) * 100;
   }

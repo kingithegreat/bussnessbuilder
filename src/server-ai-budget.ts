@@ -1,5 +1,5 @@
 import type { Firestore } from 'firebase-admin/firestore';
-import type { EffectiveTier } from './app/effective-tier';
+import { hasManagedAi, type EffectiveTier } from './app/effective-tier';
 export { AI_GENERATION_LIMITS } from './app/ai-generation-limits';
 
 // These caps bound every provider call, including its billed reasoning tokens.
@@ -9,7 +9,7 @@ export interface AiUsageLimits { daily: number; monthly: number }
 export interface AiUsageCounter { day: string; count: number; month: string; monthlyCount: number }
 
 function configuredLimit(tier: EffectiveTier, env: Record<string, string | undefined>, period: 'DAILY' | 'MONTHLY'): number {
-  if (tier === 'free') return 0;
+  if (!hasManagedAi(tier)) return 0;
   const raw = env[`AI_${period}_LIMIT_${tier === 'business' ? 'BUSINESS' : 'PRO'}`];
   if (raw === undefined || raw.trim() === '') return (tier === 'business' ? 60 : 20) * (period === 'MONTHLY' ? 10 : 1);
   const limit = Number(raw);

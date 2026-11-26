@@ -38,6 +38,7 @@ describe('AI spend boundaries', () => {
 
   it('uses modest paid defaults and fails closed on zero/invalid settings for either period', () => {
     expect(aiUsageLimits('free', {})).toEqual({ daily: 0, monthly: 0 });
+    expect(aiUsageLimits('starter', { AI_DAILY_LIMIT_PRO: '5' })).toEqual({ daily: 0, monthly: 0 });
     expect(aiUsageLimits('pro', {})).toEqual({ daily: 20, monthly: 200 });
     expect(aiUsageLimits('business', {})).toEqual({ daily: 60, monthly: 600 });
     expect(aiUsageLimits('pro', { AI_DAILY_LIMIT_PRO: '5', AI_MONTHLY_LIMIT_PRO: '50' })).toEqual({ daily: 5, monthly: 50 });

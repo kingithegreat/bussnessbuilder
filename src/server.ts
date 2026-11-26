@@ -23,8 +23,9 @@ import {
 import type Stripe from 'stripe';
 import type { Firestore } from 'firebase-admin/firestore';
 import { getAllDocs } from './server-firestore';
-import { checkoutSubscriptionStatus, effectiveTier } from './app/effective-tier';
-import { checkoutPriceId, tierForAnyPrices, pricingDisplay, nzdPriceIds, USD_DISPLAY, type PricingDisplay } from './server-pricing';
+import { checkoutSubscriptionStatus, effectiveTier, hasManagedAi } from './app/effective-tier';
+import { checkoutPriceId, tierForAnyPrices, pricingDisplay, verifyCheckoutPrice } from './server-pricing';
+import { isPaidPlanTier } from './app/plans';
 import { AI_GENERATION_LIMITS, aiUsageLimits, aiFallbackMessage, reserveManagedAiCall, validAiInput } from './server-ai-budget';
 import { persistCheckoutSubscription, updateCurrentSubscription } from './server-subscription-sync';
 import { siteActionRouter } from './server-site-action-routes';
@@ -740,12 +741,13 @@ app.get('/api/admin/metrics', async (req, res) => {
     let setupComplete = 0;
     let totalEnquiries = 0;
     let totalServices = 0;
+    let starterUsers = 0;
     let proUsers = 0;
     let businessUsers = 0;
     const signupsByDate: Record<string, number> = {};
     const enquiriesByDate: Record<string, number> = {};
     const recentUsers: { uid: string; email: string; displayName: string; businessName: string; tier: string; createdAt: string; siteSlug: string }[] = [];
-    const tierBreakdown = { free: 0, pro: 0, business: 0 };
+    const tierBreakdown = { free: 0, starter: 0, pro: 0, business: 0 };
     let totalTestimonials = 0;
     let totalFaqs = 0;
     const totalPageViews = 0;
@@ -788,6 +790,7 @@ app.get('/api/admin/metrics', async (req, res) => {
       const subSnap = subSnaps[i];
       if (subSnap.exists) {
         tier = effectiveTier(subSnap.data());
+        if (tier === 'starter') starterUsers++;
         if (tier === 'pro') proUsers++;
         if (tier === 'business') businessUsers++;
       }
@@ -804,12 +807,12 @@ app.get('/api/admin/metrics', async (req, res) => {
       });
     }
 
-    tierBreakdown.free = totalUsers - proUsers - businessUsers;
+    tierBreakdown.free = totalUsers - starterUsers - proUsers - businessUsers;
     recentUsers.sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
     const recent5 = recentUsers.slice(0, 5);
 
     const result = {
-      totalUsers, setupComplete, totalEnquiries, totalServices, proUsers, businessUsers,
+      totalUsers, setupComplete, totalEnquiries, totalServices, starterUsers, proUsers, businessUsers,
       totalTestimonials, totalFaqs, totalPageViews,
       signupsByDate, enquiriesByDate, tierBreakdown, recentUsers: recent5,
     };
@@ -917,7 +920,7 @@ app.post('/api/admin/discounts', express.json(), async (req, res) => {
       expiresAt: expiresAt || null,
       maxUses: maxUses ? Number(maxUses) : null,
       usedCount: 0,
-      applicableTiers: applicableTiers || ['pro', 'business'],
+      applicableTiers: applicableTiers || ['starter', 'pro', 'business'],
       active: true,
       createdAt: new Date().toISOString(),
       stripeCouponId: coupon.id,
@@ -1070,7 +1073,7 @@ app.post('/api/ai/generate', express.json(), async (req, res) => {
     const db = await getDb();
     const subSnap = await db.doc(`subscriptions/${uid}`).get();
     const userTier = effectiveTier(subSnap.data());
-    if (userTier === 'free') {
+    if (!hasManagedAi(userTier)) {
       res.json({ text: null, fallback: true });
       return;
     }
@@ -1192,9 +1195,9 @@ app.post('/api/ai/growth-report', express.json(), async (req, res) => {
     };
 
     const apiKey = process.env['GEMINI_API_KEY'];
-    const budget = apiKey && tier !== 'free'
+    const budget = apiKey && hasManagedAi(tier)
       ? await reserveManagedAiCall(db, uid, aiUsageLimits(tier, process.env), process.env) : null;
-    if (!apiKey || tier === 'free' || budget !== 'allowed') {
+    if (!apiKey || !hasManagedAi(tier) || budget !== 'allowed') {
       const recs: { title: string; reason: string; suggestion: string; priority: string; type: string }[] = [];
       if (services.length === 0) recs.push({ title: 'Add your services', reason: 'Your site has no services listed', suggestion: 'Add at least 3 services with descriptions and prices to help visitors understand what you offer.', priority: 'high', type: 'service' });
       if (services.some(s => !s.price)) recs.push({ title: 'Add pricing to services', reason: 'Some services are missing prices', suggestion: 'Adding starting prices reduces friction and increases enquiries.', priority: 'high', type: 'pricing' });
@@ -1385,7 +1388,7 @@ app.post('/api/ai/draft-recommendation', express.json(), async (req, res) => {
     const faqCount = Array.isArray(mainData['faqs']) ? mainData['faqs'].length : 0;
     const testimonialCount = Array.isArray(mainData['testimonials']) ? mainData['testimonials'].length : 0;
 
-    if (userTier === 'free') {
+    if (!hasManagedAi(userTier)) {
       res.json({
         title: recTitle,
         draftType: recType,
@@ -1475,22 +1478,11 @@ async function getStripe(): Promise<Stripe> {
   return _stripe;
 }
 
-// Public: the amounts the pricing page shows. USD unless NZD price ids are
-// configured (docs/STRIPE_NZD.md); cached for an hour, read-only Stripe call.
-let pricingCache: { at: number; value: PricingDisplay } | null = null;
-app.get('/api/pricing', async (_req, res) => {
-  try {
-    if (!pricingCache || Date.now() - pricingCache.at > 3600_000) {
-      const value = nzdPriceIds(process.env)
-        ? await pricingDisplay(process.env, async (id) => { const p = await (await getStripe()).prices.retrieve(id); return { unit_amount: p.unit_amount, currency: p.currency }; })
-        : USD_DISPLAY;
-      pricingCache = { at: Date.now(), value };
-    }
-    res.setHeader('Cache-Control', 'public, max-age=300');
-    res.json(pricingCache.value);
-  } catch {
-    res.json(USD_DISPLAY);
-  }
+// Public: the NZD plan amounts the pricing page shows (src/app/plans.ts) and which
+// plans can be bought yet. No Stripe call; reads env only (docs/STRIPE_NZD.md).
+app.get('/api/pricing', (_req, res) => {
+  res.setHeader('Cache-Control', 'public, max-age=300');
+  res.json(pricingDisplay(process.env));
 });
 
 app.post('/api/stripe/create-checkout-session', express.json(), async (req, res) => {
@@ -1500,14 +1492,29 @@ app.post('/api/stripe/create-checkout-session', express.json(), async (req, res)
       return;
     }
     const stripe = await getStripe();
-    const { uid, tier, currency } = req.body;
-    const priceId = checkoutPriceId(tier, currency, process.env);
-    if (typeof uid !== 'string' || typeof tier !== 'string' || !priceId) {
+    const { uid, tier } = req.body;
+    if (typeof uid !== 'string' || !isPaidPlanTier(tier)) {
       res.status(400).json({ error: 'Invalid request' });
+      return;
+    }
+    // NZD price ids only; an unset id means this plan isn't on sale yet.
+    const priceId = checkoutPriceId(tier, process.env);
+    if (!priceId) {
+      res.status(503).json({ error: 'plan_unavailable', message: 'This plan opens after the beta. Everything on the Free plan keeps working.' });
       return;
     }
     if (!await verifyFirebaseUser(req, uid)) {
       res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+    // Refuse to sell if the Stripe price isn't a monthly NZD price for the advertised amount (read-only check).
+    const priceCheck = await verifyCheckoutPrice(tier, priceId, async (id) => {
+      const p = await stripe.prices.retrieve(id);
+      return { unit_amount: p.unit_amount, currency: p.currency, recurring: p.recurring, active: p.active };
+    });
+    if (priceCheck !== 'ok') {
+      console.error(`Checkout refused: Stripe price for plan "${tier}" failed verification (${priceCheck})`);
+      res.status(503).json({ error: 'plan_unavailable', message: 'This plan is not available right now. Please try again later.' });
       return;
     }
 

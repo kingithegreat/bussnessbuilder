@@ -6,6 +6,19 @@ import { MatIconModule } from '@angular/material/icon';
 import { AuthService } from './auth.service';
 import { SubscriptionService } from './subscription.service';
 import { ToastService } from './toast.service';
+import { BOOKING_FEE_PERCENT, MANAGED_SERVICES_NZD, PAID_PLAN_TIERS, PLAN_MONTHLY_NZD, PRICE_CURRENCY, PRICE_GST_NOTE, formatNzd, type PaidPlanTier } from './plans';
+
+interface PricingView {
+  currency: typeof PRICE_CURRENCY;
+  plans: Record<PaidPlanTier, number>;
+  bookingFeePercent: number;
+  managed: { setupOnce: number; careMonthly: number };
+  gstNote: string;
+}
+const DEFAULT_PRICING: PricingView = {
+  currency: PRICE_CURRENCY, plans: PLAN_MONTHLY_NZD, bookingFeePercent: BOOKING_FEE_PERCENT,
+  managed: { setupOnce: MANAGED_SERVICES_NZD.setupOnce, careMonthly: MANAGED_SERVICES_NZD.careMonthly }, gstNote: PRICE_GST_NOTE,
+};
 
 @Component({
   selector: 'app-pricing',
@@ -38,7 +51,7 @@ import { ToastService } from './toast.service';
           <p class="text-gray-500 max-w-2xl mx-auto text-sm md:text-base">Everything you need to build a professional website — at a fraction of the cost of other platforms.</p>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8" data-testid="plan-grid">
           <!-- Free -->
           <div class="bg-white/80 backdrop-blur-xl rounded-2xl border border-gray-200/60 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 p-6 md:p-8 flex flex-col">
             <div class="mb-6">
@@ -46,7 +59,7 @@ import { ToastService } from './toast.service';
               <p class="text-gray-500 text-sm">Launch your site for free</p>
             </div>
             <div class="mb-6">
-              <span class="text-4xl font-black text-gray-900">$0</span>
+              <span class="text-4xl font-black text-gray-900">NZ$0</span>
               <span class="text-gray-500 text-sm">/month</span>
             </div>
             <ul class="space-y-3 mb-8 flex-grow text-sm text-gray-600">
@@ -66,23 +79,49 @@ import { ToastService } from './toast.service';
             }
           </div>
 
+
+          <!-- Starter -->
+          <div class="bg-white/80 backdrop-blur-xl rounded-2xl border border-gray-200/60 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 p-6 md:p-8 flex flex-col" data-testid="plan-starter">
+            <div class="mb-6">
+              <h3 class="text-lg font-bold text-gray-900 mb-1">Starter</h3>
+              <p class="text-gray-500 text-sm">For solo trades getting started</p>
+            </div>
+            <div class="mb-6">
+              <span class="text-4xl font-black text-gray-900">{{ price('starter') }}</span>
+              <span class="text-gray-500 text-sm">/month</span>
+              <p class="text-gray-500 text-xs mt-1">{{ pricing().gstNote }}</p>
+            </div>
+            <ul class="space-y-3 mb-8 flex-grow text-sm text-gray-600">
+              <li class="flex items-start gap-2"><mat-icon class="text-green-500 text-[18px] shrink-0 mt-0.5">check_circle</mat-icon> Everything in Free</li>
+              <li class="flex items-start gap-2"><mat-icon class="text-green-500 text-[18px] shrink-0 mt-0.5">check_circle</mat-icon> Unlimited services</li>
+              <li class="flex items-start gap-2"><mat-icon class="text-green-500 text-[18px] shrink-0 mt-0.5">check_circle</mat-icon> Unlimited enquiries</li>
+              <li class="flex items-start gap-2"><mat-icon class="text-green-500 text-[18px] shrink-0 mt-0.5">check_circle</mat-icon> Data export &amp; import</li>
+              <li class="flex items-start gap-2"><mat-icon class="text-green-500 text-[18px] shrink-0 mt-0.5">check_circle</mat-icon> <strong>{{ pricing().bookingFeePercent }}% booking fee</strong></li>
+            </ul>
+            @if (subService.tier() === 'starter') {
+              <div class="bg-teal-50 text-teal-700 text-center py-3 rounded-xl text-sm font-bold">Current Plan</div>
+            } @else {
+              <button (click)="subscribe('starter')" class="bg-gray-900 hover:bg-gray-800 text-white py-3 rounded-xl text-sm font-bold shadow-md transition-colors w-full">
+                {{ auth.isLoggedIn() ? 'Upgrade to Starter' : 'Get Started' }}
+              </button>
+            }
+          </div>
+
           <!-- Pro -->
-          <div class="bg-white/90 backdrop-blur-xl rounded-2xl border-2 border-blue-600 shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300 p-6 md:p-8 flex flex-col relative">
+          <div data-testid="plan-pro" class="bg-white/90 backdrop-blur-xl rounded-2xl border-2 border-blue-600 shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300 p-6 md:p-8 flex flex-col relative">
             <div class="absolute -top-3 left-1/2 -translate-x-1/2 bg-blue-600 text-white px-4 py-1 rounded-full text-xs font-bold">Most Popular</div>
             <div class="mb-6">
               <h3 class="text-lg font-bold text-gray-900 mb-1">Pro</h3>
               <p class="text-gray-500 text-sm">For growing businesses</p>
             </div>
             <div class="mb-6">
-              <span class="text-4xl font-black text-gray-900">{{ symbol() }}{{ pricing().pro }}</span>
+              <span class="text-4xl font-black text-gray-900">{{ price('pro') }}</span>
               <span class="text-gray-500 text-sm">/month</span>
+              <p class="text-gray-500 text-xs mt-1">{{ pricing().gstNote }}</p>
             </div>
             <ul class="space-y-3 mb-8 flex-grow text-sm text-gray-600">
-              <li class="flex items-start gap-2"><mat-icon class="text-green-500 text-[18px] shrink-0 mt-0.5">check_circle</mat-icon> Everything in Free</li>
+              <li class="flex items-start gap-2"><mat-icon class="text-green-500 text-[18px] shrink-0 mt-0.5">check_circle</mat-icon> Everything in Starter</li>
               <li class="flex items-start gap-2"><mat-icon class="text-blue-500 text-[18px] shrink-0 mt-0.5">auto_awesome</mat-icon> <strong>AI content generation</strong></li>
-              <li class="flex items-start gap-2"><mat-icon class="text-green-500 text-[18px] shrink-0 mt-0.5">check_circle</mat-icon> Unlimited services</li>
-              <li class="flex items-start gap-2"><mat-icon class="text-green-500 text-[18px] shrink-0 mt-0.5">check_circle</mat-icon> Unlimited enquiries</li>
-              <li class="flex items-start gap-2"><mat-icon class="text-green-500 text-[18px] shrink-0 mt-0.5">check_circle</mat-icon> Data export &amp; import</li>
               <li class="flex items-start gap-2"><mat-icon class="text-green-500 text-[18px] shrink-0 mt-0.5">check_circle</mat-icon> Email notifications@if (emailAlertsOff()) {<span class="ml-1 text-xs font-semibold text-amber-700">(switching on during beta; enquiries always land in your Inbox)</span>}</li>
             </ul>
             @if (subService.tier() === 'pro') {
@@ -95,14 +134,15 @@ import { ToastService } from './toast.service';
           </div>
 
           <!-- Business -->
-          <div class="bg-white/80 backdrop-blur-xl rounded-2xl border border-gray-200/60 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 p-6 md:p-8 flex flex-col">
+          <div data-testid="plan-business" class="bg-white/80 backdrop-blur-xl rounded-2xl border border-gray-200/60 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 p-6 md:p-8 flex flex-col">
             <div class="mb-6">
               <h3 class="text-lg font-bold text-gray-900 mb-1">Business</h3>
               <p class="text-gray-500 text-sm">For serious professionals</p>
             </div>
             <div class="mb-6">
-              <span class="text-4xl font-black text-gray-900">{{ symbol() }}{{ pricing().business }}</span>
+              <span class="text-4xl font-black text-gray-900">{{ price('business') }}</span>
               <span class="text-gray-500 text-sm">/month</span>
+              <p class="text-gray-500 text-xs mt-1">{{ pricing().gstNote }}</p>
             </div>
             <ul class="space-y-3 mb-8 flex-grow text-sm text-gray-600">
               <li class="flex items-start gap-2"><mat-icon class="text-green-500 text-[18px] shrink-0 mt-0.5">check_circle</mat-icon> Everything in Pro</li>
@@ -119,13 +159,18 @@ import { ToastService } from './toast.service';
           </div>
         </div>
 
+        <div class="mt-12 max-w-3xl mx-auto bg-white/80 rounded-2xl border border-gray-200/60 shadow-sm p-6 md:p-8" data-testid="managed-services">
+          <h2 class="text-lg font-bold text-gray-900 mb-1">Want it done for you?</h2>
+          <p class="text-gray-500 text-sm mb-4">Optional services, on top of any plan.</p>
+          <ul class="space-y-2 text-sm text-gray-700">
+            <li class="flex items-start gap-2"><mat-icon class="text-green-500 text-[18px] shrink-0 mt-0.5">check_circle</mat-icon> <span><strong>Done-for-you setup: {{ money(pricing().managed.setupOnce) }}</strong> one-time ({{ pricing().gstNote }})</span></li>
+            <li class="flex items-start gap-2"><mat-icon class="text-green-500 text-[18px] shrink-0 mt-0.5">check_circle</mat-icon> <span><strong>Managed care: {{ money(pricing().managed.careMonthly) }}/month</strong> ({{ pricing().gstNote }})</span></li>
+          </ul>
+        </div>
+
         <div class="mt-16 text-center">
           <p class="text-gray-500 text-sm mb-2">All plans include full site customisation — branding, layouts, fonts, colours, and all section types.</p>
-          @if (pricing().currency === 'NZD') {
-            <p class="text-gray-600 text-xs">Prices are in New Zealand dollars (NZD){{ pricing().gstInclusive ? ', including GST' : '' }}, charged in NZD by Stripe. Cancel anytime. No long-term contracts.</p>
-          } @else {
-            <p class="text-gray-600 text-xs">All prices are in US dollars (USD) and charged in USD by Stripe; your bank converts to NZD. Cancel anytime. No long-term contracts. Compare: Squarespace starts at $16/mo with no free tier.</p>
-          }
+          <p class="text-gray-600 text-xs" data-testid="pricing-footnote">All prices are in New Zealand dollars ({{ pricing().gstNote }}) and charged in NZD by Stripe. {{ pricing().bookingFeePercent }}% booking fee on every plan: BusinessFlow takes no commission on your bookings. Cancel anytime. No long-term contracts.</p>
         </div>
       </main>
 
@@ -143,9 +188,10 @@ import { ToastService } from './toast.service';
 export class PricingComponent implements OnInit {
   private router = inject(Router);
   private platformId = inject(PLATFORM_ID);
-  /** USD by default; NZD only when the server has NZD Stripe price ids (docs/STRIPE_NZD.md). */
-  pricing = signal<{ currency: 'USD' | 'NZD'; pro: number; business: number; gstInclusive: boolean }>({ currency: 'USD', pro: 14, business: 22, gstInclusive: false });
-  symbol = () => (this.pricing().currency === 'NZD' ? 'NZ$' : 'US$');
+  /** NZD plan amounts (src/app/plans.ts). /api/pricing can refresh them, but they never fall back to USD. */
+  pricing = signal<PricingView>(DEFAULT_PRICING);
+  price = (tier: PaidPlanTier) => formatNzd(this.pricing().plans[tier]);
+  money = (amount: number) => formatNzd(amount);
 
   /** True when the server reports email alerts aren't configured yet. */
   emailAlertsOff = signal(false);
@@ -159,21 +205,21 @@ export class PricingComponent implements OnInit {
       const res = await fetch('/api/pricing');
       if (!res.ok) return;
       const p = await res.json();
-      if ((p?.currency === 'USD' || p?.currency === 'NZD') && Number(p.pro) > 0 && Number(p.business) > 0) this.pricing.set(p);
-    } catch { /* keep USD */ }
+      if (p?.currency === 'NZD' && PAID_PLAN_TIERS.every(t => Number(p.plans?.[t]) > 0) && Number(p.managed?.setupOnce) > 0 && Number(p.managed?.careMonthly) > 0) this.pricing.set(p);
+    } catch { /* keep the built-in NZD amounts */ }
   }
   auth = inject(AuthService);
   subService = inject(SubscriptionService);
   private toast = inject(ToastService);
 
-  async subscribe(tier: 'pro' | 'business') {
+  async subscribe(tier: PaidPlanTier) {
     if (!this.auth.isLoggedIn()) {
       this.router.navigate(['/signup']);
       return;
     }
     const user = this.auth.currentUser();
     if (!user) return;
-    const url = await this.subService.createCheckoutSession(user.uid, tier, undefined, this.pricing().currency === 'NZD' ? 'nzd' : undefined);
+    const url = await this.subService.createCheckoutSession(user.uid, tier);
     if (url) {
       window.location.href = url;
     } else {

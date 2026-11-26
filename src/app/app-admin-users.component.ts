@@ -77,7 +77,7 @@ interface AdminUser {
                     </td>
                     <td class="px-4 py-3">
                       <span class="px-2 py-0.5 rounded-full text-xs font-bold uppercase"
-                            [class]="user.tier === 'free' ? 'bg-gray-100 text-gray-600' : user.tier === 'pro' ? 'bg-blue-100 text-blue-600' : 'bg-purple-100 text-purple-600'">
+                            [class]="user.tier === 'free' ? 'bg-gray-100 text-gray-600' : user.tier === 'starter' ? 'bg-teal-100 text-teal-700' : user.tier === 'pro' ? 'bg-blue-100 text-blue-600' : 'bg-purple-100 text-purple-600'">
                         {{ user.tier }}
                       </span>
                     </td>

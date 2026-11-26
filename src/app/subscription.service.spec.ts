@@ -51,6 +51,23 @@ describe('SubscriptionService tier gating', () => {
     });
   });
 
+  describe('starter tier', () => {
+    beforeEach(() => setTier('starter'));
+
+    it('is a paid tier below Pro: unlimited services/enquiries and export, no managed AI', () => {
+      expect(service.isPro()).toBe(false);
+      expect(service.isBusiness()).toBe(false);
+      expect(service.canAddService(9999)).toBe(true);
+      expect(service.canReceiveEnquiry(9999)).toBe(true);
+      expect(service.canExport()).toBe(true);
+      expect(service.canUseAi()).toBe(false);
+      expect(service.canUseGrowthAi()).toBe(false);
+      expect(service.canUseMarketing()).toBe(false);
+      expect(service.tierLabel()).toBe('Starter');
+      expect(service.tierColor()).toBe('teal');
+    });
+  });
+
   describe('pro tier', () => {
     beforeEach(() => setTier('pro'));
 
